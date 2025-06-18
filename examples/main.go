@@ -11,6 +11,7 @@ import (
 	"github.com/kernelplex/evercore/evercoresqlite"
 
 	"github.com/kernelplex/ubase/lib"
+	"github.com/kernelplex/ubase/lib/dbinterface"
 	"github.com/kernelplex/ubase/lib/dbpostgres"
 	"github.com/kernelplex/ubase/lib/dbsqlite"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
@@ -55,7 +56,7 @@ func main() {
 	eventStore := evercore.NewEventStore(storage)
 	hashService := ubsecurity.DefaultArgon2Id
 
-	userService := ubase.CreateUserService(eventStore, hashService, udb)
+	userService := ubase.CreateUserService(eventStore, hashService, udb, dbinterface.DatabaseTypeSQLite)
 
 	newUser := ubase.UserCreateCommand{
 		Email:       "chavez@example.com",

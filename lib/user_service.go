@@ -30,13 +30,15 @@ type UserServiceImpl struct {
 	store          *evercore.EventStore
 	hashingService ubsecurity.HashGenerator
 	db             *sql.DB
+	dbType         dbinterface.DatabaseType
 }
 
-func CreateUserService(store *evercore.EventStore, hashingService ubsecurity.HashGenerator, db *sql.DB) UserService {
+func CreateUserService(store *evercore.EventStore, hashingService ubsecurity.HashGenerator, db *sql.DB, dbType dbinterface.DatabaseType) UserService {
 	service := UserServiceImpl{
 		store:          store,
 		hashingService: hashingService,
 		db:             db,
+		dbType:         dbType,
 	}
 	return service
 }
@@ -319,7 +321,7 @@ func (s UserServiceImpl) SetRoles(ctx context.Context, command UserSetRolesComan
 }
 
 func (s UserServiceImpl) GetUserRolesIds(ctx context.Context, userId int64) ([]int64, error) {
-	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, s.db)
+	db := dbinterface.NewDatabase(s.dbType, s.db)
 	roles, err := db.GetUserRoles(ctx, userId)
 	if err != nil {
 		slog.Error("failed to get user roles", "userId", userId, "error", err)
@@ -341,7 +343,7 @@ func (s UserServiceImpl) ProjectRoles(ctx context.Context, userAggregate *UserAg
 	}
 	defer tx.Rollback()
 
-	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, tx)
+	db := dbinterface.NewDatabase(s.dbType, tx)
 	return projectRoles(ctx, db, userAggregate)
 }
 
@@ -353,7 +355,7 @@ func (s UserServiceImpl) ProjectUser(ctx context.Context, userAggregate *UserAgg
 	}
 	defer tx.Rollback()
 
-	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, tx)
+	db := dbinterface.NewDatabase(s.dbType, tx)
 
 	_, err = db.GetUser(ctx, userAggregate.Id)
 	// If the user doesn't exist, create it
@@ -362,7 +364,7 @@ func (s UserServiceImpl) ProjectUser(ctx context.Context, userAggregate *UserAgg
 			slog.Error("Failed to get user", "error", err)
 			return err
 		}
-		err = db.AddUser(ctx, userAggregate.Id, 
+		err = db.AddUser(ctx, userAggregate.Id,
 			userAggregate.State.FirstName,
 			userAggregate.State.LastName,
 			userAggregate.State.DisplayName,

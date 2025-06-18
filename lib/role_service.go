@@ -21,14 +21,16 @@ type RoleService interface {
 }
 
 type RoleServiceImpl struct {
-	store *evercore.EventStore
-	db    *sql.DB
+	store   *evercore.EventStore
+	db      *sql.DB
+	dbType  dbinterface.DatabaseType
 }
 
-func CreateRoleService(store *evercore.EventStore, db *sql.DB) RoleService {
+func CreateRoleService(store *evercore.EventStore, db *sql.DB, dbType dbinterface.DatabaseType) RoleService {
 	service := RoleServiceImpl{
-		store: store,
-		db:    db,
+		store:  store,
+		db:     db,
+		dbType: dbType,
 	}
 	return service
 }
@@ -46,7 +48,7 @@ func (s RoleServiceImpl) AddRole(ctx context.Context, name string, agent string)
 
 			etx.ApplyEventTo(&aggregate, evercore.NewStateEvent(ubevents.RoleCreatedEvent{Name: name}), time.Now(), agent)
 
-			db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, s.db)
+			db := dbinterface.NewDatabase(s.dbType, s.db)
 
 			err = db.AddRole(ctx, aggregate.Id, name)
 			if err != nil {
@@ -88,7 +90,7 @@ func (s RoleServiceImpl) AddPermissionToRole(ctx context.Context, role string, p
 				agent)
 
 			// Update database
-			db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, s.db)
+			db := dbinterface.NewDatabase(s.dbType, s.db)
 
 			err = db.AddPermissionToRole(ctx, aggregate.Id, permissionId)
 			if err != nil {
@@ -157,7 +159,7 @@ func (s RoleServiceImpl) RemovePermissionFromRole(ctx context.Context, role stri
 }
 
 func (s RoleServiceImpl) GetRoleList(ctx context.Context) (map[string]int64, error) {
-	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, s.db)
+	db := dbinterface.NewDatabase(s.dbType, s.db)
 
 	roles, err := db.GetRoles(ctx)
 	if err != nil {

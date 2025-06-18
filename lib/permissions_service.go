@@ -31,6 +31,7 @@ type PermissionService interface {
 
 type PermissionServiceImpl struct {
 	db                *sql.DB
+	dbType            dbinterface.DatabaseType
 	roleService       RoleService
 	userRoleCache     ubalgorithms.LRUCache[int64, UserRoles]
 	rolePermissionMap map[int64]map[int64]bool
@@ -38,10 +39,11 @@ type PermissionServiceImpl struct {
 	lock              sync.RWMutex
 }
 
-func NewPermissionService(db *sql.DB, roleService RoleService) PermissionServiceImpl {
+func NewPermissionService(db *sql.DB, dbType dbinterface.DatabaseType, roleService RoleService) PermissionServiceImpl {
 	userRoleCache := ubalgorithms.NewLRUCache[int64, UserRoles](100)
 	return PermissionServiceImpl{
 		db:                db,
+		dbType:            dbType,
 		userRoleCache:     *userRoleCache,
 		permissionIdMap:   make(map[string]int64),
 		roleService:       roleService,
@@ -64,7 +66,7 @@ func (p *PermissionServiceImpl) subsribeToEvents() {
 }
 
 func (p *PermissionServiceImpl) Warmup(ctx context.Context, allPermissions []string) error {
-	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, p.db) // or Postgres based on config
+	db := dbinterface.NewDatabase(p.dbType, p.db)
 	permissionList, err := db.GetPermissions(ctx)
 	if err != nil {
 		slog.Error("Failed to get permissions", "error", err)
@@ -140,7 +142,7 @@ func (p *PermissionServiceImpl) UserHasPermission(ctx context.Context, userId in
 }
 
 func (p *PermissionServiceImpl) GetPermissions(ctx context.Context) (map[string]int64, error) {
-	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, p.db) // or Postgres based on config
+	db := dbinterface.NewDatabase(p.dbType, p.db)
 	permissions, err := db.GetPermissions(ctx)
 	if err != nil {
 		return nil, err
@@ -167,7 +169,7 @@ func (p *PermissionServiceImpl) getUserRoles(ctx context.Context, userId int64) 
 	}
 
 	// Not in cache, get from database
-	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, p.db) // or Postgres based on config
+	db := dbinterface.NewDatabase(p.dbType, p.db)
 	roles, err := db.GetUserRoles(ctx, userId)
 	if err != nil {
 		return UserRoles{}, fmt.Errorf("failed to get user roles: %w", err)

@@ -2,7 +2,7 @@ package ubase
 
 import (
 	"fmt"
-	"github.com/kernelplex/ubase/lib/validation"
+	"github.com/kernelplex/ubase/lib/ubvalidation"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -11,7 +11,7 @@ func TestUserCreateCommand_Validate(t *testing.T) {
 	tests := []struct {
 		name     string
 		command  UserCreateCommand
-		expected *validation.ValidationIssues
+		expected *ubvalidation.ValidationIssues
 	}{
 		{
 			name: "valid command",
@@ -33,9 +33,9 @@ func TestUserCreateCommand_Validate(t *testing.T) {
 				LastName:    "Doe",
 				DisplayName: "JohnD",
 			},
-			expected: &validation.ValidationIssues{
-				Issues: []validation.ValidationIssue{
-					{Field: "Email", Error: []string{validation.ErrEmailInvalid}},
+			expected: &ubvalidation.ValidationIssues{
+				Issues: []ubvalidation.ValidationIssue{
+					{Field: "Email", Error: []string{ubvalidation.ErrEmailInvalid}},
 				},
 			},
 		},
@@ -48,9 +48,9 @@ func TestUserCreateCommand_Validate(t *testing.T) {
 				LastName:    "Doe",
 				DisplayName: "JohnD",
 			},
-			expected: &validation.ValidationIssues{
-				Issues: []validation.ValidationIssue{
-					{Field: "Password", Error: []string{validation.ErrPasswordRequired}},
+			expected: &ubvalidation.ValidationIssues{
+				Issues: []ubvalidation.ValidationIssue{
+					{Field: "Password", Error: []string{ubvalidation.ErrPasswordRequired}},
 				},
 			},
 		},
@@ -63,15 +63,15 @@ func TestUserCreateCommand_Validate(t *testing.T) {
 				LastName:    "Doe",
 				DisplayName: "JohnD",
 			},
-			expected: &validation.ValidationIssues{
-				Issues: []validation.ValidationIssue{
+			expected: &ubvalidation.ValidationIssues{
+				Issues: []ubvalidation.ValidationIssue{
 					{
 						Field: "Password",
 						Error: []string{
-							validation.ErrPasswordMinLength,
-							validation.ErrPasswordUppercase,
-							validation.ErrPasswordNumber,
-							validation.ErrPasswordSpecialChar,
+							ubvalidation.ErrPasswordMinLength,
+							ubvalidation.ErrPasswordUppercase,
+							ubvalidation.ErrPasswordNumber,
+							ubvalidation.ErrPasswordSpecialChar,
 						},
 					},
 				},
@@ -86,13 +86,13 @@ func TestUserCreateCommand_Validate(t *testing.T) {
 				LastName:    "",
 				DisplayName: "",
 			},
-			expected: &validation.ValidationIssues{
-				Issues: []validation.ValidationIssue{
-					{Field: "Email", Error: []string{validation.ErrEmailRequired}},
-					{Field: "Password", Error: []string{validation.ErrPasswordRequired}},
-					{Field: "FirstName", Error: []string{fmt.Sprintf(validation.ErrFieldRequiredTemplate, "first name")}},
-					{Field: "LastName", Error: []string{fmt.Sprintf(validation.ErrFieldRequiredTemplate, "last name")}},
-					{Field: "DisplayName", Error: []string{fmt.Sprintf(validation.ErrFieldRequiredTemplate, "display name")}},
+			expected: &ubvalidation.ValidationIssues{
+				Issues: []ubvalidation.ValidationIssue{
+					{Field: "Email", Error: []string{ubvalidation.ErrEmailRequired}},
+					{Field: "Password", Error: []string{ubvalidation.ErrPasswordRequired}},
+					{Field: "FirstName", Error: []string{fmt.Sprintf(ubvalidation.ErrFieldRequiredTemplate, "first name")}},
+					{Field: "LastName", Error: []string{fmt.Sprintf(ubvalidation.ErrFieldRequiredTemplate, "last name")}},
+					{Field: "DisplayName", Error: []string{fmt.Sprintf(ubvalidation.ErrFieldRequiredTemplate, "display name")}},
 				},
 			},
 		},
@@ -113,7 +113,7 @@ func TestUserUpdateCommand_Validate(t *testing.T) {
 	tests := []struct {
 		name     string
 		command  UserUpdateCommand
-		expected *validation.ValidationIssues
+		expected *ubvalidation.ValidationIssues
 	}{
 		{
 			name:     "no updates - valid",
@@ -132,9 +132,9 @@ func TestUserUpdateCommand_Validate(t *testing.T) {
 			command: UserUpdateCommand{
 				Password: &empty,
 			},
-			expected: &validation.ValidationIssues{
-				Issues: []validation.ValidationIssue{
-					{Field: "Password", Error: []string{validation.ErrPasswordEmpty}},
+			expected: &ubvalidation.ValidationIssues{
+				Issues: []ubvalidation.ValidationIssue{
+					{Field: "Password", Error: []string{ubvalidation.ErrPasswordEmpty}},
 				},
 			},
 		},
@@ -145,11 +145,11 @@ func TestUserUpdateCommand_Validate(t *testing.T) {
 				LastName:    &empty,
 				DisplayName: &empty,
 			},
-			expected: &validation.ValidationIssues{
-				Issues: []validation.ValidationIssue{
-					{Field: "FirstName", Error: []string{fmt.Sprintf(validation.ErrFieldEmptyTemplate, "first name")}},
-					{Field: "LastName", Error: []string{fmt.Sprintf(validation.ErrFieldEmptyTemplate, "last name")}},
-					{Field: "DisplayName", Error: []string{fmt.Sprintf(validation.ErrFieldEmptyTemplate, "display name")}},
+			expected: &ubvalidation.ValidationIssues{
+				Issues: []ubvalidation.ValidationIssue{
+					{Field: "FirstName", Error: []string{fmt.Sprintf(ubvalidation.ErrFieldEmptyTemplate, "first name")}},
+					{Field: "LastName", Error: []string{fmt.Sprintf(ubvalidation.ErrFieldEmptyTemplate, "last name")}},
+					{Field: "DisplayName", Error: []string{fmt.Sprintf(ubvalidation.ErrFieldEmptyTemplate, "display name")}},
 				},
 			},
 		},

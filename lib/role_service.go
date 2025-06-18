@@ -8,8 +8,8 @@ import (
 	"time"
 
 	evercore "github.com/kernelplex/evercore/base"
-	data "github.com/kernelplex/ubase/lib/ubase_db"
-	"github.com/kernelplex/ubase/lib/ubase_events"
+	data "github.com/kernelplex/ubase/lib/ubdata"
+	"github.com/kernelplex/ubase/lib/ubevents"
 )
 
 type RoleService interface {
@@ -46,7 +46,7 @@ func (s RoleServiceImpl) AddRole(ctx context.Context, name string, agent string)
 			}
 
 			etx.CreateAggregateWithKeyInto(&aggregate, name)
-			etx.ApplyEventTo(&aggregate, evercore.NewStateEvent(ubase_events.RoleCreatedEvent{Name: name}), time.Now(), agent)
+			etx.ApplyEventTo(&aggregate, evercore.NewStateEvent(ubevents.RoleCreatedEvent{Name: name}), time.Now(), agent)
 
 			roleParams := data.AddRoleParams{
 				RoleID: aggregate.Id,
@@ -82,7 +82,7 @@ func (s RoleServiceImpl) AddPermissionToRole(ctx context.Context, role string, p
 
 			// Apply permission added event
 			etx.ApplyEventTo(&aggregate,
-				evercore.NewStateEvent(ubase_events.RolePermissionAddedEvent{
+				evercore.NewStateEvent(ubevents.RolePermissionAddedEvent{
 					PermissionId: permissionId,
 				}),
 				time.Now(),
@@ -133,7 +133,7 @@ func (s RoleServiceImpl) RemovePermissionFromRole(ctx context.Context, role stri
 
 			// Apply permission removed event
 			etx.ApplyEventTo(&aggregate,
-				evercore.NewStateEvent(ubase_events.RolePermissionRemovedEvent{
+				evercore.NewStateEvent(ubevents.RolePermissionRemovedEvent{
 					PermissionId: permissionId,
 				}),
 				time.Now(),

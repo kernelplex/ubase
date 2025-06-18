@@ -11,7 +11,7 @@ import (
 	"github.com/kernelplex/evercore/evercoresqlite"
 
 	"github.com/kernelplex/ubase/lib"
-	"github.com/kernelplex/ubase/lib/ubasesec"
+	"github.com/kernelplex/ubase/lib/ubsecurity"
 	"github.com/kernelplex/ubase/sql/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 	_ "github.com/pressly/goose/v3"
@@ -38,7 +38,7 @@ func main() {
 	storage := evercoresqlite.NewSqliteStorageEngine(edb)
 
 	eventStore := evercore.NewEventStore(storage)
-	hashService := ubasesec.DefaultArgon2Id
+	hashService := ubsecurity.DefaultArgon2Id
 
 	userService := ubase.CreateUserService(eventStore, hashService, udb)
 

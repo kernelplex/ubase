@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/kernelplex/evercore/base"
-	"github.com/kernelplex/ubase/lib/statuscode"
-	data "github.com/kernelplex/ubase/lib/ubase_db"
-	"github.com/kernelplex/ubase/lib/ubase_events"
-	"github.com/kernelplex/ubase/lib/ubasesec"
+	data "github.com/kernelplex/ubase/lib/ubdata"
+	"github.com/kernelplex/ubase/lib/ubevents"
+	"github.com/kernelplex/ubase/lib/ubsecurity"
+	"github.com/kernelplex/ubase/lib/ubstatus"
 )
 
 const maxFailedLoginAttempts = 5
@@ -28,11 +28,11 @@ type UserService interface {
 
 type UserServiceImpl struct {
 	store          *evercore.EventStore
-	hashingService ubasesec.HashGenerator
+	hashingService ubsecurity.HashGenerator
 	db             *sql.DB
 }
 
-func CreateUserService(store *evercore.EventStore, hashingService ubasesec.HashGenerator, db *sql.DB) UserService {
+func CreateUserService(store *evercore.EventStore, hashingService ubsecurity.HashGenerator, db *sql.DB) UserService {
 	service := UserServiceImpl{
 		store:          store,
 		hashingService: hashingService,
@@ -63,7 +63,7 @@ func (s UserServiceImpl) CreateUser(ctx context.Context, command UserCreateComma
 	if issues != nil {
 		return UserCreateResponse{
 			Response: Response{
-				Status:           statuscode.ValidationError,
+				Status:           ubstatus.ValidationError,
 				Message:          "Validation issues",
 				ValidationIssues: issues,
 			},
@@ -82,7 +82,7 @@ func (s UserServiceImpl) CreateUser(ctx context.Context, command UserCreateComma
 			}
 
 			stateEvent := evercore.NewStateEvent(
-				ubase_events.UserCreatedEvent{
+				ubevents.UserCreatedEvent{
 					Email:        &command.Email,
 					PasswordHash: &passwordHash,
 					FirstName:    &command.FirstName,
@@ -105,7 +105,7 @@ func (s UserServiceImpl) CreateUser(ctx context.Context, command UserCreateComma
 		slog.Error("Error creating user", "error", err)
 		return UserCreateResponse{
 			Response: Response{
-				Status:  statuscode.UnexpectedError,
+				Status:  ubstatus.UnexpectedError,
 				Message: "Error creating user",
 			},
 		}, err
@@ -113,7 +113,7 @@ func (s UserServiceImpl) CreateUser(ctx context.Context, command UserCreateComma
 
 	return UserCreateResponse{
 		Response: Response{
-			Status:  statuscode.Success,
+			Status:  ubstatus.Success,
 			Message: "User created successfully",
 		},
 		Id: id,
@@ -125,7 +125,7 @@ func (s UserServiceImpl) UpdateUser(ctx context.Context, command UserUpdateComma
 	if issues != nil {
 		return UserUpdatedResponse{
 			Response: Response{
-				Status:           statuscode.ValidationError,
+				Status:           ubstatus.ValidationError,
 				Message:          "Validation issues",
 				ValidationIssues: issues,
 			},
@@ -149,7 +149,7 @@ func (s UserServiceImpl) UpdateUser(ctx context.Context, command UserUpdateComma
 			}
 
 			stateEvent := evercore.NewStateEvent(
-				ubase_events.UserUpdatedEvent{
+				ubevents.UserUpdatedEvent{
 					PasswordHash: passwordHash,
 					FirstName:    command.FirstName,
 					LastName:     command.LastName,
@@ -172,7 +172,7 @@ func (s UserServiceImpl) UpdateUser(ctx context.Context, command UserUpdateComma
 		slog.Error("Error updating user", "error", err)
 		return UserUpdatedResponse{
 			Response: Response{
-				Status:  statuscode.UnexpectedError,
+				Status:  ubstatus.UnexpectedError,
 				Message: "Error updating user",
 			},
 		}, err
@@ -180,7 +180,7 @@ func (s UserServiceImpl) UpdateUser(ctx context.Context, command UserUpdateComma
 
 	return UserUpdatedResponse{
 		Response: Response{
-			Status:  statuscode.Success,
+			Status:  ubstatus.Success,
 			Message: "User updated successfully",
 		},
 	}, nil
@@ -189,13 +189,13 @@ func (s UserServiceImpl) UpdateUser(ctx context.Context, command UserUpdateComma
 func (s UserServiceImpl) handleMaxAttempts(etx evercore.EventStoreContext, aggregate *UserAggregate) *UserLoginResponse {
 	timeSinceLastAttempt := time.Since(time.Unix(aggregate.State.LastLoginAttempt, 0))
 	if timeSinceLastAttempt < maxLoginFiledAttemptsTimeout {
-		etx.ApplyEventTo(aggregate, evercore.NewStateEvent(ubase_events.UserLoginFailedEvent{
+		etx.ApplyEventTo(aggregate, evercore.NewStateEvent(ubevents.UserLoginFailedEvent{
 			LastLoginAttempt:    time.Now().Unix(),
 			FailedLoginAttempts: aggregate.State.FailedLoginAttempts + 1,
 		}), time.Now(), "")
 		return &UserLoginResponse{
 			Response: Response{
-				Status:  statuscode.NotAuthorized,
+				Status:  ubstatus.NotAuthorized,
 				Message: "Max failed login attempts exceeded. Please try again later",
 			},
 		}
@@ -206,13 +206,13 @@ func (s UserServiceImpl) handleMaxAttempts(etx evercore.EventStoreContext, aggre
 func (s UserServiceImpl) verifyPassword(etx evercore.EventStoreContext, aggregate *UserAggregate, password string) (*UserLoginResponse, error) {
 	valid, err := s.hashingService.VerifyBase64(password, aggregate.State.PasswordHash)
 	if err != nil || !valid {
-		etx.ApplyEventTo(aggregate, evercore.NewStateEvent(ubase_events.UserLoginFailedEvent{
+		etx.ApplyEventTo(aggregate, evercore.NewStateEvent(ubevents.UserLoginFailedEvent{
 			LastLoginAttempt:    time.Now().Unix(),
 			FailedLoginAttempts: aggregate.State.FailedLoginAttempts + 1,
 		}), time.Now(), "")
 		return &UserLoginResponse{
 			Response: Response{
-				Status:  statuscode.NotAuthorized,
+				Status:  ubstatus.NotAuthorized,
 				Message: "Invalid email or password",
 			},
 		}, nil
@@ -221,14 +221,14 @@ func (s UserServiceImpl) verifyPassword(etx evercore.EventStoreContext, aggregat
 }
 
 func (s UserServiceImpl) createSuccessResponse(etx evercore.EventStoreContext, aggregate *UserAggregate) *UserLoginResponse {
-	etx.ApplyEventTo(aggregate, evercore.NewStateEvent(ubase_events.UserLoginSucceededEvent{
+	etx.ApplyEventTo(aggregate, evercore.NewStateEvent(ubevents.UserLoginSucceededEvent{
 		LastLoginAttempt:    time.Now().Unix(),
 		FailedLoginAttempts: 0,
 	}), time.Now(), "")
 
 	return &UserLoginResponse{
 		Response: Response{
-			Status:  statuscode.Success,
+			Status:  ubstatus.Success,
 			Message: "User login successful",
 		},
 		UserId:      aggregate.Id,
@@ -271,7 +271,7 @@ func (s UserServiceImpl) Login(ctx context.Context, command UserLoginCommand) (*
 func (s UserServiceImpl) SetRoles(ctx context.Context, command UserSetRolesComand, agent string) (UserSetRolesResponse, error) {
 	response := UserSetRolesResponse{
 		Response: Response{
-			Status:  statuscode.Success,
+			Status:  ubstatus.Success,
 			Message: "Roles updated successfully",
 		},
 	}
@@ -286,7 +286,7 @@ func (s UserServiceImpl) SetRoles(ctx context.Context, command UserSetRolesComan
 				return fmt.Errorf("failed to load user: %w", err)
 			}
 
-			event := evercore.NewStateEvent(ubase_events.UserRolesUpdatedEvent{
+			event := evercore.NewStateEvent(ubevents.UserRolesUpdatedEvent{
 				Roles: command.RoleIds,
 			})
 			currentTime := time.Now()
@@ -310,7 +310,7 @@ func (s UserServiceImpl) SetRoles(ctx context.Context, command UserSetRolesComan
 
 	if err != nil {
 		slog.Error("failed to set roles", "userId", command.Id, "error", err)
-		response.Response.Status = statuscode.UnexpectedError
+		response.Response.Status = ubstatus.UnexpectedError
 		response.Response.Message = "Failed to update roles"
 		return response, err
 	}

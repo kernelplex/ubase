@@ -2,7 +2,7 @@ package ubase
 
 import (
 	"github.com/kernelplex/evercore/base"
-	"github.com/kernelplex/ubase/lib/validation"
+	"github.com/kernelplex/ubase/lib/ubvalidation"
 )
 
 type UserState struct {
@@ -25,9 +25,9 @@ type UserAggregate struct {
 }
 
 type Response struct {
-	Status           string                       `json:"status"`
-	Message          string                       `json:"message"`
-	ValidationIssues *validation.ValidationIssues `json:"validationIssues,omitempty"`
+	Status           string                         `json:"status"`
+	Message          string                         `json:"message"`
+	ValidationIssues *ubvalidation.ValidationIssues `json:"validationIssues,omitempty"`
 }
 
 type UserCreateCommand struct {
@@ -43,32 +43,32 @@ type UserCreateResponse struct {
 	Id       int64 `json:"id"`
 }
 
-func (r UserCreateCommand) Validate() *validation.ValidationIssues {
-	var issues []validation.ValidationIssue
+func (r UserCreateCommand) Validate() *ubvalidation.ValidationIssues {
+	var issues []ubvalidation.ValidationIssue
 
-	issues = append(issues, validation.ValidateEmail(r.Email)...)
+	issues = append(issues, ubvalidation.ValidateEmail(r.Email)...)
 
 	if r.Password != "" {
-		if passwordErrors := validation.ValidatePasswordComplexity(r.Password); len(passwordErrors) > 0 {
-			issues = append(issues, validation.ValidationIssue{
+		if passwordErrors := ubvalidation.ValidatePasswordComplexity(r.Password); len(passwordErrors) > 0 {
+			issues = append(issues, ubvalidation.ValidationIssue{
 				Field: "Password",
 				Error: passwordErrors,
 			})
 		}
 	} else {
-		issues = append(issues, validation.ValidationIssue{
+		issues = append(issues, ubvalidation.ValidationIssue{
 			Field: "Password",
 			Error: []string{"password is required"},
 		})
 	}
-	issues = append(issues, validation.ValidateField("FirstName", r.FirstName, true, 0)...)
-	issues = append(issues, validation.ValidateField("LastName", r.LastName, true, 0)...)
-	issues = append(issues, validation.ValidateField("DisplayName", r.DisplayName, true, 0)...)
+	issues = append(issues, ubvalidation.ValidateField("FirstName", r.FirstName, true, 0)...)
+	issues = append(issues, ubvalidation.ValidateField("LastName", r.LastName, true, 0)...)
+	issues = append(issues, ubvalidation.ValidateField("DisplayName", r.DisplayName, true, 0)...)
 
 	if len(issues) == 0 {
 		return nil
 	}
-	return &validation.ValidationIssues{Issues: issues}
+	return &ubvalidation.ValidationIssues{Issues: issues}
 }
 
 type UserUpdateCommand struct {
@@ -79,31 +79,31 @@ type UserUpdateCommand struct {
 	DisplayName *string `json:"displayName,omitempty"`
 }
 
-func (r UserUpdateCommand) Validate() *validation.ValidationIssues {
-	var issues []validation.ValidationIssue
+func (r UserUpdateCommand) Validate() *ubvalidation.ValidationIssues {
+	var issues []ubvalidation.ValidationIssue
 
 	if r.Password != nil {
 		if *r.Password == "" {
-			issues = append(issues, validation.ValidationIssue{
+			issues = append(issues, ubvalidation.ValidationIssue{
 				Field: "Password",
 				Error: []string{"password cannot be empty if provided"},
 			})
-		} else if passwordErrors := validation.ValidatePasswordComplexity(*r.Password); len(passwordErrors) > 0 {
-			issues = append(issues, validation.ValidationIssue{
+		} else if passwordErrors := ubvalidation.ValidatePasswordComplexity(*r.Password); len(passwordErrors) > 0 {
+			issues = append(issues, ubvalidation.ValidationIssue{
 				Field: "Password",
 				Error: passwordErrors,
 			})
 		}
 	}
 
-	issues = append(issues, validation.ValidateOptionalField("FirstName", r.FirstName, 0)...)
-	issues = append(issues, validation.ValidateOptionalField("LastName", r.LastName, 0)...)
-	issues = append(issues, validation.ValidateOptionalField("DisplayName", r.DisplayName, 0)...)
+	issues = append(issues, ubvalidation.ValidateOptionalField("FirstName", r.FirstName, 0)...)
+	issues = append(issues, ubvalidation.ValidateOptionalField("LastName", r.LastName, 0)...)
+	issues = append(issues, ubvalidation.ValidateOptionalField("DisplayName", r.DisplayName, 0)...)
 
 	if len(issues) == 0 {
 		return nil
 	}
-	return &validation.ValidationIssues{Issues: issues}
+	return &ubvalidation.ValidationIssues{Issues: issues}
 }
 
 type UserUpdatedResponse struct {

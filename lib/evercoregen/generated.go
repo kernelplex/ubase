@@ -5,7 +5,7 @@ import (
 	"github.com/kernelplex/evercore/base"
 
 	events "github.com/kernelplex/ubase/lib/evercoregen/events"
-	"github.com/kernelplex/ubase/lib/ubase_events"
+	"github.com/kernelplex/ubase/lib/ubevents"
 )
 
 func StateEventDecoder(_ string, ev evercore.SerializedEvent) (evercore.EventState, error) {
@@ -15,7 +15,7 @@ func StateEventDecoder(_ string, ev evercore.SerializedEvent) (evercore.EventSta
 	// State Events
 	// ==================================================
 	case events.UserCreatedEventType:
-		eventState := ubase_events.UserCreatedEvent {}
+		eventState := ubevents.UserCreatedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
@@ -23,7 +23,7 @@ func StateEventDecoder(_ string, ev evercore.SerializedEvent) (evercore.EventSta
 		state := evercore.NewStateEvent(eventState)
 		return state, nil
 	case events.UserLoginFailedEventType:
-		eventState := ubase_events.UserLoginFailedEvent {}
+		eventState := ubevents.UserLoginFailedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
@@ -31,7 +31,7 @@ func StateEventDecoder(_ string, ev evercore.SerializedEvent) (evercore.EventSta
 		state := evercore.NewStateEvent(eventState)
 		return state, nil
 	case events.UserLoginSucceededEventType:
-		eventState := ubase_events.UserLoginSucceededEvent {}
+		eventState := ubevents.UserLoginSucceededEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
@@ -39,7 +39,7 @@ func StateEventDecoder(_ string, ev evercore.SerializedEvent) (evercore.EventSta
 		state := evercore.NewStateEvent(eventState)
 		return state, nil
 	case events.UserRolesUpdatedEventType:
-		eventState := ubase_events.UserRolesUpdatedEvent {}
+		eventState := ubevents.UserRolesUpdatedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
@@ -47,7 +47,7 @@ func StateEventDecoder(_ string, ev evercore.SerializedEvent) (evercore.EventSta
 		state := evercore.NewStateEvent(eventState)
 		return state, nil
 	case events.UserUpdatedEventType:
-		eventState := ubase_events.UserUpdatedEvent {}
+		eventState := ubevents.UserUpdatedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
@@ -61,21 +61,21 @@ func StateEventDecoder(_ string, ev evercore.SerializedEvent) (evercore.EventSta
 func EventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error) {
 	switch ev.EventType {
 	case events.RoleCreatedEventType:
-		eventState := ubase_events.RoleCreatedEvent {}
+		eventState := ubevents.RoleCreatedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
 		}
 		return eventState, nil
 	case events.RolePermissionAddedEventType:
-		eventState := ubase_events.RolePermissionAddedEvent {}
+		eventState := ubevents.RolePermissionAddedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
 		}
 		return eventState, nil
 	case events.RolePermissionRemovedEventType:
-		eventState := ubase_events.RolePermissionRemovedEvent {}
+		eventState := ubevents.RolePermissionRemovedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err

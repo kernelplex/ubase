@@ -1,4 +1,4 @@
-package domain
+package ubase
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/kernelplex/evercore/base"
-	data "github.com/kernelplex/ubase/lib/db"
-	"github.com/kernelplex/ubase/lib/eventstore_events"
 	"github.com/kernelplex/ubase/lib/statuscode"
+	data "github.com/kernelplex/ubase/lib/ubase_db"
+	"github.com/kernelplex/ubase/lib/ubase_events"
 	"github.com/kernelplex/ubase/lib/ubasesec"
 )
 
@@ -82,7 +82,7 @@ func (s UserServiceImpl) CreateUser(ctx context.Context, command UserCreateComma
 			}
 
 			stateEvent := evercore.NewStateEvent(
-				eventstore_events.UserCreatedEvent{
+				ubase_events.UserCreatedEvent{
 					Email:        &command.Email,
 					PasswordHash: &passwordHash,
 					FirstName:    &command.FirstName,
@@ -149,7 +149,7 @@ func (s UserServiceImpl) UpdateUser(ctx context.Context, command UserUpdateComma
 			}
 
 			stateEvent := evercore.NewStateEvent(
-				eventstore_events.UserUpdatedEvent{
+				ubase_events.UserUpdatedEvent{
 					PasswordHash: passwordHash,
 					FirstName:    command.FirstName,
 					LastName:     command.LastName,
@@ -189,7 +189,7 @@ func (s UserServiceImpl) UpdateUser(ctx context.Context, command UserUpdateComma
 func (s UserServiceImpl) handleMaxAttempts(etx evercore.EventStoreContext, aggregate *UserAggregate) *UserLoginResponse {
 	timeSinceLastAttempt := time.Since(time.Unix(aggregate.State.LastLoginAttempt, 0))
 	if timeSinceLastAttempt < maxLoginFiledAttemptsTimeout {
-		etx.ApplyEventTo(aggregate, evercore.NewStateEvent(eventstore_events.UserLoginFailedEvent{
+		etx.ApplyEventTo(aggregate, evercore.NewStateEvent(ubase_events.UserLoginFailedEvent{
 			LastLoginAttempt:    time.Now().Unix(),
 			FailedLoginAttempts: aggregate.State.FailedLoginAttempts + 1,
 		}), time.Now(), "")
@@ -206,7 +206,7 @@ func (s UserServiceImpl) handleMaxAttempts(etx evercore.EventStoreContext, aggre
 func (s UserServiceImpl) verifyPassword(etx evercore.EventStoreContext, aggregate *UserAggregate, password string) (*UserLoginResponse, error) {
 	valid, err := s.hashingService.VerifyBase64(password, aggregate.State.PasswordHash)
 	if err != nil || !valid {
-		etx.ApplyEventTo(aggregate, evercore.NewStateEvent(eventstore_events.UserLoginFailedEvent{
+		etx.ApplyEventTo(aggregate, evercore.NewStateEvent(ubase_events.UserLoginFailedEvent{
 			LastLoginAttempt:    time.Now().Unix(),
 			FailedLoginAttempts: aggregate.State.FailedLoginAttempts + 1,
 		}), time.Now(), "")
@@ -221,7 +221,7 @@ func (s UserServiceImpl) verifyPassword(etx evercore.EventStoreContext, aggregat
 }
 
 func (s UserServiceImpl) createSuccessResponse(etx evercore.EventStoreContext, aggregate *UserAggregate) *UserLoginResponse {
-	etx.ApplyEventTo(aggregate, evercore.NewStateEvent(eventstore_events.UserLoginSucceededEvent{
+	etx.ApplyEventTo(aggregate, evercore.NewStateEvent(ubase_events.UserLoginSucceededEvent{
 		LastLoginAttempt:    time.Now().Unix(),
 		FailedLoginAttempts: 0,
 	}), time.Now(), "")
@@ -286,7 +286,7 @@ func (s UserServiceImpl) SetRoles(ctx context.Context, command UserSetRolesComan
 				return fmt.Errorf("failed to load user: %w", err)
 			}
 
-			event := evercore.NewStateEvent(eventstore_events.UserRolesUpdatedEvent{
+			event := evercore.NewStateEvent(ubase_events.UserRolesUpdatedEvent{
 				Roles: command.RoleIds,
 			})
 			currentTime := time.Now()

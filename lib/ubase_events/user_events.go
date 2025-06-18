@@ -1,4 +1,4 @@
-package eventstore_events
+package ubase_events
 
 // evercore:state-event
 type UserCreatedEvent struct {

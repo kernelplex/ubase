@@ -1,4 +1,4 @@
-package eventstore_events
+package ubase_events
 
 import (
 	evercore "github.com/kernelplex/evercore/base"

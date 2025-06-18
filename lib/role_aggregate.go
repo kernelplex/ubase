@@ -1,4 +1,4 @@
-package domain
+package ubase
 
 import (
 	"fmt"
@@ -7,9 +7,9 @@ import (
 	"time"
 
 	evercore "github.com/kernelplex/evercore/base"
-	"github.com/kernelplex/ubase/lib/eventstore_events"
 	"github.com/kernelplex/ubase/lib/evercoregen"
 	aggregates "github.com/kernelplex/ubase/lib/evercoregen/aggregates"
+	"github.com/kernelplex/ubase/lib/ubase_events"
 )
 
 type RoleState struct {
@@ -80,11 +80,11 @@ func (a *RoleAggregate) ApplyEventState(eventState evercore.EventState, eventTim
 	// Print the actual event go type
 
 	switch eventState := eventState.(type) {
-	case eventstore_events.RoleCreatedEvent:
+	case ubase_events.RoleCreatedEvent:
 		a.State.Name = eventState.Name
-	case eventstore_events.RolePermissionAddedEvent:
+	case ubase_events.RolePermissionAddedEvent:
 		a.State.Premissions = append(a.State.Premissions, eventState.PermissionId)
-	case eventstore_events.RolePermissionRemovedEvent:
+	case ubase_events.RolePermissionRemovedEvent:
 		for i, permissionId := range a.State.Premissions {
 			if permissionId == eventState.PermissionId {
 				a.State.Premissions = slices.Delete(a.State.Premissions, i, i+1)

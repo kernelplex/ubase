@@ -63,9 +63,10 @@ INSERT INTO role_permissions (role_id, permission_id)
 DELETE FROM role_permissions WHERE role_id = sqlc.arg(role_id) AND permission_id = sqlc.arg(permission_id);
 
 
--- name: CreatePermission :exec
-INSERT INTO permissions (permission_id, name) 
-	VALUES (sqlc.arg(permission_id), sqlc.arg(name));
+-- name: CreatePermission :one
+INSERT INTO permissions (name) 
+	VALUES (sqlc.arg(name))
+	RETURNING permission_id;
 
 -- name: GetPermissions :many
 SELECT permission_id, name FROM permissions;

@@ -24,7 +24,7 @@ CREATE TABLE "user_roles" (
 );
 
 CREATE TABLE "permissions" (
-	"permission_id" INTEGER NOT NULL PRIMARY KEY,
+	"permission_id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	"name" VARCHAR(255) NOT NULL
 );
 

@@ -86,19 +86,17 @@ func (q *Queries) AddUser(ctx context.Context, arg AddUserParams) error {
 	return err
 }
 
-const createPermission = `-- name: CreatePermission :exec
-INSERT INTO permissions (permission_id, name) 
-	VALUES ($1, $2)
+const createPermission = `-- name: CreatePermission :one
+INSERT INTO permissions (name) 
+	VALUES ($1)
+	RETURNING permission_id
 `
 
-type CreatePermissionParams struct {
-	PermissionID int64
-	Name         string
-}
-
-func (q *Queries) CreatePermission(ctx context.Context, arg CreatePermissionParams) error {
-	_, err := q.db.ExecContext(ctx, createPermission, arg.PermissionID, arg.Name)
-	return err
+func (q *Queries) CreatePermission(ctx context.Context, name string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createPermission, name)
+	var permission_id int64
+	err := row.Scan(&permission_id)
+	return permission_id, err
 }
 
 const getPermissions = `-- name: GetPermissions :many

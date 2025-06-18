@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"sync"
 
+	"github.com/kernelplex/ubase/lib/dbinterface"
 	"github.com/kernelplex/ubase/lib/ubalgorithms"
-	data "github.com/kernelplex/ubase/lib/ubdata"
 )
 
 type UserRoles struct {
@@ -64,8 +64,8 @@ func (p *PermissionServiceImpl) subsribeToEvents() {
 }
 
 func (p *PermissionServiceImpl) Warmup(ctx context.Context, allPermissions []string) error {
-	orm := data.New(p.db)
-	permissionList, err := orm.GetPermissions(ctx)
+	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, p.db) // or Postgres based on config
+	permissionList, err := db.GetPermissions(ctx)
 	if err != nil {
 		slog.Error("Failed to get permissions", "error", err)
 	}
@@ -77,8 +77,7 @@ func (p *PermissionServiceImpl) Warmup(ctx context.Context, allPermissions []str
 	for _, permission := range allPermissions {
 		if _, ok := p.permissionIdMap[permission]; !ok {
 			slog.Info("Permission not found in map, adding to database", "permission", permission)
-			orm := data.New(p.db)
-			id, err := orm.CreatePermission(ctx, permission)
+			id, err := db.CreatePermission(ctx, permission)
 			if err != nil {
 				return err
 			}
@@ -139,12 +138,12 @@ func (p *PermissionServiceImpl) UserHasPermission(ctx context.Context, userId in
 
 	return false, nil
 }
+
 func (p *PermissionServiceImpl) GetPermissions(ctx context.Context) (map[string]int64, error) {
-	orm := data.New(p.db)
-	permissions, err := orm.GetPermissions(ctx)
+	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, p.db) // or Postgres based on config
+	permissions, err := db.GetPermissions(ctx)
 	if err != nil {
 		return nil, err
-
 	}
 
 	permissionMap := make(map[string]int64)
@@ -155,7 +154,10 @@ func (p *PermissionServiceImpl) GetPermissions(ctx context.Context) (map[string]
 }
 
 func (p *PermissionServiceImpl) GetPermissionId(name string) (int64, error) {
-	return 0, nil
+	if id, ok := p.permissionIdMap[name]; ok {
+		return id, nil
+	}
+	return 0, fmt.Errorf("permission not found")
 }
 
 func (p *PermissionServiceImpl) getUserRoles(ctx context.Context, userId int64) (UserRoles, error) {
@@ -165,8 +167,8 @@ func (p *PermissionServiceImpl) getUserRoles(ctx context.Context, userId int64) 
 	}
 
 	// Not in cache, get from database
-	orm := data.New(p.db)
-	roles, err := orm.GetUserRoles(ctx, userId)
+	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, p.db) // or Postgres based on config
+	roles, err := db.GetUserRoles(ctx, userId)
 	if err != nil {
 		return UserRoles{}, fmt.Errorf("failed to get user roles: %w", err)
 	}
@@ -177,7 +179,7 @@ func (p *PermissionServiceImpl) getUserRoles(ctx context.Context, userId int64) 
 		Roles:  make([]int64, 0, len(roles)),
 	}
 	for _, role := range roles {
-		userRoles.Roles = append(userRoles.Roles, role.RoleID.Int64)
+		userRoles.Roles = append(userRoles.Roles, role.RoleID)
 	}
 	p.userRoleCache.Put(userId, userRoles)
 
@@ -185,8 +187,8 @@ func (p *PermissionServiceImpl) getUserRoles(ctx context.Context, userId int64) 
 }
 
 func (p *PermissionServiceImpl) GetPermissionsForRole(ctx context.Context, roleId int64) (map[string]bool, error) {
-	orm := data.New(p.db)
-	permissions, err := orm.GetRolePermissions(ctx, roleId)
+	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, p.db) // or Postgres based on config
+	permissions, err := db.GetRolePermissions(ctx, roleId)
 	if err != nil {
 		slog.Error("failed to get role permissions", "roleId", roleId, "error", err)
 		return nil, fmt.Errorf("failed to get role permissions: %w", err)
@@ -194,9 +196,7 @@ func (p *PermissionServiceImpl) GetPermissionsForRole(ctx context.Context, roleI
 
 	permissionMap := make(map[string]bool)
 	for _, perm := range permissions {
-		if perm.Name.Valid {
-			permissionMap[perm.Name.String] = true
-		}
+		permissionMap[perm.Name] = true
 	}
 
 	return permissionMap, nil

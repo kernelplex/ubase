@@ -26,7 +26,7 @@ CREATE TABLE "user_roles" (
 );
 
 CREATE TABLE "permissions" (
-	"permission_id" BIGINT PRIMARY KEY,
+	"permission_id" BIGSERIAL PRIMARY KEY,
 	"name" VARCHAR(255) NOT NULL
 );
 

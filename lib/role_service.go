@@ -8,7 +8,7 @@ import (
 	"time"
 
 	evercore "github.com/kernelplex/evercore/base"
-	data "github.com/kernelplex/ubase/lib/ubdata"
+	"github.com/kernelplex/ubase/lib/dbinterface"
 	"github.com/kernelplex/ubase/lib/ubevents"
 )
 
@@ -39,20 +39,19 @@ func (s RoleServiceImpl) AddRole(ctx context.Context, name string, agent string)
 		ctx,
 		s.store,
 		func(etx evercore.EventStoreContext) (int64, error) {
-			orm := data.New(s.db)
 			err := etx.CreateAggregateWithKeyInto(&aggregate, name)
 			if err != nil {
-				return 0, err
+				return 0, fmt.Errorf("failed to create aggregate: %w", err)
 			}
 
-			etx.CreateAggregateWithKeyInto(&aggregate, name)
 			etx.ApplyEventTo(&aggregate, evercore.NewStateEvent(ubevents.RoleCreatedEvent{Name: name}), time.Now(), agent)
 
-			roleParams := data.AddRoleParams{
-				RoleID: aggregate.Id,
-				Name:   name,
+			db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, s.db)
+
+			err = db.AddRole(ctx, aggregate.Id, name)
+			if err != nil {
+				return 0, fmt.Errorf("failed to add role: %w", err)
 			}
-			orm.AddRole(ctx, roleParams)
 
 			return aggregate.Id, nil
 		})
@@ -89,12 +88,9 @@ func (s RoleServiceImpl) AddPermissionToRole(ctx context.Context, role string, p
 				agent)
 
 			// Update database
-			orm := data.New(s.db)
-			params := data.AddPermissionToRoleParams{
-				RoleID:       aggregate.Id,
-				PermissionID: permissionId,
-			}
-			err = orm.AddPermissionToRole(ctx, params)
+			db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, s.db)
+
+			err = db.AddPermissionToRole(ctx, aggregate.Id, permissionId)
 			if err != nil {
 				return 0, fmt.Errorf("failed to add permission to role in database: %w", err)
 			}
@@ -140,12 +136,8 @@ func (s RoleServiceImpl) RemovePermissionFromRole(ctx context.Context, role stri
 				agent)
 
 			// Update database
-			orm := data.New(s.db)
-			params := data.RemovePermissionFromRoleParams{
-				RoleID:       aggregate.Id,
-				PermissionID: permissionId,
-			}
-			err = orm.RemovePermissionFromRole(ctx, params)
+			db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, s.db)
+			err = db.RemovePermissionFromRole(ctx, aggregate.Id, permissionId)
 			if err != nil {
 				return 0, fmt.Errorf("failed to remove permission from role in database: %w", err)
 			}
@@ -165,8 +157,9 @@ func (s RoleServiceImpl) RemovePermissionFromRole(ctx context.Context, role stri
 }
 
 func (s RoleServiceImpl) GetRoleList(ctx context.Context) (map[string]int64, error) {
-	orm := data.New(s.db)
-	roles, err := orm.GetRoles(ctx)
+	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, s.db)
+
+	roles, err := db.GetRoles(ctx)
 	if err != nil {
 		return nil, err
 	}

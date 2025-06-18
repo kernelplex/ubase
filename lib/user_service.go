@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/kernelplex/evercore/base"
-	data "github.com/kernelplex/ubase/lib/ubdata"
+	"github.com/kernelplex/ubase/lib/dbinterface"
 	"github.com/kernelplex/ubase/lib/ubevents"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
 	"github.com/kernelplex/ubase/lib/ubstatus"
@@ -319,18 +319,16 @@ func (s UserServiceImpl) SetRoles(ctx context.Context, command UserSetRolesComan
 }
 
 func (s UserServiceImpl) GetUserRolesIds(ctx context.Context, userId int64) ([]int64, error) {
-	orm := data.New(s.db)
-	roles, err := orm.GetUserRoles(ctx, userId)
+	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, s.db)
+	roles, err := db.GetUserRoles(ctx, userId)
 	if err != nil {
 		slog.Error("failed to get user roles", "userId", userId, "error", err)
 		return nil, fmt.Errorf("failed to get user roles: %w", err)
 	}
 
-	var roleIds []int64
+	roleIds := make([]int64, 0, len(roles))
 	for _, role := range roles {
-		if role.RoleID.Valid {
-			roleIds = append(roleIds, role.RoleID.Int64)
-		}
+		roleIds = append(roleIds, role.RoleID)
 	}
 
 	return roleIds, nil
@@ -342,9 +340,9 @@ func (s UserServiceImpl) ProjectRoles(ctx context.Context, userAggregate *UserAg
 		return err
 	}
 	defer tx.Rollback()
-	orm := data.New(tx)
-	return projectRoles(ctx, orm, userAggregate)
 
+	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, tx)
+	return projectRoles(ctx, db, userAggregate)
 }
 
 // ProjectUser projects the user to the relational database.
@@ -355,35 +353,31 @@ func (s UserServiceImpl) ProjectUser(ctx context.Context, userAggregate *UserAgg
 	}
 	defer tx.Rollback()
 
-	orm := data.New(tx)
+	db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, tx)
 
-	_, err = orm.GetUser(ctx, userAggregate.Id)
+	_, err = db.GetUser(ctx, userAggregate.Id)
 	// If the user doesn't exist, create it
 	if err != nil {
 		if err != sql.ErrNoRows {
 			slog.Error("Failed to get user", "error", err)
 			return err
 		}
-		_, err = orm.AddUser(ctx, data.AddUserParams{
-			UserID:      userAggregate.Id,
-			FirstName:   userAggregate.State.FirstName,
-			LastName:    userAggregate.State.LastName,
-			DisplayName: userAggregate.State.DisplayName,
-			Email:       userAggregate.State.Email,
-		})
+		err = db.AddUser(ctx, userAggregate.Id, 
+			userAggregate.State.FirstName,
+			userAggregate.State.LastName,
+			userAggregate.State.DisplayName,
+			userAggregate.State.Email)
 		if err != nil {
 			slog.Error("Failed to project user", "error", err)
 			return err
 		}
 	} else {
 		// If the user exists, update it
-		err = orm.UpdateUser(ctx, data.UpdateUserParams{
-			UserID:      userAggregate.Id,
-			FirstName:   userAggregate.State.FirstName,
-			LastName:    userAggregate.State.LastName,
-			DisplayName: userAggregate.State.DisplayName,
-			Email:       userAggregate.State.Email,
-		})
+		err = db.UpdateUser(ctx, userAggregate.Id,
+			userAggregate.State.FirstName,
+			userAggregate.State.LastName,
+			userAggregate.State.DisplayName,
+			userAggregate.State.Email)
 		if err != nil {
 			slog.Error("Failed to project user", "error", err)
 			return err
@@ -391,7 +385,7 @@ func (s UserServiceImpl) ProjectUser(ctx context.Context, userAggregate *UserAgg
 	}
 
 	// Remove all existing roles
-	err = projectRoles(ctx, orm, userAggregate)
+	err = projectRoles(ctx, db, userAggregate)
 	if err != nil {
 		slog.Error("Failed to project roles", "error", err)
 		return err
@@ -402,8 +396,8 @@ func (s UserServiceImpl) ProjectUser(ctx context.Context, userAggregate *UserAgg
 	return nil
 }
 
-func projectRoles(ctx context.Context, orm *data.Queries, userAggregate *UserAggregate) error {
-	err := orm.RemoveAllRolesFromUser(ctx, userAggregate.Id)
+func projectRoles(ctx context.Context, db dbinterface.Database, userAggregate *UserAggregate) error {
+	err := db.RemoveAllRolesFromUser(ctx, userAggregate.Id)
 	if err != nil {
 		slog.Error("Failed to remove all roles from user", "error", err)
 		return err
@@ -411,10 +405,7 @@ func projectRoles(ctx context.Context, orm *data.Queries, userAggregate *UserAgg
 
 	// Add roles
 	for _, roleId := range userAggregate.State.Roles {
-		err = orm.AddRoleToUser(ctx, data.AddRoleToUserParams{
-			UserID: userAggregate.Id,
-			RoleID: roleId,
-		})
+		err = db.AddRoleToUser(ctx, userAggregate.Id, roleId)
 		if err != nil {
 			slog.Error("Failed to add role to user", "error", err)
 			return err

@@ -11,6 +11,8 @@ import (
 	"github.com/kernelplex/evercore/evercoresqlite"
 
 	"github.com/kernelplex/ubase/lib"
+	"github.com/kernelplex/ubase/lib/dbpostgres"
+	"github.com/kernelplex/ubase/lib/dbsqlite"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
 	"github.com/kernelplex/ubase/sql/sqlite"
 	_ "github.com/mattn/go-sqlite3"
@@ -18,6 +20,19 @@ import (
 )
 
 func main() {
+	x := dbsqlite.AddUserParams{
+		UserID:      1,
+		FirstName:   "Charles",
+		LastName:    "Havez",
+		DisplayName: "Charles Havez",
+		Email:       "chavez@example.com",
+	}
+
+	var y dbpostgres.AddUserParams
+
+	y = (dbpostgres.AddUserParams)(x)
+	slog.Info("y", "y", y)
+
 	eventstore_db := "./.eventstore.db"
 	user_db := "./.user.db"
 

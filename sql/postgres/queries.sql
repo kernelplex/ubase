@@ -20,13 +20,13 @@ WHERE user_id = sqlc.arg(user_id);
 
 
 -- name: GetUser :one
-select * from users where user_id = sqlc.arg(user_id);
+SELECT * FROM users WHERE user_id = sqlc.arg(user_id);
 
 -- name: GetUserByEmail :one
-select * from users where email = sqlc.arg(email);
+SELECT * FROM users WHERE email = sqlc.arg(email);
 
 -- name: AddRole :exec
-insert into roles (role_id, name) 
+INSERT INTO roles (role_id, name) 
 	VALUES (sqlc.arg(role_id), sqlc.arg(name));
 
 
@@ -79,6 +79,5 @@ WHERE rp.role_id = sqlc.arg(role_id);
 SELECT p.permission_id, p.name
 FROM user_roles up
 LEFT JOIN role_permissions rp ON rp.role_id = up.role_id
-LEFT JOIN permissions p ON p.permission_id = up.permission_id
+LEFT JOIN permissions p ON p.permission_id = rp.permission_id
 WHERE up.user_id = sqlc.arg(user_id);
-

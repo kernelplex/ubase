@@ -3,7 +3,7 @@
 //   sqlc v1.28.0
 // source: queries.sql
 
-package db
+package dbpostgres
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 
 const addPermissionToRole = `-- name: AddPermissionToRole :exec
 INSERT INTO role_permissions (role_id, permission_id) 
-	VALUES (?1, ?2)
+	VALUES ($1, $2)
 `
 
 type AddPermissionToRoleParams struct {
@@ -25,10 +25,9 @@ func (q *Queries) AddPermissionToRole(ctx context.Context, arg AddPermissionToRo
 	return err
 }
 
-const addRole = `-- name: AddRole :one
-insert into roles (role_id, name) 
-	VALUES (?1, ?2)
-	RETURNING role_id
+const addRole = `-- name: AddRole :exec
+INSERT INTO roles (role_id, name) 
+	VALUES ($1, $2)
 `
 
 type AddRoleParams struct {
@@ -36,16 +35,14 @@ type AddRoleParams struct {
 	Name   string
 }
 
-func (q *Queries) AddRole(ctx context.Context, arg AddRoleParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, addRole, arg.RoleID, arg.Name)
-	var role_id int64
-	err := row.Scan(&role_id)
-	return role_id, err
+func (q *Queries) AddRole(ctx context.Context, arg AddRoleParams) error {
+	_, err := q.db.ExecContext(ctx, addRole, arg.RoleID, arg.Name)
+	return err
 }
 
 const addRoleToUser = `-- name: AddRoleToUser :exec
 INSERT INTO user_roles (user_id, role_id) 
-	VALUES (?1, ?2)
+	VALUES ($1, $2)
 `
 
 type AddRoleToUserParams struct {
@@ -58,12 +55,11 @@ func (q *Queries) AddRoleToUser(ctx context.Context, arg AddRoleToUserParams) er
 	return err
 }
 
-const addUser = `-- name: AddUser :one
+const addUser = `-- name: AddUser :exec
 
 
 INSERT INTO users (user_id, first_name, last_name, display_name, email) 
-	VALUES (?1, ?2, ?3, ?4, ?5)
-	RETURNING user_id
+	VALUES ($1, $2, $3, $4, $5)
 `
 
 type AddUserParams struct {
@@ -79,30 +75,30 @@ type AddUserParams struct {
 // # User and Role management
 //
 // ---------------------------------------------------------------------------
-func (q *Queries) AddUser(ctx context.Context, arg AddUserParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, addUser,
+func (q *Queries) AddUser(ctx context.Context, arg AddUserParams) error {
+	_, err := q.db.ExecContext(ctx, addUser,
 		arg.UserID,
 		arg.FirstName,
 		arg.LastName,
 		arg.DisplayName,
 		arg.Email,
 	)
-	var user_id int64
-	err := row.Scan(&user_id)
-	return user_id, err
+	return err
 }
 
-const createPermission = `-- name: CreatePermission :one
-INSERT INTO permissions (name) 
-	VALUES (?1)
-	RETURNING permission_id
+const createPermission = `-- name: CreatePermission :exec
+INSERT INTO permissions (permission_id, name) 
+	VALUES ($1, $2)
 `
 
-func (q *Queries) CreatePermission(ctx context.Context, name string) (int64, error) {
-	row := q.db.QueryRowContext(ctx, createPermission, name)
-	var permission_id int64
-	err := row.Scan(&permission_id)
-	return permission_id, err
+type CreatePermissionParams struct {
+	PermissionID int64
+	Name         string
+}
+
+func (q *Queries) CreatePermission(ctx context.Context, arg CreatePermissionParams) error {
+	_, err := q.db.ExecContext(ctx, createPermission, arg.PermissionID, arg.Name)
+	return err
 }
 
 const getPermissions = `-- name: GetPermissions :many
@@ -135,7 +131,7 @@ func (q *Queries) GetPermissions(ctx context.Context) ([]Permission, error) {
 const getRolePermissions = `-- name: GetRolePermissions :many
 SELECT p.permission_id, p.name FROM role_permissions rp
 LEFT JOIN permissions p ON p.permission_id = rp.permission_id
-WHERE rp.role_id = ?1
+WHERE rp.role_id = $1
 `
 
 type GetRolePermissionsRow struct {
@@ -194,7 +190,7 @@ func (q *Queries) GetRoles(ctx context.Context) ([]Role, error) {
 }
 
 const getUser = `-- name: GetUser :one
-select user_id, last_name, first_name, display_name, email from users where user_id = ?1
+SELECT user_id, last_name, first_name, display_name, email FROM users WHERE user_id = $1
 `
 
 func (q *Queries) GetUser(ctx context.Context, userID int64) (User, error) {
@@ -211,7 +207,7 @@ func (q *Queries) GetUser(ctx context.Context, userID int64) (User, error) {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-select user_id, last_name, first_name, display_name, email from users where email = ?1
+SELECT user_id, last_name, first_name, display_name, email FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -231,8 +227,8 @@ const getUserPermissions = `-- name: GetUserPermissions :many
 SELECT p.permission_id, p.name
 FROM user_roles up
 LEFT JOIN role_permissions rp ON rp.role_id = up.role_id
-LEFT JOIN permissions p ON p.permission_id = up.permission_id
-WHERE up.user_id = ?1
+LEFT JOIN permissions p ON p.permission_id = rp.permission_id
+WHERE up.user_id = $1
 `
 
 type GetUserPermissionsRow struct {
@@ -266,7 +262,7 @@ func (q *Queries) GetUserPermissions(ctx context.Context, userID int64) ([]GetUs
 const getUserRoles = `-- name: GetUserRoles :many
 SELECT r.role_id, r.name FROM user_roles ur
 LEFT JOIN roles r ON r.role_id = ur.role_id
-WHERE ur.user_id = ?1
+WHERE ur.user_id = $1
 `
 
 type GetUserRolesRow struct {
@@ -298,7 +294,7 @@ func (q *Queries) GetUserRoles(ctx context.Context, userID int64) ([]GetUserRole
 }
 
 const removeAllRolesFromUser = `-- name: RemoveAllRolesFromUser :exec
-DELETE FROM user_roles WHERE user_id = ?1
+DELETE FROM user_roles WHERE user_id = $1
 `
 
 func (q *Queries) RemoveAllRolesFromUser(ctx context.Context, userID int64) error {
@@ -307,7 +303,7 @@ func (q *Queries) RemoveAllRolesFromUser(ctx context.Context, userID int64) erro
 }
 
 const removePermissionFromRole = `-- name: RemovePermissionFromRole :exec
-DELETE FROM role_permissions WHERE role_id = ?1 AND permission_id = ?2
+DELETE FROM role_permissions WHERE role_id = $1 AND permission_id = $2
 `
 
 type RemovePermissionFromRoleParams struct {
@@ -321,7 +317,7 @@ func (q *Queries) RemovePermissionFromRole(ctx context.Context, arg RemovePermis
 }
 
 const updateRole = `-- name: UpdateRole :exec
-UPDATE roles SET name = ?1 WHERE role_id = ?2
+UPDATE roles SET name = $1 WHERE role_id = $2
 `
 
 type UpdateRoleParams struct {
@@ -336,11 +332,11 @@ func (q *Queries) UpdateRole(ctx context.Context, arg UpdateRoleParams) error {
 
 const updateUser = `-- name: UpdateUser :exec
 UPDATE users 
-SET last_name = ?1, 
-    first_name = ?2, 
-    display_name = ?3, 
-    email = ?4 
-WHERE user_id = ?5
+SET last_name = $1, 
+    first_name = $2, 
+    display_name = $3, 
+    email = $4 
+WHERE user_id = $5
 `
 
 type UpdateUserParams struct {

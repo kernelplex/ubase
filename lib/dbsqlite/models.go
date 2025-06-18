@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.28.0
 
-package db
+package dbsqlite
 
 type Permission struct {
 	PermissionID int64

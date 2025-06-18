@@ -3,7 +3,7 @@
 //   sqlc v1.28.0
 // source: queries.sql
 
-package ubdata
+package dbsqlite
 
 import (
 	"context"
@@ -25,10 +25,9 @@ func (q *Queries) AddPermissionToRole(ctx context.Context, arg AddPermissionToRo
 	return err
 }
 
-const addRole = `-- name: AddRole :one
+const addRole = `-- name: AddRole :exec
 insert into roles (role_id, name) 
 	VALUES (?1, ?2)
-	RETURNING role_id
 `
 
 type AddRoleParams struct {
@@ -36,11 +35,9 @@ type AddRoleParams struct {
 	Name   string
 }
 
-func (q *Queries) AddRole(ctx context.Context, arg AddRoleParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, addRole, arg.RoleID, arg.Name)
-	var role_id int64
-	err := row.Scan(&role_id)
-	return role_id, err
+func (q *Queries) AddRole(ctx context.Context, arg AddRoleParams) error {
+	_, err := q.db.ExecContext(ctx, addRole, arg.RoleID, arg.Name)
+	return err
 }
 
 const addRoleToUser = `-- name: AddRoleToUser :exec
@@ -58,12 +55,11 @@ func (q *Queries) AddRoleToUser(ctx context.Context, arg AddRoleToUserParams) er
 	return err
 }
 
-const addUser = `-- name: AddUser :one
+const addUser = `-- name: AddUser :exec
 
 
 INSERT INTO users (user_id, first_name, last_name, display_name, email) 
 	VALUES (?1, ?2, ?3, ?4, ?5)
-	RETURNING user_id
 `
 
 type AddUserParams struct {
@@ -79,30 +75,30 @@ type AddUserParams struct {
 // # User and Role management
 //
 // ---------------------------------------------------------------------------
-func (q *Queries) AddUser(ctx context.Context, arg AddUserParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, addUser,
+func (q *Queries) AddUser(ctx context.Context, arg AddUserParams) error {
+	_, err := q.db.ExecContext(ctx, addUser,
 		arg.UserID,
 		arg.FirstName,
 		arg.LastName,
 		arg.DisplayName,
 		arg.Email,
 	)
-	var user_id int64
-	err := row.Scan(&user_id)
-	return user_id, err
+	return err
 }
 
-const createPermission = `-- name: CreatePermission :one
-INSERT INTO permissions (name) 
-	VALUES (?1)
-	RETURNING permission_id
+const createPermission = `-- name: CreatePermission :exec
+INSERT INTO permissions (permission_id, name) 
+	VALUES (?1, ?2)
 `
 
-func (q *Queries) CreatePermission(ctx context.Context, name string) (int64, error) {
-	row := q.db.QueryRowContext(ctx, createPermission, name)
-	var permission_id int64
-	err := row.Scan(&permission_id)
-	return permission_id, err
+type CreatePermissionParams struct {
+	PermissionID int64
+	Name         string
+}
+
+func (q *Queries) CreatePermission(ctx context.Context, arg CreatePermissionParams) error {
+	_, err := q.db.ExecContext(ctx, createPermission, arg.PermissionID, arg.Name)
+	return err
 }
 
 const getPermissions = `-- name: GetPermissions :many

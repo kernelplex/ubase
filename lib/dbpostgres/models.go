@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.28.0
 
-package ubdata
+package dbpostgres
 
 type Permission struct {
 	PermissionID int64

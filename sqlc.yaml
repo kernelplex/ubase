@@ -6,5 +6,12 @@ sql:
     schema: sql/sqlite/migrations
     gen:
       go:
-        package: db
-        out: lib/db/
+        package: dbsqlite
+        out: lib/dbsqlite/
+  - engine: postgresql
+    queries: sql/postgres/queries.sql
+    schema: sql/postgres/migrations
+    gen:
+      go:
+        package: dbpostgres
+        out: lib/dbpostgres/

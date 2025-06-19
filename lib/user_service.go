@@ -77,7 +77,11 @@ func (s UserServiceImpl) CreateUser(ctx context.Context, command UserCreateComma
 		s.store,
 		func(etx evercore.EventStoreContext) (int64, error) {
 			aggregate := UserAggregate{}
-			etx.CreateAggregateWithKeyInto(&aggregate, command.Email)
+			err := etx.CreateAggregateWithKeyInto(&aggregate, command.Email)
+			if err != nil {
+				return 0, err
+			}
+
 			passwordHash, err := s.hashingService.GenerateHashBase64(command.Password)
 			if err != nil {
 				return 0, err
@@ -138,8 +142,11 @@ func (s UserServiceImpl) UpdateUser(ctx context.Context, command UserUpdateComma
 		ctx,
 		func(etx evercore.EventStoreContext) error {
 			aggregate := UserAggregate{}
-			etx.LoadStateInto(&aggregate, command.Id)
-			slog.Info("user id", "id", aggregate.Id)
+			err := etx.LoadStateInto(&aggregate, command.Id)
+			if err != nil {
+				slog.Error("Failed to load user", "error", err)
+				return err
+			}
 
 			var passwordHash *string
 			if command.Password != nil {
@@ -162,8 +169,9 @@ func (s UserServiceImpl) UpdateUser(ctx context.Context, command UserUpdateComma
 			etx.ApplyEventTo(&aggregate, stateEvent, currentTime, agent)
 
 			// Update the projected data
-			err := s.ProjectUser(ctx, &aggregate)
+			err = s.ProjectUser(ctx, &aggregate)
 			if err != nil {
+				slog.Error("Failed to project user", "error", err)
 				return err
 			}
 

@@ -5,7 +5,8 @@ go 1.24.0
 tool github.com/kernelplex/evercore/cmd/evercoregen
 
 require (
-	github.com/kernelplex/evercore v0.0.23
+	github.com/joho/godotenv v1.5.1
+	github.com/kernelplex/evercore v0.0.24
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/pressly/goose/v3 v3.24.1
 	github.com/stretchr/testify v1.10.0

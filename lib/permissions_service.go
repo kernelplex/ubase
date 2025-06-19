@@ -39,9 +39,9 @@ type PermissionServiceImpl struct {
 	lock              sync.RWMutex
 }
 
-func NewPermissionService(db *sql.DB, dbType dbinterface.DatabaseType, roleService RoleService) PermissionServiceImpl {
+func NewPermissionService(db *sql.DB, dbType dbinterface.DatabaseType, roleService RoleService) PermissionService {
 	userRoleCache := ubalgorithms.NewLRUCache[int64, UserRoles](100)
-	return PermissionServiceImpl{
+	return &PermissionServiceImpl{
 		db:                db,
 		dbType:            dbType,
 		userRoleCache:     *userRoleCache,

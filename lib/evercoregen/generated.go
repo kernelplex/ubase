@@ -8,7 +8,7 @@ import (
 	"github.com/kernelplex/ubase/lib/ubevents"
 )
 
-func StateEventDecoder(_ string, ev evercore.SerializedEvent) (evercore.EventState, error) {
+func StateEventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error) {
 	switch ev.EventType {
 
 	// ================================================== 
@@ -66,25 +66,27 @@ func EventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error) {
 		if err != nil {
 			return nil, err
 		}
-		return eventState, nil
+		return &eventState, nil
 	case events.RolePermissionAddedEventType:
 		eventState := ubevents.RolePermissionAddedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
 		}
-		return eventState, nil
+		return &eventState, nil
 	case events.RolePermissionRemovedEventType:
 		eventState := ubevents.RolePermissionRemovedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
 		}
-		return eventState, nil
+		return &eventState, nil
 	}
 	return nil, nil
 }
 
 func init() {
-	evercore.RegisterStateEventDecoder(StateEventDecoder)
+	evercore.RegisterEventDecoder(
+		StateEventDecoder,
+		EventDecoder)
 }

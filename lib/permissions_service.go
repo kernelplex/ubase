@@ -27,6 +27,7 @@ type PermissionService interface {
 	GetPermissions(ctx context.Context) (map[string]int64, error)
 	GetPermissionsForRole(ctx context.Context, roleId int64) (map[string]bool, error)
 	HasPermission(ctx context.Context, userID int64, permission string) (bool, error)
+	Warmup(ctx context.Context, allPermissions []string) error
 }
 
 type PermissionServiceImpl struct {

@@ -1,13 +1,11 @@
 package ubase
 
 import (
-	"fmt"
 	"log/slog"
 	"slices"
 	"time"
 
 	evercore "github.com/kernelplex/evercore/base"
-	"github.com/kernelplex/ubase/lib/evercoregen"
 	aggregates "github.com/kernelplex/ubase/lib/evercoregen/aggregates"
 	"github.com/kernelplex/ubase/lib/ubevents"
 )
@@ -61,18 +59,6 @@ func (a *RoleAggregate) GetSnapshotFrequency() int64 {
 func (a *RoleAggregate) GetSnapshotState() (*string, error) {
 	state := evercore.SerializeToJson(a.State)
 	return &state, nil
-}
-
-func (a *RoleAggregate) DecodeEvent(ev evercore.SerializedEvent) (evercore.EventState, error) {
-	eventState, err := evercoregen.EventDecoder(ev)
-	if err != nil {
-		return nil, err
-	}
-
-	if eventState == nil {
-		return nil, fmt.Errorf("unknown event type: %s", ev.EventType)
-	}
-	return eventState, nil
 }
 
 func (a *RoleAggregate) ApplyEventState(eventState evercore.EventState, eventTime time.Time, reference string) error {

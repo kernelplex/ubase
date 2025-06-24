@@ -10,3 +10,6 @@ evercoregen:
 sqlc: 
 	sqlc generate
 
+.PHONY: test
+test: sqlc evercoregen main
+	go test integration_tests/*.go

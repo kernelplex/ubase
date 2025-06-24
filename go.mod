@@ -6,11 +6,11 @@ tool github.com/kernelplex/evercore/cmd/evercoregen
 
 require (
 	github.com/joho/godotenv v1.5.1
-	github.com/kernelplex/evercore v0.0.24
+	github.com/kernelplex/evercore v0.0.28
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/pressly/goose/v3 v3.24.1
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/crypto v0.35.0
+	golang.org/x/crypto v0.37.0
 )
 
 require (
@@ -20,7 +20,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/sync v0.15.0 // indirect
+	golang.org/x/sys v0.32.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

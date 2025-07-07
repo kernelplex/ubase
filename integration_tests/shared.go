@@ -9,10 +9,24 @@ import (
 
 	evercore "github.com/kernelplex/evercore/base"
 	ubase "github.com/kernelplex/ubase/lib"
-	"github.com/kernelplex/ubase/lib/dbinterface"
 	"github.com/kernelplex/ubase/lib/ubconst"
+	"github.com/kernelplex/ubase/lib/ubdata"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
 )
+
+const (
+	PermCanCreateRecord = "can_create_record"
+	PermCanReadRecord   = "can_read_record"
+	PermCanUpdateRecord = "can_update_record"
+	PermCanDeleteRecord = "can_delete_record"
+)
+
+var allPermissions = []string{
+	PermCanCreateRecord,
+	PermCanReadRecord,
+	PermCanUpdateRecord,
+	PermCanDeleteRecord,
+}
 
 type StorageEngineTestSuite struct {
 	eventStore        *evercore.EventStore
@@ -22,6 +36,8 @@ type StorageEngineTestSuite struct {
 	userService       ubase.UserService
 	permissionService ubase.PermissionService
 	existinguserId    int64
+	testRoleId        int64
+	permisssionMap    map[string]int64
 }
 
 func NewStorageEngineTestSuite(eventStore *evercore.EventStore, db *sql.DB, dbType ubconst.DatabaseType) *StorageEngineTestSuite {
@@ -33,7 +49,7 @@ func NewStorageEngineTestSuite(eventStore *evercore.EventStore, db *sql.DB, dbTy
 }
 
 func (s *StorageEngineTestSuite) RunTests(t *testing.T) {
-	dbadapter := dbinterface.NewDatabase(s.dbType, s.db)
+	dbadapter := ubdata.NewDatabase(s.dbType, s.db)
 
 	hashingService := ubsecurity.DefaultArgon2Id
 	s.userService = ubase.CreateUserService(s.eventStore, hashingService, dbadapter)
@@ -43,10 +59,11 @@ func (s *StorageEngineTestSuite) RunTests(t *testing.T) {
 	t.Run("CreateUser", s.CreateUser)
 	t.Run("CreateUser_WithDuplicateEmailFails", s.CreateUser_WithDuplicateEmailFails)
 	t.Run("UpdateUser", s.UpdateUser)
+	t.Run("CreateRole", s.CreateRole)
+	t.Run("PermissionServiceWarmup", s.PermissionServiceWarmup)
+	t.Run("AddPermissionToRole", s.AddPermissionToRole)
+	t.Run("RemovePermissionFromRole", s.RemovePermissionFromRole)
 	/*
-		t.Run("CreateRole", s.CreateRole)
-		t.Run("AddPermissionToRole", s.AddPermissionToRole)
-		t.Run("RemovePermissionFromRole", s.RemovePermissionFromRole)
 		t.Run("GetRolePermissions", s.GetRolePermissions)
 		t.Run("UpdateRole", s.UpdateRole)
 		t.Run("DeleteRole", s.DeleteRole)
@@ -166,19 +183,92 @@ func (s *StorageEngineTestSuite) UpdateUser(t *testing.T) {
 	}
 }
 
-/*
-
 func (s *StorageEngineTestSuite) CreateRole(t *testing.T) {
-	panic("implement me")
+	id, err := s.roleService.AddRole(context.Background(), "testrole", "testrole")
+	if err != nil {
+		t.Fatalf("Failed to create role: %v", err)
+	}
+	if id <= 0 {
+		t.Fatalf("Failed to create role: id is %d", id)
+	}
+	s.testRoleId = id
+}
+
+func (s *StorageEngineTestSuite) PermissionServiceWarmup(t *testing.T) {
+	err := s.permissionService.Warmup(context.Background(), allPermissions)
+	if err != nil {
+		t.Fatalf("Failed to warmup permission service: %v", err)
+	}
+
+	permissions, err := s.permissionService.GetPermissions(context.Background())
+	if err != nil {
+		t.Fatalf("Failed to get permissions: %v", err)
+	}
+	if len(permissions) != len(allPermissions) {
+		t.Fatalf("Expected %d permissions, got %d", len(allPermissions), len(permissions))
+	}
+	for _, perm := range allPermissions {
+		permId, ok := permissions[perm]
+		if !ok {
+			t.Fatalf("Permission %s not found in map", perm)
+		}
+		if permId <= 0 {
+			t.Fatalf("Permission %s has id %d", perm, permId)
+		}
+	}
+	s.permisssionMap = permissions
 }
 
 func (s *StorageEngineTestSuite) AddPermissionToRole(t *testing.T) {
-	panic("implement me")
+
+	permissionId, ok := s.permisssionMap[PermCanCreateRecord]
+	if !ok {
+		t.Fatalf("Permission %s not found in map", PermCanCreateRecord)
+	}
+	err := s.roleService.AddPermissionToRole(context.Background(), "testrole", permissionId, "testrunner")
+	if err != nil {
+		t.Fatalf("Failed to add permission to role: %v", err)
+	}
+
+	perms, err := s.permissionService.GetPermissionsForRole(context.Background(), s.testRoleId)
+	if err != nil {
+		t.Fatalf("Failed to get permissions for role: %v", err)
+	}
+
+	if len(perms) != 1 {
+		t.Fatalf("Expected 1 permission, got %d", len(perms))
+	}
+
+	_, ok = perms[PermCanCreateRecord]
+	if !ok {
+		t.Fatalf("Permission %s not found in map", PermCanCreateRecord)
+	}
 }
 
 func (s *StorageEngineTestSuite) RemovePermissionFromRole(t *testing.T) {
-	panic("implement me")
+	permissionId, ok := s.permisssionMap[PermCanCreateRecord]
+	if !ok {
+		t.Fatalf("Permission %s not found in map", PermCanCreateRecord)
+	}
+
+	err := s.roleService.RemovePermissionFromRole(context.Background(), "testrole", permissionId, "testrunner")
+	if err != nil {
+		t.Fatalf("Failed to remove permission from role: %v", err)
+	}
+
+	perms, err := s.permissionService.GetPermissionsForRole(context.Background(), s.testRoleId)
+	if err != nil {
+		t.Fatalf("Failed to get permissions for role: %v", err)
+	}
+
+	if len(perms) != 0 {
+		t.Fatalf("Expected 0 permissions, got %d", len(perms))
+	}
 }
+
+/*
+
+
 
 func (s *StorageEngineTestSuite) GetRolePermissions(t *testing.T) {
 	panic("implement me")

@@ -2,7 +2,7 @@ package ubevents
 
 import (
 	evercore "github.com/kernelplex/evercore/base"
-	events "github.com/kernelplex/ubase/lib/evercoregen/events"
+	events "github.com/kernelplex/ubase/internal/evercoregen/events"
 )
 
 // evercore:event

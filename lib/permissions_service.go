@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/kernelplex/ubase/lib/dbinterface"
 	"github.com/kernelplex/ubase/lib/ubalgorithms"
+	"github.com/kernelplex/ubase/lib/ubdata"
 )
 
 type UserRoles struct {
@@ -30,7 +30,7 @@ type PermissionService interface {
 }
 
 type PermissionServiceImpl struct {
-	dbadapter         dbinterface.DataAdapter
+	dbadapter         ubdata.DataAdapter
 	roleService       RoleService
 	userRoleCache     ubalgorithms.LRUCache[int64, UserRoles]
 	rolePermissionMap map[int64]map[int64]bool
@@ -38,7 +38,7 @@ type PermissionServiceImpl struct {
 	lock              sync.RWMutex
 }
 
-func NewPermissionService(dbadapter dbinterface.DataAdapter, roleService RoleService) PermissionService {
+func NewPermissionService(dbadapter ubdata.DataAdapter, roleService RoleService) PermissionService {
 	userRoleCache := ubalgorithms.NewLRUCache[int64, UserRoles](100)
 	return &PermissionServiceImpl{
 		dbadapter:         dbadapter,

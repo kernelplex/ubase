@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/kernelplex/evercore/base"
-	"github.com/kernelplex/ubase/lib/dbinterface"
+	"github.com/kernelplex/ubase/lib/ubdata"
 	"github.com/kernelplex/ubase/lib/ubevents"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
 	"github.com/kernelplex/ubase/lib/ubstatus"
@@ -28,10 +28,10 @@ type UserService interface {
 type UserServiceImpl struct {
 	store          *evercore.EventStore
 	hashingService ubsecurity.HashGenerator
-	dbadapter      dbinterface.DataAdapter
+	dbadapter      ubdata.DataAdapter
 }
 
-func CreateUserService(store *evercore.EventStore, hashingService ubsecurity.HashGenerator, dbadapter dbinterface.DataAdapter) UserService {
+func CreateUserService(store *evercore.EventStore, hashingService ubsecurity.HashGenerator, dbadapter ubdata.DataAdapter) UserService {
 	service := UserServiceImpl{
 		store:          store,
 		hashingService: hashingService,

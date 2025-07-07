@@ -4,7 +4,7 @@ package evercoregen
 import (
 	"github.com/kernelplex/evercore/base"
 
-	events "github.com/kernelplex/ubase/lib/evercoregen/events"
+	events "github.com/kernelplex/ubase/internal/evercoregen/events"
 	"github.com/kernelplex/ubase/lib/ubevents"
 )
 

@@ -2,7 +2,7 @@ package ubase
 
 import (
 	"github.com/kernelplex/evercore/base"
-	_ "github.com/kernelplex/ubase/lib/evercoregen"
+	_ "github.com/kernelplex/ubase/internal/evercoregen"
 	"github.com/kernelplex/ubase/lib/ubstate"
 	"github.com/kernelplex/ubase/lib/ubvalidation"
 )

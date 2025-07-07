@@ -1,4 +1,4 @@
-package dbinterface
+package ubdata
 
 import (
 	"database/sql"

@@ -1,10 +1,11 @@
-package ubaseapp
+package ubapp
 
 import (
 	"database/sql"
 
 	evercore "github.com/kernelplex/evercore/base"
 	ubase "github.com/kernelplex/ubase/lib"
+	"github.com/kernelplex/ubase/lib/ubenv"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
 )
 
@@ -19,9 +20,7 @@ type Config struct {
 }
 
 type App struct {
-	/*
-		config            *config.Config
-	*/
+	config            Config
 	db                *sql.DB
 	edb               *sql.DB // Event store database connection
 	store             *evercore.EventStore
@@ -30,4 +29,21 @@ type App struct {
 	encryptionService ubsecurity.EncryptionService
 	permissionService ubase.PermissionService
 	roleService       ubase.RoleService
+}
+
+func NewAppFromEnv() (*App, error) {
+	config := Config{}
+	err := ubenv.ConfigFromEnv(&config)
+	if err != nil {
+		return nil, err
+	}
+	return NewApp(config)
+}
+
+func NewApp(config Config) (*App, error) {
+	app := App{
+		config: config,
+	}
+
+	return &app, nil
 }

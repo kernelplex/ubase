@@ -1,28 +1,28 @@
-package dbinterface
+package ubdata
 
 import (
 	"context"
 	"database/sql"
 	"log/slog"
 
-	"github.com/kernelplex/ubase/lib/dbsqlite"
+	"github.com/kernelplex/ubase/lib/ubpostgres"
 	"github.com/kernelplex/ubase/lib/ubstate"
 )
 
-type SQLiteAdapter struct {
+type PostgresAdapter struct {
 	db      *sql.DB
-	queries *dbsqlite.Queries
+	queries *ubpostgres.Queries
 }
 
-func NewSQLiteAdapter(db *sql.DB) *SQLiteAdapter {
-	return &SQLiteAdapter{
+func NewPostgresAdapter(db *sql.DB) *PostgresAdapter {
+	return &PostgresAdapter{
 		db:      db,
-		queries: dbsqlite.New(db),
+		queries: ubpostgres.New(db),
 	}
 }
 
-func (a *SQLiteAdapter) AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error {
-	return a.queries.AddUser(ctx, dbsqlite.AddUserParams{
+func (a *PostgresAdapter) AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error {
+	return a.queries.AddUser(ctx, ubpostgres.AddUserParams{
 		UserID:      userID,
 		FirstName:   firstName,
 		LastName:    lastName,
@@ -31,7 +31,7 @@ func (a *SQLiteAdapter) AddUser(ctx context.Context, userID int64, firstName, la
 	})
 }
 
-func (a *SQLiteAdapter) GetUser(ctx context.Context, userID int64) (User, error) {
+func (a *PostgresAdapter) GetUser(ctx context.Context, userID int64) (User, error) {
 	user, err := a.queries.GetUser(ctx, userID)
 	if err != nil {
 		return User{}, err
@@ -45,7 +45,7 @@ func (a *SQLiteAdapter) GetUser(ctx context.Context, userID int64) (User, error)
 	}, nil
 }
 
-func (a *SQLiteAdapter) GetUserByEmail(ctx context.Context, email string) (User, error) {
+func (a *PostgresAdapter) GetUserByEmail(ctx context.Context, email string) (User, error) {
 	user, err := a.queries.GetUserByEmail(ctx, email)
 	if err != nil {
 		return User{}, err
@@ -59,8 +59,8 @@ func (a *SQLiteAdapter) GetUserByEmail(ctx context.Context, email string) (User,
 	}, nil
 }
 
-func (a *SQLiteAdapter) UpdateUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error {
-	return a.queries.UpdateUser(ctx, dbsqlite.UpdateUserParams{
+func (a *PostgresAdapter) UpdateUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error {
+	return a.queries.UpdateUser(ctx, ubpostgres.UpdateUserParams{
 		UserID:      userID,
 		FirstName:   firstName,
 		LastName:    lastName,
@@ -69,21 +69,21 @@ func (a *SQLiteAdapter) UpdateUser(ctx context.Context, userID int64, firstName,
 	})
 }
 
-func (a *SQLiteAdapter) AddRole(ctx context.Context, roleID int64, name string) error {
-	return a.queries.AddRole(ctx, dbsqlite.AddRoleParams{
+func (a *PostgresAdapter) AddRole(ctx context.Context, roleID int64, name string) error {
+	return a.queries.AddRole(ctx, ubpostgres.AddRoleParams{
 		RoleID: roleID,
 		Name:   name,
 	})
 }
 
-func (a *SQLiteAdapter) UpdateRole(ctx context.Context, roleID int64, name string) error {
-	return a.queries.UpdateRole(ctx, dbsqlite.UpdateRoleParams{
+func (a *PostgresAdapter) UpdateRole(ctx context.Context, roleID int64, name string) error {
+	return a.queries.UpdateRole(ctx, ubpostgres.UpdateRoleParams{
 		Name:   name,
 		RoleID: roleID,
 	})
 }
 
-func (a *SQLiteAdapter) GetRoles(ctx context.Context) ([]Role, error) {
+func (a *PostgresAdapter) GetRoles(ctx context.Context) ([]Role, error) {
 	roles, err := a.queries.GetRoles(ctx)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,9 @@ func (a *SQLiteAdapter) GetRoles(ctx context.Context) ([]Role, error) {
 	return result, nil
 }
 
-func (a *SQLiteAdapter) CreatePermission(ctx context.Context, name string) (int64, error) {
+func (a *PostgresAdapter) CreatePermission(ctx context.Context, name string) (int64, error) {
+	var id int64
+
 	id, err := a.queries.CreatePermission(ctx, name)
 	if err != nil {
 		return 0, err
@@ -106,7 +108,7 @@ func (a *SQLiteAdapter) CreatePermission(ctx context.Context, name string) (int6
 	return id, nil
 }
 
-func (a *SQLiteAdapter) GetPermissions(ctx context.Context) ([]Permission, error) {
+func (a *PostgresAdapter) GetPermissions(ctx context.Context) ([]Permission, error) {
 	perms, err := a.queries.GetPermissions(ctx)
 	if err != nil {
 		return nil, err
@@ -121,21 +123,21 @@ func (a *SQLiteAdapter) GetPermissions(ctx context.Context) ([]Permission, error
 	return result, nil
 }
 
-func (a *SQLiteAdapter) AddPermissionToRole(ctx context.Context, roleID, permissionID int64) error {
-	return a.queries.AddPermissionToRole(ctx, dbsqlite.AddPermissionToRoleParams{
+func (a *PostgresAdapter) AddPermissionToRole(ctx context.Context, roleID, permissionID int64) error {
+	return a.queries.AddPermissionToRole(ctx, ubpostgres.AddPermissionToRoleParams{
 		RoleID:       roleID,
 		PermissionID: permissionID,
 	})
 }
 
-func (a *SQLiteAdapter) RemovePermissionFromRole(ctx context.Context, roleID, permissionID int64) error {
-	return a.queries.RemovePermissionFromRole(ctx, dbsqlite.RemovePermissionFromRoleParams{
+func (a *PostgresAdapter) RemovePermissionFromRole(ctx context.Context, roleID, permissionID int64) error {
+	return a.queries.RemovePermissionFromRole(ctx, ubpostgres.RemovePermissionFromRoleParams{
 		RoleID:       roleID,
 		PermissionID: permissionID,
 	})
 }
 
-func (a *SQLiteAdapter) GetRolePermissions(ctx context.Context, roleID int64) ([]Permission, error) {
+func (a *PostgresAdapter) GetRolePermissions(ctx context.Context, roleID int64) ([]Permission, error) {
 	perms, err := a.queries.GetRolePermissions(ctx, roleID)
 	if err != nil {
 		return nil, err
@@ -152,18 +154,18 @@ func (a *SQLiteAdapter) GetRolePermissions(ctx context.Context, roleID int64) ([
 	return result, nil
 }
 
-func (a *SQLiteAdapter) AddRoleToUser(ctx context.Context, userID, roleID int64) error {
-	return a.queries.AddRoleToUser(ctx, dbsqlite.AddRoleToUserParams{
+func (a *PostgresAdapter) AddRoleToUser(ctx context.Context, userID, roleID int64) error {
+	return a.queries.AddRoleToUser(ctx, ubpostgres.AddRoleToUserParams{
 		UserID: userID,
 		RoleID: roleID,
 	})
 }
 
-func (a *SQLiteAdapter) RemoveAllRolesFromUser(ctx context.Context, userID int64) error {
+func (a *PostgresAdapter) RemoveAllRolesFromUser(ctx context.Context, userID int64) error {
 	return a.queries.RemoveAllRolesFromUser(ctx, userID)
 }
 
-func (a *SQLiteAdapter) GetUserRoles(ctx context.Context, userID int64) ([]Role, error) {
+func (a *PostgresAdapter) GetUserRoles(ctx context.Context, userID int64) ([]Role, error) {
 	roles, err := a.queries.GetUserRoles(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -180,7 +182,7 @@ func (a *SQLiteAdapter) GetUserRoles(ctx context.Context, userID int64) ([]Role,
 	return result, nil
 }
 
-func (a *SQLiteAdapter) GetUserPermissions(ctx context.Context, userID int64) ([]Permission, error) {
+func (a *PostgresAdapter) GetUserPermissions(ctx context.Context, userID int64) ([]Permission, error) {
 	perms, err := a.queries.GetUserPermissions(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -197,13 +199,13 @@ func (a *SQLiteAdapter) GetUserPermissions(ctx context.Context, userID int64) ([
 	return result, nil
 }
 
-func (a *SQLiteAdapter) ProjectUser(ctx context.Context, userID int64, userState ubstate.UserState) error {
+func (a *PostgresAdapter) ProjectUser(ctx context.Context, userID int64, userState ubstate.UserState) error {
 	tx, err := a.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	queries := dbsqlite.New(tx)
+	queries := ubpostgres.New(tx)
 	_, err = queries.GetUser(ctx, userID)
 
 	// If the user doesn't exist, create it
@@ -213,7 +215,7 @@ func (a *SQLiteAdapter) ProjectUser(ctx context.Context, userID int64, userState
 			return err
 		}
 
-		addUserParams := dbsqlite.AddUserParams{
+		addUserParams := ubpostgres.AddUserParams{
 			UserID:      userID,
 			FirstName:   userState.FirstName,
 			LastName:    userState.LastName,
@@ -228,7 +230,7 @@ func (a *SQLiteAdapter) ProjectUser(ctx context.Context, userID int64, userState
 		}
 	} else {
 		// If the user exists, update it
-		updateUserParams := dbsqlite.UpdateUserParams{
+		updateUserParams := ubpostgres.UpdateUserParams{
 			LastName:    userState.LastName,
 			FirstName:   userState.FirstName,
 			DisplayName: userState.DisplayName,
@@ -253,7 +255,7 @@ func (a *SQLiteAdapter) ProjectUser(ctx context.Context, userID int64, userState
 	return nil
 }
 
-func (a *SQLiteAdapter) projectUserRoles(ctx context.Context, queries *dbsqlite.Queries, userID int64, stateRoles []int64) error {
+func (a *PostgresAdapter) projectUserRoles(ctx context.Context, queries *ubpostgres.Queries, userID int64, stateRoles []int64) error {
 	// Remove all existing roles
 	err := queries.RemoveAllRolesFromUser(ctx, userID)
 	if err != nil {
@@ -263,7 +265,7 @@ func (a *SQLiteAdapter) projectUserRoles(ctx context.Context, queries *dbsqlite.
 
 	// Add roles
 	for _, roleId := range stateRoles {
-		addRoleToUserParams := dbsqlite.AddRoleToUserParams{
+		addRoleToUserParams := ubpostgres.AddRoleToUserParams{
 			UserID: userID,
 			RoleID: roleId,
 		}
@@ -276,6 +278,6 @@ func (a *SQLiteAdapter) projectUserRoles(ctx context.Context, queries *dbsqlite.
 	return nil
 }
 
-func (a *SQLiteAdapter) ProjectUserRoles(ctx context.Context, userID int64, stateRoles []int64) error {
+func (a *PostgresAdapter) ProjectUserRoles(ctx context.Context, userID int64, stateRoles []int64) error {
 	return a.projectUserRoles(ctx, a.queries, userID, stateRoles)
 }

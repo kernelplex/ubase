@@ -2,14 +2,12 @@ package ubase
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/kernelplex/evercore/base"
 	"github.com/kernelplex/ubase/lib/dbinterface"
-	"github.com/kernelplex/ubase/lib/ubconst"
 	"github.com/kernelplex/ubase/lib/ubevents"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
 	"github.com/kernelplex/ubase/lib/ubstatus"
@@ -30,16 +28,14 @@ type UserService interface {
 type UserServiceImpl struct {
 	store          *evercore.EventStore
 	hashingService ubsecurity.HashGenerator
-	db             *sql.DB
-	dbType         ubconst.DatabaseType
+	dbadapter      dbinterface.DataAdapter
 }
 
-func CreateUserService(store *evercore.EventStore, hashingService ubsecurity.HashGenerator, db *sql.DB, dbType ubconst.DatabaseType) UserService {
+func CreateUserService(store *evercore.EventStore, hashingService ubsecurity.HashGenerator, dbadapter dbinterface.DataAdapter) UserService {
 	service := UserServiceImpl{
 		store:          store,
 		hashingService: hashingService,
-		db:             db,
-		dbType:         dbType,
+		dbadapter:      dbadapter,
 	}
 	return service
 }
@@ -330,8 +326,7 @@ func (s UserServiceImpl) SetRoles(ctx context.Context, command UserSetRolesComan
 }
 
 func (s UserServiceImpl) GetUserRolesIds(ctx context.Context, userId int64) ([]int64, error) {
-	db := dbinterface.NewDatabase(s.dbType, s.db)
-	roles, err := db.GetUserRoles(ctx, userId)
+	roles, err := s.dbadapter.GetUserRoles(ctx, userId)
 	if err != nil {
 		slog.Error("failed to get user roles", "userId", userId, "error", err)
 		return nil, fmt.Errorf("failed to get user roles: %w", err)
@@ -346,81 +341,11 @@ func (s UserServiceImpl) GetUserRolesIds(ctx context.Context, userId int64) ([]i
 }
 
 func (s UserServiceImpl) ProjectRoles(ctx context.Context, userAggregate *UserAggregate) error {
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	db := dbinterface.NewDatabase(s.dbType, tx)
-	return projectRoles(ctx, db, userAggregate)
+	return s.dbadapter.ProjectUserRoles(ctx, userAggregate.Id, userAggregate.State.Roles)
 }
 
 // ProjectUser projects the user to the relational database.
 func (s UserServiceImpl) ProjectUser(ctx context.Context, userAggregate *UserAggregate) error {
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
+	return s.dbadapter.ProjectUser(ctx, userAggregate.Id, userAggregate.State)
 
-	db := dbinterface.NewDatabase(s.dbType, tx)
-
-	_, err = db.GetUser(ctx, userAggregate.Id)
-	// If the user doesn't exist, create it
-	if err != nil {
-		if err != sql.ErrNoRows {
-			slog.Error("Failed to get user", "error", err)
-			return err
-		}
-		err = db.AddUser(ctx, userAggregate.Id,
-			userAggregate.State.FirstName,
-			userAggregate.State.LastName,
-			userAggregate.State.DisplayName,
-			userAggregate.State.Email)
-		if err != nil {
-			slog.Error("Failed to project user", "error", err)
-			return err
-		}
-	} else {
-		// If the user exists, update it
-		err = db.UpdateUser(ctx, userAggregate.Id,
-			userAggregate.State.FirstName,
-			userAggregate.State.LastName,
-			userAggregate.State.DisplayName,
-			userAggregate.State.Email)
-		if err != nil {
-			slog.Error("Failed to project user", "error", err)
-			return err
-		}
-	}
-
-	// Remove all existing roles
-	err = projectRoles(ctx, db, userAggregate)
-	if err != nil {
-		slog.Error("Failed to project roles", "error", err)
-		return err
-	}
-
-	tx.Commit()
-
-	return nil
-}
-
-func projectRoles(ctx context.Context, db dbinterface.Database, userAggregate *UserAggregate) error {
-	err := db.RemoveAllRolesFromUser(ctx, userAggregate.Id)
-	if err != nil {
-		slog.Error("Failed to remove all roles from user", "error", err)
-		return err
-	}
-
-	// Add roles
-	for _, roleId := range userAggregate.State.Roles {
-		err = db.AddRoleToUser(ctx, userAggregate.Id, roleId)
-		if err != nil {
-			slog.Error("Failed to add role to user", "error", err)
-			return err
-		}
-	}
-	return nil
 }

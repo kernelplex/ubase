@@ -1,11 +1,12 @@
 package dbinterface
 
 import (
-	"github.com/kernelplex/ubase/lib/dbsqlite"
+	"database/sql"
+
 	"github.com/kernelplex/ubase/lib/ubconst"
 )
 
-func NewDatabase(dbType ubconst.DatabaseType, db dbsqlite.DBTX) Database {
+func NewDatabase(dbType ubconst.DatabaseType, db *sql.DB) DataAdapter {
 	switch dbType {
 	case ubconst.DatabaseTypePostgres:
 		return NewPostgresAdapter(db)

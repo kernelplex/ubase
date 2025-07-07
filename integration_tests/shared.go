@@ -36,7 +36,7 @@ func (s *StorageEngineTestSuite) RunTests(t *testing.T) {
 	dbadapter := dbinterface.NewDatabase(s.dbType, s.db)
 
 	hashingService := ubsecurity.DefaultArgon2Id
-	s.userService = ubase.CreateUserService(s.eventStore, hashingService, s.db, s.dbType)
+	s.userService = ubase.CreateUserService(s.eventStore, hashingService, dbadapter)
 	s.roleService = ubase.CreateRoleService(s.eventStore, dbadapter)
 	s.permissionService = ubase.NewPermissionService(dbadapter, s.roleService)
 

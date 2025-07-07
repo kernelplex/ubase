@@ -2,16 +2,21 @@ package dbinterface
 
 import (
 	"context"
+	"database/sql"
+	"log/slog"
 
 	"github.com/kernelplex/ubase/lib/dbsqlite"
+	"github.com/kernelplex/ubase/lib/ubstate"
 )
 
 type SQLiteAdapter struct {
+	db      *sql.DB
 	queries *dbsqlite.Queries
 }
 
-func NewSQLiteAdapter(db dbsqlite.DBTX) *SQLiteAdapter {
+func NewSQLiteAdapter(db *sql.DB) *SQLiteAdapter {
 	return &SQLiteAdapter{
+		db:      db,
 		queries: dbsqlite.New(db),
 	}
 }
@@ -190,4 +195,87 @@ func (a *SQLiteAdapter) GetUserPermissions(ctx context.Context, userID int64) ([
 		}
 	}
 	return result, nil
+}
+
+func (a *SQLiteAdapter) ProjectUser(ctx context.Context, userID int64, userState ubstate.UserState) error {
+	tx, err := a.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	queries := dbsqlite.New(tx)
+	_, err = queries.GetUser(ctx, userID)
+
+	// If the user doesn't exist, create it
+	if err != nil {
+		if err != sql.ErrNoRows {
+			slog.Error("Failed to get user", "error", err)
+			return err
+		}
+
+		addUserParams := dbsqlite.AddUserParams{
+			UserID:      userID,
+			FirstName:   userState.FirstName,
+			LastName:    userState.LastName,
+			DisplayName: userState.DisplayName,
+			Email:       userState.Email,
+		}
+
+		err = queries.AddUser(ctx, addUserParams)
+		if err != nil {
+			slog.Error("Failed to project user", "error", err)
+			return err
+		}
+	} else {
+		// If the user exists, update it
+		updateUserParams := dbsqlite.UpdateUserParams{
+			LastName:    userState.LastName,
+			FirstName:   userState.FirstName,
+			DisplayName: userState.DisplayName,
+			Email:       userState.Email,
+			UserID:      userID,
+		}
+		err = queries.UpdateUser(ctx, updateUserParams)
+		if err != nil {
+			slog.Error("Failed to project user", "error", err)
+			return err
+		}
+	}
+
+	err = a.projectUserRoles(ctx, queries, userID, userState.Roles)
+	if err != nil {
+		slog.Error("Failed to project user roles", "error", err)
+		return err
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+func (a *SQLiteAdapter) projectUserRoles(ctx context.Context, queries *dbsqlite.Queries, userID int64, stateRoles []int64) error {
+	// Remove all existing roles
+	err := queries.RemoveAllRolesFromUser(ctx, userID)
+	if err != nil {
+		slog.Error("Failed to remove all roles from user", "error", err)
+		return err
+	}
+
+	// Add roles
+	for _, roleId := range stateRoles {
+		addRoleToUserParams := dbsqlite.AddRoleToUserParams{
+			UserID: userID,
+			RoleID: roleId,
+		}
+		err = queries.AddRoleToUser(ctx, addRoleToUserParams)
+		if err != nil {
+			slog.Error("Failed to add role to user", "error", err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (a *SQLiteAdapter) ProjectUserRoles(ctx context.Context, userID int64, stateRoles []int64) error {
+	return a.projectUserRoles(ctx, a.queries, userID, stateRoles)
 }

@@ -2,10 +2,11 @@ package dbinterface
 
 import (
 	"context"
+	"github.com/kernelplex/ubase/lib/ubstate"
 )
 
-// Database defines the common interface for user/role/permission operations
-type Database interface {
+// DataAdapter defines the common interface for user/role/permission operations
+type DataAdapter interface {
 	// User operations
 	AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error
 	GetUser(ctx context.Context, userID int64) (User, error)
@@ -31,6 +32,9 @@ type Database interface {
 	RemoveAllRolesFromUser(ctx context.Context, userID int64) error
 	GetUserRoles(ctx context.Context, userID int64) ([]Role, error)
 	GetUserPermissions(ctx context.Context, userID int64) ([]Permission, error)
+
+	ProjectUser(ctx context.Context, userID int64, userState ubstate.UserState) error
+	ProjectUserRoles(ctx context.Context, userID int64, stateRoles []int64) error
 }
 
 // User represents a user in the system

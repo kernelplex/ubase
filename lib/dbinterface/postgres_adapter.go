@@ -2,16 +2,21 @@ package dbinterface
 
 import (
 	"context"
+	"database/sql"
+	"log/slog"
 
 	"github.com/kernelplex/ubase/lib/dbpostgres"
+	"github.com/kernelplex/ubase/lib/ubstate"
 )
 
 type PostgresAdapter struct {
+	db      *sql.DB
 	queries *dbpostgres.Queries
 }
 
-func NewPostgresAdapter(db dbpostgres.DBTX) *PostgresAdapter {
+func NewPostgresAdapter(db *sql.DB) *PostgresAdapter {
 	return &PostgresAdapter{
+		db:      db,
 		queries: dbpostgres.New(db),
 	}
 }
@@ -192,4 +197,87 @@ func (a *PostgresAdapter) GetUserPermissions(ctx context.Context, userID int64) 
 		}
 	}
 	return result, nil
+}
+
+func (a *PostgresAdapter) ProjectUser(ctx context.Context, userID int64, userState ubstate.UserState) error {
+	tx, err := a.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	queries := dbpostgres.New(tx)
+	_, err = queries.GetUser(ctx, userID)
+
+	// If the user doesn't exist, create it
+	if err != nil {
+		if err != sql.ErrNoRows {
+			slog.Error("Failed to get user", "error", err)
+			return err
+		}
+
+		addUserParams := dbpostgres.AddUserParams{
+			UserID:      userID,
+			FirstName:   userState.FirstName,
+			LastName:    userState.LastName,
+			DisplayName: userState.DisplayName,
+			Email:       userState.Email,
+		}
+
+		err = queries.AddUser(ctx, addUserParams)
+		if err != nil {
+			slog.Error("Failed to project user", "error", err)
+			return err
+		}
+	} else {
+		// If the user exists, update it
+		updateUserParams := dbpostgres.UpdateUserParams{
+			LastName:    userState.LastName,
+			FirstName:   userState.FirstName,
+			DisplayName: userState.DisplayName,
+			Email:       userState.Email,
+			UserID:      userID,
+		}
+		err = queries.UpdateUser(ctx, updateUserParams)
+		if err != nil {
+			slog.Error("Failed to project user", "error", err)
+			return err
+		}
+	}
+
+	err = a.projectUserRoles(ctx, queries, userID, userState.Roles)
+	if err != nil {
+		slog.Error("Failed to project user roles", "error", err)
+		return err
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+func (a *PostgresAdapter) projectUserRoles(ctx context.Context, queries *dbpostgres.Queries, userID int64, stateRoles []int64) error {
+	// Remove all existing roles
+	err := queries.RemoveAllRolesFromUser(ctx, userID)
+	if err != nil {
+		slog.Error("Failed to remove all roles from user", "error", err)
+		return err
+	}
+
+	// Add roles
+	for _, roleId := range stateRoles {
+		addRoleToUserParams := dbpostgres.AddRoleToUserParams{
+			UserID: userID,
+			RoleID: roleId,
+		}
+		err = queries.AddRoleToUser(ctx, addRoleToUserParams)
+		if err != nil {
+			slog.Error("Failed to add role to user", "error", err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (a *PostgresAdapter) ProjectUserRoles(ctx context.Context, userID int64, stateRoles []int64) error {
+	return a.projectUserRoles(ctx, a.queries, userID, stateRoles)
 }

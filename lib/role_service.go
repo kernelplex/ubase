@@ -21,12 +21,12 @@ type RoleService interface {
 
 type RoleServiceImpl struct {
 	store     *evercore.EventStore
-	dbadapter dbinterface.Database
+	dbadapter dbinterface.DataAdapter
 }
 
 func CreateRoleService(
 	store *evercore.EventStore,
-	dbadapter dbinterface.Database) RoleService {
+	dbadapter dbinterface.DataAdapter) RoleService {
 	service := RoleServiceImpl{
 		store:     store,
 		dbadapter: dbadapter,

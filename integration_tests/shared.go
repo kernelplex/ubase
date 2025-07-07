@@ -10,20 +10,21 @@ import (
 	evercore "github.com/kernelplex/evercore/base"
 	ubase "github.com/kernelplex/ubase/lib"
 	"github.com/kernelplex/ubase/lib/dbinterface"
+	"github.com/kernelplex/ubase/lib/ubconst"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
 )
 
 type StorageEngineTestSuite struct {
 	eventStore        *evercore.EventStore
 	db                *sql.DB
-	dbType            dbinterface.DatabaseType
+	dbType            ubconst.DatabaseType
 	roleService       ubase.RoleService
 	userService       ubase.UserService
 	permissionService ubase.PermissionService
 	existinguserId    int64
 }
 
-func NewStorageEngineTestSuite(eventStore *evercore.EventStore, db *sql.DB, dbType dbinterface.DatabaseType) *StorageEngineTestSuite {
+func NewStorageEngineTestSuite(eventStore *evercore.EventStore, db *sql.DB, dbType ubconst.DatabaseType) *StorageEngineTestSuite {
 	return &StorageEngineTestSuite{
 		eventStore: eventStore,
 		db:         db,
@@ -32,10 +33,12 @@ func NewStorageEngineTestSuite(eventStore *evercore.EventStore, db *sql.DB, dbTy
 }
 
 func (s *StorageEngineTestSuite) RunTests(t *testing.T) {
+	dbadapter := dbinterface.NewDatabase(s.dbType, s.db)
+
 	hashingService := ubsecurity.DefaultArgon2Id
 	s.userService = ubase.CreateUserService(s.eventStore, hashingService, s.db, s.dbType)
-	s.roleService = ubase.CreateRoleService(s.eventStore, s.db, s.dbType)
-	s.permissionService = ubase.NewPermissionService(s.db, s.dbType, s.roleService)
+	s.roleService = ubase.CreateRoleService(s.eventStore, dbadapter)
+	s.permissionService = ubase.NewPermissionService(dbadapter, s.roleService)
 
 	t.Run("CreateUser", s.CreateUser)
 	t.Run("CreateUser_WithDuplicateEmailFails", s.CreateUser_WithDuplicateEmailFails)

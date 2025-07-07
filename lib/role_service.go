@@ -2,7 +2,6 @@ package ubase
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"slices"
 	"time"
@@ -21,16 +20,16 @@ type RoleService interface {
 }
 
 type RoleServiceImpl struct {
-	store   *evercore.EventStore
-	db      *sql.DB
-	dbType  dbinterface.DatabaseType
+	store     *evercore.EventStore
+	dbadapter dbinterface.Database
 }
 
-func CreateRoleService(store *evercore.EventStore, db *sql.DB, dbType dbinterface.DatabaseType) RoleService {
+func CreateRoleService(
+	store *evercore.EventStore,
+	dbadapter dbinterface.Database) RoleService {
 	service := RoleServiceImpl{
-		store:  store,
-		db:     db,
-		dbType: dbType,
+		store:     store,
+		dbadapter: dbadapter,
 	}
 	return service
 }
@@ -48,9 +47,7 @@ func (s RoleServiceImpl) AddRole(ctx context.Context, name string, agent string)
 
 			etx.ApplyEventTo(&aggregate, evercore.NewStateEvent(ubevents.RoleCreatedEvent{Name: name}), time.Now(), agent)
 
-			db := dbinterface.NewDatabase(s.dbType, s.db)
-
-			err = db.AddRole(ctx, aggregate.Id, name)
+			err = s.dbadapter.AddRole(ctx, aggregate.Id, name)
 			if err != nil {
 				return 0, fmt.Errorf("failed to add role: %w", err)
 			}
@@ -90,9 +87,8 @@ func (s RoleServiceImpl) AddPermissionToRole(ctx context.Context, role string, p
 				agent)
 
 			// Update database
-			db := dbinterface.NewDatabase(s.dbType, s.db)
 
-			err = db.AddPermissionToRole(ctx, aggregate.Id, permissionId)
+			err = s.dbadapter.AddPermissionToRole(ctx, aggregate.Id, permissionId)
 			if err != nil {
 				return 0, fmt.Errorf("failed to add permission to role in database: %w", err)
 			}
@@ -138,8 +134,7 @@ func (s RoleServiceImpl) RemovePermissionFromRole(ctx context.Context, role stri
 				agent)
 
 			// Update database
-			db := dbinterface.NewDatabase(dbinterface.DatabaseTypeSQLite, s.db)
-			err = db.RemovePermissionFromRole(ctx, aggregate.Id, permissionId)
+			err = s.dbadapter.RemovePermissionFromRole(ctx, aggregate.Id, permissionId)
 			if err != nil {
 				return 0, fmt.Errorf("failed to remove permission from role in database: %w", err)
 			}
@@ -159,9 +154,8 @@ func (s RoleServiceImpl) RemovePermissionFromRole(ctx context.Context, role stri
 }
 
 func (s RoleServiceImpl) GetRoleList(ctx context.Context) (map[string]int64, error) {
-	db := dbinterface.NewDatabase(s.dbType, s.db)
 
-	roles, err := db.GetRoles(ctx)
+	roles, err := s.dbadapter.GetRoles(ctx)
 	if err != nil {
 		return nil, err
 	}

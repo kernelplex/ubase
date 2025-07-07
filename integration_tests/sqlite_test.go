@@ -11,7 +11,7 @@ import (
 
 	evercore "github.com/kernelplex/evercore/base"
 	"github.com/kernelplex/evercore/evercoresqlite"
-	"github.com/kernelplex/ubase/lib/dbinterface"
+	"github.com/kernelplex/ubase/lib/ubconst"
 	"github.com/kernelplex/ubase/sql/sqlite"
 )
 
@@ -82,7 +82,7 @@ func TestSqliteStorageEngine(t *testing.T) {
 
 	CleanupExistingDatabases(testDbFile, testEventstoreDbFile)
 
-	dbType := dbinterface.DatabaseTypeSQLite
+	dbType := ubconst.DatabaseTypeSQLite
 	db, err := openDatabase(testDbFile)
 	if err != nil {
 		t.Fatalf("Failed to open database: %v", err)

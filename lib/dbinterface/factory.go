@@ -2,20 +2,14 @@ package dbinterface
 
 import (
 	"github.com/kernelplex/ubase/lib/dbsqlite"
+	"github.com/kernelplex/ubase/lib/ubconst"
 )
 
-type DatabaseType string
-
-const (
-	DatabaseTypeSQLite   DatabaseType = "sqlite"
-	DatabaseTypePostgres DatabaseType = "postgres"
-)
-
-func NewDatabase(dbType DatabaseType, db dbsqlite.DBTX) Database {
+func NewDatabase(dbType ubconst.DatabaseType, db dbsqlite.DBTX) Database {
 	switch dbType {
-	case DatabaseTypePostgres:
+	case ubconst.DatabaseTypePostgres:
 		return NewPostgresAdapter(db)
-	case DatabaseTypeSQLite:
+	case ubconst.DatabaseTypeSQLite:
 		return NewSQLiteAdapter(db)
 	default:
 		panic("unknown database type")

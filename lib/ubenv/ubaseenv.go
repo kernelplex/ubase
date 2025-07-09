@@ -26,6 +26,17 @@ func ConfigFromEnv(cfg any) error {
 	for i := range cfgType.NumField() {
 		field := cfgType.Field(i)
 		fieldValue := cfgValue.Field(i)
+
+		kind := fieldValue.Kind()
+		// Process sub structs
+		if kind == reflect.Struct {
+			err := ConfigFromEnv(fieldValue.Addr().Interface())
+			if err != nil {
+				return err
+			}
+			continue
+		}
+
 		envTag := field.Tag.Get(EnvTag)
 		if envTag == "" {
 			continue

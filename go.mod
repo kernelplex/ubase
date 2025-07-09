@@ -10,8 +10,11 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/pressly/goose/v3 v3.24.1
 	github.com/stretchr/testify v1.10.0
+	github.com/xo/dburl v0.23.8
 	golang.org/x/crypto v0.37.0
 )
+
+replace github.com/kernelplex/evercore => /mnt/data/seddy/proj/evercore
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.8.1 // indirect

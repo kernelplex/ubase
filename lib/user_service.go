@@ -23,6 +23,7 @@ type UserService interface {
 	Login(ctx context.Context, command UserLoginCommand) (*UserLoginResponse, error)
 	SetRoles(ctx context.Context, command UserSetRolesComand, agent string) (UserSetRolesResponse, error)
 	GetUserRolesIds(ctx context.Context, userId int64) ([]int64, error)
+	// EmailVerifyGenerate(ctx context.Context, command UserEmailVerifyGenerateCommand, agent) (UserEmailVerifyGenerateResponse, error)
 }
 
 type UserServiceImpl struct {
@@ -78,6 +79,8 @@ func (s UserServiceImpl) CreateUser(ctx context.Context, command UserCreateComma
 			if err != nil {
 				return 0, err
 			}
+
+			slog.Info("Error creating user", "email", command.Email, "err", err)
 
 			passwordHash, err := s.hashingService.GenerateHashBase64(command.Password)
 			if err != nil {

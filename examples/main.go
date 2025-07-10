@@ -11,18 +11,18 @@ import (
 	"github.com/kernelplex/evercore/evercoresqlite"
 
 	"github.com/kernelplex/ubase/lib"
+	"github.com/kernelplex/ubase/lib/dbpostgres"
+	"github.com/kernelplex/ubase/lib/dbsqlite"
 	"github.com/kernelplex/ubase/lib/ubconst"
 	"github.com/kernelplex/ubase/lib/ubdata"
-	"github.com/kernelplex/ubase/lib/ubpostgres"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
-	"github.com/kernelplex/ubase/lib/ubsqlite"
 	"github.com/kernelplex/ubase/sql/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 	_ "github.com/pressly/goose/v3"
 )
 
 func main() {
-	x := ubsqlite.AddUserParams{
+	x := dbsqlite.AddUserParams{
 		UserID:      1,
 		FirstName:   "Charles",
 		LastName:    "Havez",
@@ -30,9 +30,9 @@ func main() {
 		Email:       "chavez@example.com",
 	}
 
-	var y ubpostgres.AddUserParams
+	var y dbpostgres.AddUserParams
 
-	y = (ubpostgres.AddUserParams)(x)
+	y = (dbpostgres.AddUserParams)(x)
 	slog.Info("y", "y", y)
 
 	eventstore_db := "./.eventstore.db"

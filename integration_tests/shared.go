@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"log/slog"
-	"strings"
 	"testing"
 
 	evercore "github.com/kernelplex/evercore/base"
@@ -132,8 +131,14 @@ func (s *StorageEngineTestSuite) CreateUser_WithDuplicateEmailFails(t *testing.T
 		return
 	}
 
-	if !strings.Contains(err.Error(), "UNIQUE constraint failed") {
-		t.Errorf("Expected duplicate email error, got: %v", err)
+	serr, ok := err.(*evercore.StorageEngineError)
+	if !ok {
+		t.Errorf("Expected storage engine error, got: %v", err)
+		return
+	}
+
+	if serr.ErrorType != evercore.ErrorTypeConstraintViolation {
+		t.Errorf("Error type of %s, but got: %s", evercore.ErrorTypeConstraintViolation, serr.ErrorType)
 		return
 	}
 }

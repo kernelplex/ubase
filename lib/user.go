@@ -26,6 +26,39 @@ type UserCreateCommand struct {
 	DisplayName string `json:"displayName"`
 }
 
+type UserEmailVerifyGenerateCommand struct {
+}
+
+type UserEmailVerifyGenerateResponse struct {
+	Code string `json:"code"`
+}
+
+type UserEmailVerifyCommand struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
+type UserEmailVerifyResponse struct {
+	Verified bool `json:"verified"`
+}
+
+type UserGenerateTwoFactorCommand struct {
+	Id int64 `json:"id"`
+}
+
+type UserGenerateTwoFactorResponse struct {
+	SharedSecret string `json:"sharedSecret"`
+}
+
+type UserVerifyTwoFactorCommand struct {
+	Id   int64  `json:"id"`
+	Code string `json:"code"`
+}
+
+type UserVerifyTwoFactorResponse struct {
+	Verified bool `json:"verified"`
+}
+
 type UserCreateResponse struct {
 	Response `json:"response"`
 	Id       int64 `json:"id"`

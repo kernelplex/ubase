@@ -3,26 +3,25 @@ package ubdata
 import (
 	"context"
 	"database/sql"
-	"log/slog"
-
-	"github.com/kernelplex/ubase/lib/ubpostgres"
+	"github.com/kernelplex/ubase/lib/dbpostgres"
 	"github.com/kernelplex/ubase/lib/ubstate"
+	"log/slog"
 )
 
 type PostgresAdapter struct {
 	db      *sql.DB
-	queries *ubpostgres.Queries
+	queries *dbpostgres.Queries
 }
 
 func NewPostgresAdapter(db *sql.DB) *PostgresAdapter {
 	return &PostgresAdapter{
 		db:      db,
-		queries: ubpostgres.New(db),
+		queries: dbpostgres.New(db),
 	}
 }
 
 func (a *PostgresAdapter) AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error {
-	return a.queries.AddUser(ctx, ubpostgres.AddUserParams{
+	return a.queries.AddUser(ctx, dbpostgres.AddUserParams{
 		UserID:      userID,
 		FirstName:   firstName,
 		LastName:    lastName,
@@ -60,7 +59,7 @@ func (a *PostgresAdapter) GetUserByEmail(ctx context.Context, email string) (Use
 }
 
 func (a *PostgresAdapter) UpdateUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error {
-	return a.queries.UpdateUser(ctx, ubpostgres.UpdateUserParams{
+	return a.queries.UpdateUser(ctx, dbpostgres.UpdateUserParams{
 		UserID:      userID,
 		FirstName:   firstName,
 		LastName:    lastName,
@@ -70,14 +69,14 @@ func (a *PostgresAdapter) UpdateUser(ctx context.Context, userID int64, firstNam
 }
 
 func (a *PostgresAdapter) AddRole(ctx context.Context, roleID int64, name string) error {
-	return a.queries.AddRole(ctx, ubpostgres.AddRoleParams{
+	return a.queries.AddRole(ctx, dbpostgres.AddRoleParams{
 		RoleID: roleID,
 		Name:   name,
 	})
 }
 
 func (a *PostgresAdapter) UpdateRole(ctx context.Context, roleID int64, name string) error {
-	return a.queries.UpdateRole(ctx, ubpostgres.UpdateRoleParams{
+	return a.queries.UpdateRole(ctx, dbpostgres.UpdateRoleParams{
 		Name:   name,
 		RoleID: roleID,
 	})
@@ -124,14 +123,14 @@ func (a *PostgresAdapter) GetPermissions(ctx context.Context) ([]Permission, err
 }
 
 func (a *PostgresAdapter) AddPermissionToRole(ctx context.Context, roleID, permissionID int64) error {
-	return a.queries.AddPermissionToRole(ctx, ubpostgres.AddPermissionToRoleParams{
+	return a.queries.AddPermissionToRole(ctx, dbpostgres.AddPermissionToRoleParams{
 		RoleID:       roleID,
 		PermissionID: permissionID,
 	})
 }
 
 func (a *PostgresAdapter) RemovePermissionFromRole(ctx context.Context, roleID, permissionID int64) error {
-	return a.queries.RemovePermissionFromRole(ctx, ubpostgres.RemovePermissionFromRoleParams{
+	return a.queries.RemovePermissionFromRole(ctx, dbpostgres.RemovePermissionFromRoleParams{
 		RoleID:       roleID,
 		PermissionID: permissionID,
 	})
@@ -155,7 +154,7 @@ func (a *PostgresAdapter) GetRolePermissions(ctx context.Context, roleID int64) 
 }
 
 func (a *PostgresAdapter) AddRoleToUser(ctx context.Context, userID, roleID int64) error {
-	return a.queries.AddRoleToUser(ctx, ubpostgres.AddRoleToUserParams{
+	return a.queries.AddRoleToUser(ctx, dbpostgres.AddRoleToUserParams{
 		UserID: userID,
 		RoleID: roleID,
 	})
@@ -205,7 +204,7 @@ func (a *PostgresAdapter) ProjectUser(ctx context.Context, userID int64, userSta
 		return err
 	}
 	defer tx.Rollback()
-	queries := ubpostgres.New(tx)
+	queries := dbpostgres.New(tx)
 	_, err = queries.GetUser(ctx, userID)
 
 	// If the user doesn't exist, create it
@@ -215,7 +214,7 @@ func (a *PostgresAdapter) ProjectUser(ctx context.Context, userID int64, userSta
 			return err
 		}
 
-		addUserParams := ubpostgres.AddUserParams{
+		addUserParams := dbpostgres.AddUserParams{
 			UserID:      userID,
 			FirstName:   userState.FirstName,
 			LastName:    userState.LastName,
@@ -230,7 +229,7 @@ func (a *PostgresAdapter) ProjectUser(ctx context.Context, userID int64, userSta
 		}
 	} else {
 		// If the user exists, update it
-		updateUserParams := ubpostgres.UpdateUserParams{
+		updateUserParams := dbpostgres.UpdateUserParams{
 			LastName:    userState.LastName,
 			FirstName:   userState.FirstName,
 			DisplayName: userState.DisplayName,
@@ -255,7 +254,7 @@ func (a *PostgresAdapter) ProjectUser(ctx context.Context, userID int64, userSta
 	return nil
 }
 
-func (a *PostgresAdapter) projectUserRoles(ctx context.Context, queries *ubpostgres.Queries, userID int64, stateRoles []int64) error {
+func (a *PostgresAdapter) projectUserRoles(ctx context.Context, queries *dbpostgres.Queries, userID int64, stateRoles []int64) error {
 	// Remove all existing roles
 	err := queries.RemoveAllRolesFromUser(ctx, userID)
 	if err != nil {
@@ -265,7 +264,7 @@ func (a *PostgresAdapter) projectUserRoles(ctx context.Context, queries *ubpostg
 
 	// Add roles
 	for _, roleId := range stateRoles {
-		addRoleToUserParams := ubpostgres.AddRoleToUserParams{
+		addRoleToUserParams := dbpostgres.AddRoleToUserParams{
 			UserID: userID,
 			RoleID: roleId,
 		}

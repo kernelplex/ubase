@@ -5,24 +5,24 @@ import (
 	"database/sql"
 	"log/slog"
 
-	"github.com/kernelplex/ubase/lib/ubsqlite"
+	"github.com/kernelplex/ubase/lib/dbsqlite"
 	"github.com/kernelplex/ubase/lib/ubstate"
 )
 
 type SQLiteAdapter struct {
 	db      *sql.DB
-	queries *ubsqlite.Queries
+	queries *dbsqlite.Queries
 }
 
 func NewSQLiteAdapter(db *sql.DB) *SQLiteAdapter {
 	return &SQLiteAdapter{
 		db:      db,
-		queries: ubsqlite.New(db),
+		queries: dbsqlite.New(db),
 	}
 }
 
 func (a *SQLiteAdapter) AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error {
-	return a.queries.AddUser(ctx, ubsqlite.AddUserParams{
+	return a.queries.AddUser(ctx, dbsqlite.AddUserParams{
 		UserID:      userID,
 		FirstName:   firstName,
 		LastName:    lastName,
@@ -60,7 +60,7 @@ func (a *SQLiteAdapter) GetUserByEmail(ctx context.Context, email string) (User,
 }
 
 func (a *SQLiteAdapter) UpdateUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error {
-	return a.queries.UpdateUser(ctx, ubsqlite.UpdateUserParams{
+	return a.queries.UpdateUser(ctx, dbsqlite.UpdateUserParams{
 		UserID:      userID,
 		FirstName:   firstName,
 		LastName:    lastName,
@@ -70,14 +70,14 @@ func (a *SQLiteAdapter) UpdateUser(ctx context.Context, userID int64, firstName,
 }
 
 func (a *SQLiteAdapter) AddRole(ctx context.Context, roleID int64, name string) error {
-	return a.queries.AddRole(ctx, ubsqlite.AddRoleParams{
+	return a.queries.AddRole(ctx, dbsqlite.AddRoleParams{
 		RoleID: roleID,
 		Name:   name,
 	})
 }
 
 func (a *SQLiteAdapter) UpdateRole(ctx context.Context, roleID int64, name string) error {
-	return a.queries.UpdateRole(ctx, ubsqlite.UpdateRoleParams{
+	return a.queries.UpdateRole(ctx, dbsqlite.UpdateRoleParams{
 		Name:   name,
 		RoleID: roleID,
 	})
@@ -122,14 +122,14 @@ func (a *SQLiteAdapter) GetPermissions(ctx context.Context) ([]Permission, error
 }
 
 func (a *SQLiteAdapter) AddPermissionToRole(ctx context.Context, roleID, permissionID int64) error {
-	return a.queries.AddPermissionToRole(ctx, ubsqlite.AddPermissionToRoleParams{
+	return a.queries.AddPermissionToRole(ctx, dbsqlite.AddPermissionToRoleParams{
 		RoleID:       roleID,
 		PermissionID: permissionID,
 	})
 }
 
 func (a *SQLiteAdapter) RemovePermissionFromRole(ctx context.Context, roleID, permissionID int64) error {
-	return a.queries.RemovePermissionFromRole(ctx, ubsqlite.RemovePermissionFromRoleParams{
+	return a.queries.RemovePermissionFromRole(ctx, dbsqlite.RemovePermissionFromRoleParams{
 		RoleID:       roleID,
 		PermissionID: permissionID,
 	})
@@ -153,7 +153,7 @@ func (a *SQLiteAdapter) GetRolePermissions(ctx context.Context, roleID int64) ([
 }
 
 func (a *SQLiteAdapter) AddRoleToUser(ctx context.Context, userID, roleID int64) error {
-	return a.queries.AddRoleToUser(ctx, ubsqlite.AddRoleToUserParams{
+	return a.queries.AddRoleToUser(ctx, dbsqlite.AddRoleToUserParams{
 		UserID: userID,
 		RoleID: roleID,
 	})
@@ -203,7 +203,7 @@ func (a *SQLiteAdapter) ProjectUser(ctx context.Context, userID int64, userState
 		return err
 	}
 	defer tx.Rollback()
-	queries := ubsqlite.New(tx)
+	queries := dbsqlite.New(tx)
 	_, err = queries.GetUser(ctx, userID)
 
 	// If the user doesn't exist, create it
@@ -213,7 +213,7 @@ func (a *SQLiteAdapter) ProjectUser(ctx context.Context, userID int64, userState
 			return err
 		}
 
-		addUserParams := ubsqlite.AddUserParams{
+		addUserParams := dbsqlite.AddUserParams{
 			UserID:      userID,
 			FirstName:   userState.FirstName,
 			LastName:    userState.LastName,
@@ -228,7 +228,7 @@ func (a *SQLiteAdapter) ProjectUser(ctx context.Context, userID int64, userState
 		}
 	} else {
 		// If the user exists, update it
-		updateUserParams := ubsqlite.UpdateUserParams{
+		updateUserParams := dbsqlite.UpdateUserParams{
 			LastName:    userState.LastName,
 			FirstName:   userState.FirstName,
 			DisplayName: userState.DisplayName,
@@ -253,7 +253,7 @@ func (a *SQLiteAdapter) ProjectUser(ctx context.Context, userID int64, userState
 	return nil
 }
 
-func (a *SQLiteAdapter) projectUserRoles(ctx context.Context, queries *ubsqlite.Queries, userID int64, stateRoles []int64) error {
+func (a *SQLiteAdapter) projectUserRoles(ctx context.Context, queries *dbsqlite.Queries, userID int64, stateRoles []int64) error {
 	// Remove all existing roles
 	err := queries.RemoveAllRolesFromUser(ctx, userID)
 	if err != nil {
@@ -263,7 +263,7 @@ func (a *SQLiteAdapter) projectUserRoles(ctx context.Context, queries *ubsqlite.
 
 	// Add roles
 	for _, roleId := range stateRoles {
-		addRoleToUserParams := ubsqlite.AddRoleToUserParams{
+		addRoleToUserParams := dbsqlite.AddRoleToUserParams{
 			UserID: userID,
 			RoleID: roleId,
 		}

@@ -52,7 +52,7 @@ func (s UserServiceImpl) GetUserByEmail(ctx context.Context, email string) (*Use
 			return &aggregate, nil
 		})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 	return aggregate, nil
 }
@@ -77,14 +77,14 @@ func (s UserServiceImpl) CreateUser(ctx context.Context, command UserCreateComma
 			aggregate := UserAggregate{}
 			err := etx.CreateAggregateWithKeyInto(&aggregate, command.Email)
 			if err != nil {
-				return 0, err
+				return 0, fmt.Errorf("failed to create aggregate: %w", err)
 			}
 
 			slog.Info("Error creating user", "email", command.Email, "err", err)
 
 			passwordHash, err := s.hashingService.GenerateHashBase64(command.Password)
 			if err != nil {
-				return 0, err
+				return 0, fmt.Errorf("failed to generate password hash: %w", err)
 			}
 
 			stateEvent := evercore.NewStateEvent(
@@ -101,7 +101,7 @@ func (s UserServiceImpl) CreateUser(ctx context.Context, command UserCreateComma
 
 			err = s.ProjectUser(ctx, &aggregate)
 			if err != nil {
-				return 0, err
+				return 0, fmt.Errorf("failed to project user: %w", err)
 			}
 
 			return aggregate.Id, nil
@@ -145,14 +145,14 @@ func (s UserServiceImpl) UpdateUser(ctx context.Context, command UserUpdateComma
 			err := etx.LoadStateInto(&aggregate, command.Id)
 			if err != nil {
 				slog.Error("Failed to load user", "error", err)
-				return err
+				return fmt.Errorf("failed to load user: %w", err)
 			}
 
 			var passwordHash *string
 			if command.Password != nil {
 				hash, err := s.hashingService.GenerateHashBase64(*command.Password)
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to generate password hash: %w", err)
 				}
 				passwordHash = &hash
 			}
@@ -172,7 +172,7 @@ func (s UserServiceImpl) UpdateUser(ctx context.Context, command UserUpdateComma
 			err = s.ProjectUser(ctx, &aggregate)
 			if err != nil {
 				slog.Error("Failed to project user", "error", err)
-				return err
+				return fmt.Errorf("failed to project user: %w", err)
 			}
 
 			return nil
@@ -264,7 +264,7 @@ func (s UserServiceImpl) Login(ctx context.Context, command UserLoginCommand) (*
 			}
 
 			if resp, err := s.verifyPassword(etx, &aggregate, command.Password); resp != nil || err != nil {
-				return resp, err
+				return resp, fmt.Errorf("failed to verify password: %w", err)
 
 			}
 
@@ -272,7 +272,7 @@ func (s UserServiceImpl) Login(ctx context.Context, command UserLoginCommand) (*
 		})
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to login: %w", err)
 	}
 	return response, nil
 
@@ -322,7 +322,7 @@ func (s UserServiceImpl) SetRoles(ctx context.Context, command UserSetRolesComan
 		slog.Error("failed to set roles", "userId", command.Id, "error", err)
 		response.Response.Status = ubstatus.UnexpectedError
 		response.Response.Message = "Failed to update roles"
-		return response, err
+		return response, fmt.Errorf("failed to set roles: %w", err)
 	}
 
 	return response, nil

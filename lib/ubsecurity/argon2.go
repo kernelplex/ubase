@@ -4,6 +4,7 @@ package ubsecurity
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"slices"
 
 	"golang.org/x/crypto/argon2"
@@ -90,7 +91,7 @@ func (i Argon2IdHashGenerator) Verify(target []byte, hashed []byte) bool {
 func (i Argon2IdHashGenerator) VerifyBase64(target string, base64Hash string) (bool, error) {
 	hash, err := base64.StdEncoding.DecodeString(base64Hash)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to decode base64 hash: %w", err)
 	}
 	return i.Verify([]byte(target), hash), nil
 }

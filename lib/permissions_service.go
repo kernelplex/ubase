@@ -78,7 +78,7 @@ func (p *PermissionServiceImpl) Warmup(ctx context.Context, allPermissions []str
 			slog.Info("Permission not found in map, adding to database", "permission", permission)
 			id, err := p.dbadapter.CreatePermission(ctx, permission)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to create permission: %w", err)
 			}
 			p.permissionIdMap[permission] = id
 		}
@@ -123,7 +123,7 @@ func (p *PermissionServiceImpl) UserHasPermission(ctx context.Context, userId in
 	// Get user roles (from cache or database)
 	userRoles, err := p.getUserRoles(ctx, userId)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to get user roles: %w", err)
 	}
 
 	// Check if any role has the requested permission
@@ -141,7 +141,7 @@ func (p *PermissionServiceImpl) UserHasPermission(ctx context.Context, userId in
 func (p *PermissionServiceImpl) GetPermissions(ctx context.Context) (map[string]int64, error) {
 	permissions, err := p.dbadapter.GetPermissions(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get permissions: %w", err)
 	}
 
 	permissionMap := make(map[string]int64)

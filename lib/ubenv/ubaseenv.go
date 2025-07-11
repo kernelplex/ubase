@@ -32,7 +32,7 @@ func ConfigFromEnv(cfg any) error {
 		if kind == reflect.Struct {
 			err := ConfigFromEnv(fieldValue.Addr().Interface())
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to load config from environment: %w", err)
 			}
 			continue
 		}

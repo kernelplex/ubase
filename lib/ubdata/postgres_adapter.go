@@ -3,6 +3,7 @@ package ubdata
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/kernelplex/ubase/lib/dbpostgres"
 	"github.com/kernelplex/ubase/lib/ubstate"
 	"log/slog"
@@ -33,7 +34,7 @@ func (a *PostgresAdapter) AddUser(ctx context.Context, userID int64, firstName, 
 func (a *PostgresAdapter) GetUser(ctx context.Context, userID int64) (User, error) {
 	user, err := a.queries.GetUser(ctx, userID)
 	if err != nil {
-		return User{}, err
+		return User{}, fmt.Errorf("failed to get user: %w", err)
 	}
 	return User{
 		UserID:      user.UserID,
@@ -47,7 +48,7 @@ func (a *PostgresAdapter) GetUser(ctx context.Context, userID int64) (User, erro
 func (a *PostgresAdapter) GetUserByEmail(ctx context.Context, email string) (User, error) {
 	user, err := a.queries.GetUserByEmail(ctx, email)
 	if err != nil {
-		return User{}, err
+		return User{}, fmt.Errorf("failed to get user by email: %w", err)
 	}
 	return User{
 		UserID:      user.UserID,
@@ -85,7 +86,7 @@ func (a *PostgresAdapter) UpdateRole(ctx context.Context, roleID int64, name str
 func (a *PostgresAdapter) GetRoles(ctx context.Context) ([]Role, error) {
 	roles, err := a.queries.GetRoles(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get roles: %w", err)
 	}
 	result := make([]Role, len(roles))
 	for i, r := range roles {
@@ -102,7 +103,7 @@ func (a *PostgresAdapter) CreatePermission(ctx context.Context, name string) (in
 
 	id, err := a.queries.CreatePermission(ctx, name)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to create permission: %w", err)
 	}
 	return id, nil
 }
@@ -110,7 +111,7 @@ func (a *PostgresAdapter) CreatePermission(ctx context.Context, name string) (in
 func (a *PostgresAdapter) GetPermissions(ctx context.Context) ([]Permission, error) {
 	perms, err := a.queries.GetPermissions(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get permissions: %w", err)
 	}
 	result := make([]Permission, len(perms))
 	for i, p := range perms {
@@ -139,7 +140,7 @@ func (a *PostgresAdapter) RemovePermissionFromRole(ctx context.Context, roleID, 
 func (a *PostgresAdapter) GetRolePermissions(ctx context.Context, roleID int64) ([]Permission, error) {
 	perms, err := a.queries.GetRolePermissions(ctx, roleID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get role permissions: %w", err)
 	}
 	result := make([]Permission, 0, len(perms))
 	for _, p := range perms {
@@ -167,7 +168,7 @@ func (a *PostgresAdapter) RemoveAllRolesFromUser(ctx context.Context, userID int
 func (a *PostgresAdapter) GetUserRoles(ctx context.Context, userID int64) ([]Role, error) {
 	roles, err := a.queries.GetUserRoles(ctx, userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get user roles: %w", err)
 	}
 	result := make([]Role, 0, len(roles))
 	for _, r := range roles {
@@ -184,7 +185,7 @@ func (a *PostgresAdapter) GetUserRoles(ctx context.Context, userID int64) ([]Rol
 func (a *PostgresAdapter) GetUserPermissions(ctx context.Context, userID int64) ([]Permission, error) {
 	perms, err := a.queries.GetUserPermissions(ctx, userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get user permissions: %w", err)
 	}
 	result := make([]Permission, 0, len(perms))
 	for _, p := range perms {
@@ -201,7 +202,7 @@ func (a *PostgresAdapter) GetUserPermissions(ctx context.Context, userID int64) 
 func (a *PostgresAdapter) ProjectUser(ctx context.Context, userID int64, userState ubstate.UserState) error {
 	tx, err := a.db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback()
 	queries := dbpostgres.New(tx)
@@ -211,7 +212,7 @@ func (a *PostgresAdapter) ProjectUser(ctx context.Context, userID int64, userSta
 	if err != nil {
 		if err != sql.ErrNoRows {
 			slog.Error("Failed to get user", "error", err)
-			return err
+			return fmt.Errorf("failed to get user: %w", err)
 		}
 
 		addUserParams := dbpostgres.AddUserParams{
@@ -225,7 +226,7 @@ func (a *PostgresAdapter) ProjectUser(ctx context.Context, userID int64, userSta
 		err = queries.AddUser(ctx, addUserParams)
 		if err != nil {
 			slog.Error("Failed to project user", "error", err)
-			return err
+			return fmt.Errorf("failed to add user: %w", err)
 		}
 	} else {
 		// If the user exists, update it
@@ -239,14 +240,14 @@ func (a *PostgresAdapter) ProjectUser(ctx context.Context, userID int64, userSta
 		err = queries.UpdateUser(ctx, updateUserParams)
 		if err != nil {
 			slog.Error("Failed to project user", "error", err)
-			return err
+			return fmt.Errorf("failed to update user: %w", err)
 		}
 	}
 
 	err = a.projectUserRoles(ctx, queries, userID, userState.Roles)
 	if err != nil {
 		slog.Error("Failed to project user roles", "error", err)
-		return err
+		return fmt.Errorf("failed to project user roles: %w", err)
 	}
 
 	tx.Commit()
@@ -259,7 +260,7 @@ func (a *PostgresAdapter) projectUserRoles(ctx context.Context, queries *dbpostg
 	err := queries.RemoveAllRolesFromUser(ctx, userID)
 	if err != nil {
 		slog.Error("Failed to remove all roles from user", "error", err)
-		return err
+		return fmt.Errorf("failed to remove all roles from user: %w", err)
 	}
 
 	// Add roles
@@ -271,7 +272,7 @@ func (a *PostgresAdapter) projectUserRoles(ctx context.Context, queries *dbpostg
 		err = queries.AddRoleToUser(ctx, addRoleToUserParams)
 		if err != nil {
 			slog.Error("Failed to add role to user", "error", err)
-			return err
+			return fmt.Errorf("failed to add role to user: %w", err)
 		}
 	}
 	return nil

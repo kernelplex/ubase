@@ -1,6 +1,7 @@
 package ubase
 
 import (
+	"fmt"
 	"log/slog"
 	"slices"
 	"time"
@@ -63,14 +64,14 @@ func (a *RoleAggregate) GetSnapshotState() (*string, error) {
 
 func (a *RoleAggregate) ApplyEventState(eventState evercore.EventState, eventTime time.Time, reference string) error {
 
-	// Print the actual event go type
-
 	switch eventState := eventState.(type) {
 	case *ubevents.RoleCreatedEvent:
 		a.State.Name = eventState.Name
+	case ubevents.RolePermissionAddedEvent:
+		a.State.Premissions = append(a.State.Premissions, eventState.PermissionId)
 	case *ubevents.RolePermissionAddedEvent:
 		a.State.Premissions = append(a.State.Premissions, eventState.PermissionId)
-	case *ubevents.RolePermissionRemovedEvent:
+	case ubevents.RolePermissionRemovedEvent:
 		for i, permissionId := range a.State.Premissions {
 			if permissionId == eventState.PermissionId {
 				a.State.Premissions = slices.Delete(a.State.Premissions, i, i+1)
@@ -85,5 +86,5 @@ func (a *RoleAggregate) ApplyEventState(eventState evercore.EventState, eventTim
 
 func (a *RoleAggregate) ApplySnapshot(snapshot *evercore.Snapshot) error {
 	err := evercore.DeserializeFromJson(snapshot.State, &a.State)
-	return err
+	return fmt.Errorf("failed to apply snapshot: %w", err)
 }

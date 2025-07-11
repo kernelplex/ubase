@@ -3,6 +3,7 @@ package integration_tests
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log/slog"
 	"testing"
 
@@ -131,8 +132,8 @@ func (s *StorageEngineTestSuite) CreateUser_WithDuplicateEmailFails(t *testing.T
 		return
 	}
 
-	serr, ok := err.(*evercore.StorageEngineError)
-	if !ok {
+	var serr *evercore.StorageEngineError
+	if !errors.As(err, &serr) {
 		t.Errorf("Expected storage engine error, got: %v", err)
 		return
 	}

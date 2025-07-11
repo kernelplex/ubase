@@ -43,7 +43,7 @@ func (app *App) SetupFromEnv() error {
 	config := Config{}
 	err := ubenv.ConfigFromEnv(&config)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load config from environment: %w", err)
 	}
 	return app.Setup(config)
 }
@@ -75,7 +75,7 @@ func (app *App) Setup(config Config) error {
 	// ====================================================st==================
 	eventStore, err := evercoreuri.Connect(config.EventStoreConnection)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to connect to event store: %w", err)
 	}
 
 	app.store = eventStore
@@ -85,11 +85,11 @@ func (app *App) Setup(config Config) error {
 	// ======================================================================
 	dburl, err := dburl.Parse(config.DatabaseConnection)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse database connection URL: %w", err)
 	}
 	app.db, err = sql.Open(dburl.Driver, dburl.DSN)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open database connection: %w", err)
 	}
 
 	var databaseType ubconst.DatabaseType
@@ -118,7 +118,7 @@ func NewAppFromEnv() (*App, error) {
 	config := Config{}
 	err := ubenv.ConfigFromEnv(&config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load config from environment: %w", err)
 	}
 	return NewApp(config)
 }

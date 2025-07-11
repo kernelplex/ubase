@@ -3,6 +3,7 @@ package ubdata
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log/slog"
 
 	"github.com/kernelplex/ubase/lib/dbsqlite"
@@ -34,7 +35,7 @@ func (a *SQLiteAdapter) AddUser(ctx context.Context, userID int64, firstName, la
 func (a *SQLiteAdapter) GetUser(ctx context.Context, userID int64) (User, error) {
 	user, err := a.queries.GetUser(ctx, userID)
 	if err != nil {
-		return User{}, err
+		return User{}, fmt.Errorf("failed to get user: %w", err)
 	}
 	return User{
 		UserID:      user.UserID,
@@ -48,7 +49,7 @@ func (a *SQLiteAdapter) GetUser(ctx context.Context, userID int64) (User, error)
 func (a *SQLiteAdapter) GetUserByEmail(ctx context.Context, email string) (User, error) {
 	user, err := a.queries.GetUserByEmail(ctx, email)
 	if err != nil {
-		return User{}, err
+		return User{}, fmt.Errorf("failed to get user by email: %w", err)
 	}
 	return User{
 		UserID:      user.UserID,
@@ -86,7 +87,7 @@ func (a *SQLiteAdapter) UpdateRole(ctx context.Context, roleID int64, name strin
 func (a *SQLiteAdapter) GetRoles(ctx context.Context) ([]Role, error) {
 	roles, err := a.queries.GetRoles(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get roles: %w", err)
 	}
 	result := make([]Role, len(roles))
 	for i, r := range roles {
@@ -101,7 +102,7 @@ func (a *SQLiteAdapter) GetRoles(ctx context.Context) ([]Role, error) {
 func (a *SQLiteAdapter) CreatePermission(ctx context.Context, name string) (int64, error) {
 	id, err := a.queries.CreatePermission(ctx, name)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to create permission: %w", err)
 	}
 	return id, nil
 }
@@ -109,7 +110,7 @@ func (a *SQLiteAdapter) CreatePermission(ctx context.Context, name string) (int6
 func (a *SQLiteAdapter) GetPermissions(ctx context.Context) ([]Permission, error) {
 	perms, err := a.queries.GetPermissions(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get permissions: %w", err)
 	}
 	result := make([]Permission, len(perms))
 	for i, p := range perms {
@@ -138,7 +139,7 @@ func (a *SQLiteAdapter) RemovePermissionFromRole(ctx context.Context, roleID, pe
 func (a *SQLiteAdapter) GetRolePermissions(ctx context.Context, roleID int64) ([]Permission, error) {
 	perms, err := a.queries.GetRolePermissions(ctx, roleID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get role permissions: %w", err)
 	}
 	result := make([]Permission, 0, len(perms))
 	for _, p := range perms {
@@ -166,7 +167,7 @@ func (a *SQLiteAdapter) RemoveAllRolesFromUser(ctx context.Context, userID int64
 func (a *SQLiteAdapter) GetUserRoles(ctx context.Context, userID int64) ([]Role, error) {
 	roles, err := a.queries.GetUserRoles(ctx, userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get user roles: %w", err)
 	}
 	result := make([]Role, 0, len(roles))
 	for _, r := range roles {
@@ -183,7 +184,7 @@ func (a *SQLiteAdapter) GetUserRoles(ctx context.Context, userID int64) ([]Role,
 func (a *SQLiteAdapter) GetUserPermissions(ctx context.Context, userID int64) ([]Permission, error) {
 	perms, err := a.queries.GetUserPermissions(ctx, userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get user permissions: %w", err)
 	}
 	result := make([]Permission, 0, len(perms))
 	for _, p := range perms {
@@ -200,7 +201,7 @@ func (a *SQLiteAdapter) GetUserPermissions(ctx context.Context, userID int64) ([
 func (a *SQLiteAdapter) ProjectUser(ctx context.Context, userID int64, userState ubstate.UserState) error {
 	tx, err := a.db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback()
 	queries := dbsqlite.New(tx)
@@ -210,7 +211,7 @@ func (a *SQLiteAdapter) ProjectUser(ctx context.Context, userID int64, userState
 	if err != nil {
 		if err != sql.ErrNoRows {
 			slog.Error("Failed to get user", "error", err)
-			return err
+			return fmt.Errorf("failed to get user: %w", err)
 		}
 
 		addUserParams := dbsqlite.AddUserParams{
@@ -224,7 +225,7 @@ func (a *SQLiteAdapter) ProjectUser(ctx context.Context, userID int64, userState
 		err = queries.AddUser(ctx, addUserParams)
 		if err != nil {
 			slog.Error("Failed to project user", "error", err)
-			return err
+			return fmt.Errorf("failed to add user: %w", err)
 		}
 	} else {
 		// If the user exists, update it
@@ -238,14 +239,14 @@ func (a *SQLiteAdapter) ProjectUser(ctx context.Context, userID int64, userState
 		err = queries.UpdateUser(ctx, updateUserParams)
 		if err != nil {
 			slog.Error("Failed to project user", "error", err)
-			return err
+			return fmt.Errorf("failed to update user: %w", err)
 		}
 	}
 
 	err = a.projectUserRoles(ctx, queries, userID, userState.Roles)
 	if err != nil {
 		slog.Error("Failed to project user roles", "error", err)
-		return err
+		return fmt.Errorf("failed to project user roles: %w", err)
 	}
 
 	tx.Commit()
@@ -258,7 +259,7 @@ func (a *SQLiteAdapter) projectUserRoles(ctx context.Context, queries *dbsqlite.
 	err := queries.RemoveAllRolesFromUser(ctx, userID)
 	if err != nil {
 		slog.Error("Failed to remove all roles from user", "error", err)
-		return err
+		return fmt.Errorf("failed to remove all roles from user: %w", err)
 	}
 
 	// Add roles
@@ -270,7 +271,7 @@ func (a *SQLiteAdapter) projectUserRoles(ctx context.Context, queries *dbsqlite.
 		err = queries.AddRoleToUser(ctx, addRoleToUserParams)
 		if err != nil {
 			slog.Error("Failed to add role to user", "error", err)
-			return err
+			return fmt.Errorf("failed to add role to user: %w", err)
 		}
 	}
 	return nil

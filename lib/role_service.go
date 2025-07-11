@@ -55,7 +55,7 @@ func (s RoleServiceImpl) AddRole(ctx context.Context, name string, agent string)
 			return aggregate.Id, nil
 		})
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to execute in context: %w", err)
 	}
 
 	return aggregateId, nil
@@ -157,7 +157,7 @@ func (s RoleServiceImpl) GetRoleList(ctx context.Context) (map[string]int64, err
 
 	roles, err := s.dbadapter.GetRoles(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get roles from database: %w", err)
 	}
 	roleMap := make(map[string]int64)
 	for _, role := range roles {

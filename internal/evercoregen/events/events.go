@@ -2,25 +2,43 @@
 package evercoregen_events
 
 const (
-	UserCreatedEventType = "UserCreatedEvent"
+	OrganizationAddedEventType = "OrganizationAddedEvent"
+	OrganizationUpdatedEventType = "OrganizationUpdatedEvent"
+	RoleCreatedEventType = "RoleCreatedEvent"
+	RoleUpdatedEventType = "RoleUpdatedEvent"
+	UserAddedEventType = "UserAddedEvent"
+	UserUpdatedEventType = "UserUpdatedEvent"
+	RoleDeletedEventType = "RoleDeletedEvent"
+	RoleUndeletedEventType = "RoleUndeletedEvent"
+	UserDisabledEventType = "UserDisabledEvent"
+	UserEnabledEventType = "UserEnabledEvent"
 	UserLoginFailedEventType = "UserLoginFailedEvent"
 	UserLoginSucceededEventType = "UserLoginSucceededEvent"
-	UserRolesUpdatedEventType = "UserRolesUpdatedEvent"
-	UserUpdatedEventType = "UserUpdatedEvent"
-	RoleCreatedEventType = "RoleCreatedEvent"
-	RolePermissionAddedEventType = "RolePermissionAddedEvent"
-	RolePermissionRemovedEventType = "RolePermissionRemovedEvent"
+	UserTwoFactorAuthenticatedEventType = "UserTwoFactorAuthenticatedEvent"
+	UserTwoFactorDisabledEventType = "UserTwoFactorDisabledEvent"
+	UserTwoFactorEnabledEventType = "UserTwoFactorEnabledEvent"
+	UserVerificationTokenGeneratedEventType = "UserVerificationTokenGeneratedEvent"
+	UserVerificationTokenVerifiedEventType = "UserVerificationTokenVerifiedEvent"
 )
 
 var List = []string{
-	UserCreatedEventType,
+	OrganizationAddedEventType,
+	OrganizationUpdatedEventType,
+	RoleCreatedEventType,
+	RoleUpdatedEventType,
+	UserAddedEventType,
+	UserUpdatedEventType,
+	RoleDeletedEventType,
+	RoleUndeletedEventType,
+	UserDisabledEventType,
+	UserEnabledEventType,
 	UserLoginFailedEventType,
 	UserLoginSucceededEventType,
-	UserRolesUpdatedEventType,
-	UserUpdatedEventType,
-	RoleCreatedEventType,
-	RolePermissionAddedEventType,
-	RolePermissionRemovedEventType,
+	UserTwoFactorAuthenticatedEventType,
+	UserTwoFactorDisabledEventType,
+	UserTwoFactorEnabledEventType,
+	UserVerificationTokenGeneratedEventType,
+	UserVerificationTokenVerifiedEventType,
 }
 
 

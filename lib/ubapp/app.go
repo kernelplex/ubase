@@ -1,5 +1,6 @@
 package ubapp
 
+/*
 import (
 	"database/sql"
 	"fmt"
@@ -12,7 +13,7 @@ import (
 	"github.com/kernelplex/ubase/lib/ubdata"
 	"github.com/kernelplex/ubase/lib/ubenv"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
-	"github.com/kernelplex/ubase/sql/postgres"
+	// "github.com/kernelplex/ubase/sql/postgres"
 	"github.com/kernelplex/ubase/sql/sqlite"
 	"github.com/xo/dburl"
 )
@@ -141,3 +142,4 @@ func (app *App) Shutdown() {
 		slog.Error("Error closing event store", "error", err)
 	}
 }
+*/

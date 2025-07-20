@@ -2,12 +2,14 @@
 package evercoregen_aggregates
 
 const (
-	RoleAggregateType = "RoleAggregate"
+	OrganizationAggregateType = "OrganizationAggregate"
+	OrganizationStateType = "OrganizationState"
 	UserAggregateType = "UserAggregate"
 )
 
 var List = []string{
-	RoleAggregateType,
+	OrganizationAggregateType,
+	OrganizationStateType,
 	UserAggregateType,
 }
 

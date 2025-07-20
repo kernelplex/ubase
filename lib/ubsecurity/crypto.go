@@ -9,9 +9,8 @@ import (
 	"io"
 )
 
-// Replace all bare error returns with a fmt.Errorf call. AI!
 
-type EncryptionServiceX struct {
+type EncryptionServiceImpl struct {
 	key []byte
 }
 
@@ -27,13 +26,13 @@ func CreateEncryptionService(key []byte) EncryptionService {
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
 		return nil
 	}
-	service := EncryptionServiceX{
+	service := EncryptionServiceImpl{
 		key: key,
 	}
 	return service
 }
 
-func (s EncryptionServiceX) Encrypt(data []byte) ([]byte, error) {
+func (s EncryptionServiceImpl) Encrypt(data []byte) ([]byte, error) {
 	if s.key == nil {
 		return nil, fmt.Errorf("invalid encryption service: nil key")
 	}
@@ -44,7 +43,7 @@ func (s EncryptionServiceX) Encrypt(data []byte) ([]byte, error) {
 	return encrypted, nil
 }
 
-func (s EncryptionServiceX) Decrypt(data []byte) ([]byte, error) {
+func (s EncryptionServiceImpl) Decrypt(data []byte) ([]byte, error) {
 	decrypted, err := Decrypt(s.key, data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt data: %w", err)
@@ -52,7 +51,7 @@ func (s EncryptionServiceX) Decrypt(data []byte) ([]byte, error) {
 	return decrypted, nil
 }
 
-func (s EncryptionServiceX) Encrypt64(data string) (string, error) {
+func (s EncryptionServiceImpl) Encrypt64(data string) (string, error) {
 	encrypted, err := Encrypt64(s.key, []byte(data))
 	if err != nil {
 		return "", fmt.Errorf("failed to encrypt64 data: %w", err)
@@ -60,7 +59,7 @@ func (s EncryptionServiceX) Encrypt64(data string) (string, error) {
 	return encrypted, nil
 }
 
-func (s EncryptionServiceX) Decrypt64(data string) ([]byte, error) {
+func (s EncryptionServiceImpl) Decrypt64(data string) ([]byte, error) {
 	decrypted, err := Decrypt64(s.key, data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt64 data: %w", err)

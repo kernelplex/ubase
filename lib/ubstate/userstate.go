@@ -5,6 +5,8 @@ type UserState struct {
 	PasswordHash          string  `json:"passwordHash"`
 	FirstName             string  `json:"firstName"`
 	LastName              string  `json:"lastName"`
+	VerificationToken     *string `json:"verificationToken,omitempty"`
+	Verified              bool    `json:"verified"`
 	DisplayName           string  `json:"displayName"`
 	ResetToken            *string `json:"resetToken,omitempty"`
 	LastLogin             int64   `json:"lastLogin,omitempty"`

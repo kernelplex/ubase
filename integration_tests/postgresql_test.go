@@ -3,17 +3,16 @@ package integration_tests
 import (
 	"database/sql"
 	"testing"
-	"time"
+	// "time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	evercore "github.com/kernelplex/evercore/base"
 	pg "github.com/kernelplex/evercore/evercorepostgres"
-	"github.com/testcontainers/testcontainers-go"
+	//"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
+	// "github.com/testcontainers/testcontainers-go/wait"
 
-	"github.com/kernelplex/ubase/lib/ubconst"
-	"github.com/kernelplex/ubase/sql/postgres"
+	"github.com/kernelplex/ubase/lib/ubdata"
+	ubase_postgres "github.com/kernelplex/ubase/sql/postgres"
 )
 
 func TestPostgresqlStorageEngine(t *testing.T) {
@@ -22,10 +21,9 @@ func TestPostgresqlStorageEngine(t *testing.T) {
 	postgresContainer, err := postgres.Run(
 		ctx,
 		"postgres:16-alpine",
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).WithStartupTimeout(5*time.Second)),
+		postgres.BasicWaitStrategies(),
 	)
+
 	if err != nil {
 		t.Fatalf("failed to start postgres container: %s", err)
 		return
@@ -58,13 +56,21 @@ func TestPostgresqlStorageEngine(t *testing.T) {
 	pg.MigrateUp(db)
 	ubase_postgres.MigrateUp(db)
 
-	storage := pg.NewPostgresStorageEngine(db)
-	eventStore := evercore.NewEventStore(storage)
-
-	// Create a new test suite
-	testSuite := NewStorageEngineTestSuite(eventStore, db, ubconst.DatabaseTypePostgres)
+	adapter := ubdata.NewPostgresAdapter(db)
+	testSuite := NewAdapterExercises(db, adapter)
 
 	// Run the tests
 	testSuite.RunTests(t)
+
+	/*
+		storage := pg.NewPostgresStorageEngine(db)
+		eventStore := evercore.NewEventStore(storage)
+
+		// Create a new test suite
+		testSuite := NewStorageEngineTestSuite(eventStore, db, ubconst.DatabaseTypePostgres)
+
+		// Run the tests
+		testSuite.RunTests(t)
+	*/
 
 }

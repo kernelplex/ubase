@@ -2,6 +2,7 @@ package integration_tests
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/kernelplex/ubase/lib/ubmanage"
@@ -49,6 +50,93 @@ func (s *ManagmentServiceTestSuite) AddRole(t *testing.T) {
 	foundRoles[0].Name = aRole.Name
 	foundRoles[0].SystemName = aRole.SystemName
 
+}
+
+func (s *ManagmentServiceTestSuite) AddPermissionToRole(t *testing.T) {
+
+	// Add permission to role
+	permission := "test.permission"
+	res, err := s.managementService.RolePermissionAdd(context.Background(), ubmanage.RolePermissionAddCommand{
+		Id:         s.createdRoleId,
+		Permission: permission,
+	}, "test-runner")
+
+	if err != nil {
+		t.Fatalf("AddPermissionToRole failed to add permission to role: %v", err)
+	}
+	if res.Status != ubstatus.Success {
+		t.Fatalf("AddPermissionToRole status is not success: %v", res.Status)
+	}
+
+	response, err := s.managementService.RoleGetById(context.Background(), s.createdRoleId)
+
+	if err != nil {
+		t.Fatalf("AddPermissionToRole failed to get role by ID: %v", err)
+	}
+
+	role := response.Data.State
+
+	// Ensure the premission was added to role
+	found := slices.Contains(role.Permissions, permission)
+	if !found {
+		t.Fatalf("AddPermissionToRole failed to add permission to role: %v", err)
+	}
+
+	perms, err := s.dbadapter.GetRolePermissions(context.Background(), s.createdRoleId)
+	if err != nil {
+		t.Fatalf("AddPermissionToRole failed to get role permissions: %v", err)
+	}
+
+	found = slices.Contains(perms, permission)
+	if !found {
+		t.Fatalf("AddPermissionToRole failed to add permission to role: %v", err)
+	}
+}
+
+func (s *ManagmentServiceTestSuite) RemovePermissionFromRole(t *testing.T) {
+	// First ensure test role exists with a permission
+	permission := "test.permission_to_remove"
+	_, err := s.managementService.RolePermissionAdd(context.Background(), ubmanage.RolePermissionAddCommand{
+		Id:         s.createdRoleId,
+		Permission: permission,
+	}, "test-runner")
+	if err != nil {
+		t.Fatalf("RemovePermissionFromRole failed to add permission: %v", err)
+	}
+
+	// Remove the permission
+	res, err := s.managementService.RolePermissionRemove(context.Background(), ubmanage.RolePermissionRemoveCommand{
+		Id:         s.createdRoleId,
+		Permission: permission,
+	}, "test-runner")
+
+	if err != nil {
+		t.Fatalf("RemovePermissionFromRole failed to remove permission: %v", err)
+	}
+	if res.Status != ubstatus.Success {
+		t.Fatalf("RemovePermissionFromRole status is not success: %v", res.Status)
+	}
+
+	// Verify in aggregate
+	response, err := s.managementService.RoleGetById(context.Background(), s.createdRoleId)
+	if err != nil {
+		t.Fatalf("RemovePermissionFromRole failed to get role by ID: %v", err)
+	}
+
+	role := response.Data.State
+	if slices.Contains(role.Permissions, permission) {
+		t.Fatalf("RemovePermissionFromRole permission still exists in aggregate")
+	}
+
+	// Verify in database
+	perms, err := s.dbadapter.GetRolePermissions(context.Background(), s.createdRoleId)
+	if err != nil {
+		t.Fatalf("RemovePermissionFromRole failed to get role permissions: %v", err)
+	}
+
+	if slices.Contains(perms, permission) {
+		t.Fatalf("RemovePermissionFromRole permission still exists in database")
+	}
 }
 
 func (s *ManagmentServiceTestSuite) UpdateRole(t *testing.T) {

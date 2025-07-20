@@ -223,44 +223,18 @@ func (s *AdapterExercises) TestAddRole(t *testing.T) {
 	}
 }
 
-func (s *AdapterExercises) TestAddPermission(t *testing.T) {
-	ctx := t.Context()
-	permID := int64(1)
-
-	err := s.adapter.AddPermission(ctx, permID, PermCanCreateRecord)
-	if err != nil {
-		t.Fatalf("AddPermission failed: %v", err)
-	}
-}
-
-func (s *AdapterExercises) TestGetPermissions(t *testing.T) {
-	ctx := t.Context()
-	permissions, err := s.adapter.GetPermissions(ctx)
-	if err != nil {
-		t.Fatalf("GetPermissions failed: %v", err)
-	}
-	if len(permissions) != 0 {
-		t.Fatalf("Expected 0 permissions, got %d", len(permissions))
-	}
-}
-
 func (s *AdapterExercises) TestAddPermissionToRole(t *testing.T) {
 	ctx := t.Context()
 	roleID := int64(1)
-	permID := int64(1)
 
 	// First create role and permission
 	err := s.adapter.AddRole(ctx, roleID, sampleOrganization.OrganizationID, "Admin", "admin")
 	if err != nil {
 		t.Fatalf("Setup: AddRole failed: %v", err)
 	}
-	err = s.adapter.AddPermission(ctx, permID, PermCanCreateRecord)
-	if err != nil {
-		t.Fatalf("Setup: AddPermission failed: %v", err)
-	}
 
 	// Test adding permission to role
-	err = s.adapter.AddPermissionToRole(ctx, roleID, permID)
+	err = s.adapter.AddPermissionToRole(ctx, roleID, "user:create")
 	if err != nil {
 		t.Fatalf("AddPermissionToRole failed: %v", err)
 	}
@@ -269,16 +243,15 @@ func (s *AdapterExercises) TestAddPermissionToRole(t *testing.T) {
 func (s *AdapterExercises) TestRemovePermissionFromRole(t *testing.T) {
 	ctx := t.Context()
 	roleID := int64(1)
-	permID := int64(1)
 
 	// Setup - add permission to role first
-	err := s.adapter.AddPermissionToRole(ctx, roleID, permID)
+	err := s.adapter.AddPermissionToRole(ctx, roleID, "user:delete")
 	if err != nil {
 		t.Fatalf("Setup: AddPermissionToRole failed: %v", err)
 	}
 
 	// Test removal
-	err = s.adapter.RemovePermissionFromRole(ctx, roleID, permID)
+	err = s.adapter.RemovePermissionFromRole(ctx, roleID, "user:delete")
 	if err != nil {
 		t.Fatalf("RemovePermissionFromRole failed: %v", err)
 	}
@@ -350,8 +323,6 @@ func (s *AdapterExercises) TestRemoveAllRolesFromUser(t *testing.T) {
 func (s *AdapterExercises) RunAllTests(t *testing.T) {
 	s.RunTests(t)
 	t.Run("TestAddRole", s.TestAddRole)
-	t.Run("TestAddPermission", s.TestAddPermission)
-	t.Run("TestGetPermissions", s.TestGetPermissions)
 	t.Run("TestAddPermissionToRole", s.TestAddPermissionToRole)
 	t.Run("TestRemovePermissionFromRole", s.TestRemovePermissionFromRole)
 	t.Run("TestAddUserToRole", s.TestAddUserToRole)

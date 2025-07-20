@@ -85,7 +85,12 @@ func TestSqliteDataAdapter(t *testing.T) {
 		t.Fatalf("Failed to open database: %v", err)
 	}
 	defer db.Close()
-	ubase_sqlite.MigrateUp(db)
+
+	err = ubase_sqlite.MigrateUp(db)
+	if err != nil {
+		t.Fatalf("Failed to migrate database: %v", err)
+		return
+	}
 
 	fmt.Printf("Current working directory: %s\n", cwd)
 

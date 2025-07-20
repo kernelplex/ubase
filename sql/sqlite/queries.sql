@@ -24,19 +24,6 @@ SELECT id, name, system_name FROM organizations;
 
 -- ---------------------------------------------------------------------------
 --
--- Permission Management
---
--- ---------------------------------------------------------------------------
-
--- name: AddPermission :exec
-INSERT INTO permissions (id, system_name) 
-VALUES (sqlc.arg(id), sqlc.arg(system_name));
-
--- name: GetPermissions :many
-SELECT id, system_name FROM permissions;
-
--- ---------------------------------------------------------------------------
---
 -- Role Management
 --
 -- ---------------------------------------------------------------------------
@@ -76,16 +63,15 @@ LEFT JOIN roles r ON r.id = ur.role_id
 WHERE ur.user_id = sqlc.arg(user_id) AND r.organization_id = sqlc.arg(organization_id);
 
 -- name: AddPermissionToRole :exec
-INSERT INTO role_permissions (role_id, permission_id) 
-VALUES (sqlc.arg(role_id), sqlc.arg(permission_id));
+INSERT INTO role_permissions (role_id, permission) 
+VALUES (sqlc.arg(role_id), sqlc.arg(permission));
 
 -- name: RemovePermissionFromRole :exec
 DELETE FROM role_permissions 
-WHERE role_id = sqlc.arg(role_id) AND permission_id = sqlc.arg(permission_id);
+WHERE role_id = sqlc.arg(role_id) AND permission = sqlc.arg(permission);
 
 -- name: GetRolePermissions :many
-SELECT p.id, p.system_name FROM role_permissions rp
-LEFT JOIN permissions p ON p.id = rp.permission_id
+SELECT rp.permission FROM role_permissions rp
 WHERE rp.role_id = sqlc.arg(role_id);
 
 -- name: GetUserOrganizations :many
@@ -96,9 +82,8 @@ LEFT JOIN organizations o ON o.id = r.organization_id
 WHERE ur.user_id = sqlc.arg(user_id);
 
 -- name: GetUserOrganizationPermissions :many
-SELECT p.id, p.system_name FROM user_roles ur
+SELECT rp.permission FROM user_roles ur
 LEFT JOIN role_permissions rp ON rp.role_id = ur.role_id
-LEFT JOIN permissions p ON p.id = rp.permission_id
 WHERE ur.user_id = sqlc.arg(user_id) AND ur.organization_id = sqlc.arg(organization_id);
 
 -- ---------------------------------------------------------------------------

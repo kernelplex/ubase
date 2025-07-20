@@ -37,39 +37,18 @@ func (q *Queries) AddOrganization(ctx context.Context, arg AddOrganizationParams
 	return err
 }
 
-const addPermission = `-- name: AddPermission :exec
-
-INSERT INTO permissions (id, system_name) 
-VALUES ($1, $2)
-`
-
-type AddPermissionParams struct {
-	ID         int64
-	SystemName string
-}
-
-// ---------------------------------------------------------------------------
-//
-// # Permission Management
-//
-// ---------------------------------------------------------------------------
-func (q *Queries) AddPermission(ctx context.Context, arg AddPermissionParams) error {
-	_, err := q.db.ExecContext(ctx, addPermission, arg.ID, arg.SystemName)
-	return err
-}
-
 const addPermissionToRole = `-- name: AddPermissionToRole :exec
-INSERT INTO role_permissions (role_id, permission_id) 
+INSERT INTO role_permissions (role_id, permission) 
 VALUES ($1, $2)
 `
 
 type AddPermissionToRoleParams struct {
-	RoleID       int64
-	PermissionID int64
+	RoleID     int64
+	Permission string
 }
 
 func (q *Queries) AddPermissionToRole(ctx context.Context, arg AddPermissionToRoleParams) error {
-	_, err := q.db.ExecContext(ctx, addPermissionToRole, arg.RoleID, arg.PermissionID)
+	_, err := q.db.ExecContext(ctx, addPermissionToRole, arg.RoleID, arg.Permission)
 	return err
 }
 
@@ -269,57 +248,24 @@ func (q *Queries) GetOrganizations(ctx context.Context) ([]GetOrganizationsRow, 
 	return items, nil
 }
 
-const getPermissions = `-- name: GetPermissions :many
-SELECT id, system_name FROM permissions
-`
-
-func (q *Queries) GetPermissions(ctx context.Context) ([]Permission, error) {
-	rows, err := q.db.QueryContext(ctx, getPermissions)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Permission
-	for rows.Next() {
-		var i Permission
-		if err := rows.Scan(&i.ID, &i.SystemName); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getRolePermissions = `-- name: GetRolePermissions :many
-SELECT p.id, p.system_name FROM role_permissions rp
-LEFT JOIN permissions p ON p.id = rp.permission_id
+SELECT rp.permission FROM role_permissions rp
 WHERE rp.role_id = $1
 `
 
-type GetRolePermissionsRow struct {
-	ID         sql.NullInt64
-	SystemName sql.NullString
-}
-
-func (q *Queries) GetRolePermissions(ctx context.Context, roleID int64) ([]GetRolePermissionsRow, error) {
+func (q *Queries) GetRolePermissions(ctx context.Context, roleID int64) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, getRolePermissions, roleID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetRolePermissionsRow
+	var items []string
 	for rows.Next() {
-		var i GetRolePermissionsRow
-		if err := rows.Scan(&i.ID, &i.SystemName); err != nil {
+		var permission string
+		if err := rows.Scan(&permission); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, permission)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -365,9 +311,8 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserOrganizationPermissions = `-- name: GetUserOrganizationPermissions :many
-SELECT p.id, p.system_name FROM user_roles ur
+SELECT rp.permission FROM user_roles ur
 LEFT JOIN role_permissions rp ON rp.role_id = ur.role_id
-LEFT JOIN permissions p ON p.id = rp.permission_id
 WHERE ur.user_id = $1 AND ur.organization_id = $2
 `
 
@@ -376,24 +321,19 @@ type GetUserOrganizationPermissionsParams struct {
 	OrganizationID int64
 }
 
-type GetUserOrganizationPermissionsRow struct {
-	ID         sql.NullInt64
-	SystemName sql.NullString
-}
-
-func (q *Queries) GetUserOrganizationPermissions(ctx context.Context, arg GetUserOrganizationPermissionsParams) ([]GetUserOrganizationPermissionsRow, error) {
+func (q *Queries) GetUserOrganizationPermissions(ctx context.Context, arg GetUserOrganizationPermissionsParams) ([]sql.NullString, error) {
 	rows, err := q.db.QueryContext(ctx, getUserOrganizationPermissions, arg.UserID, arg.OrganizationID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetUserOrganizationPermissionsRow
+	var items []sql.NullString
 	for rows.Next() {
-		var i GetUserOrganizationPermissionsRow
-		if err := rows.Scan(&i.ID, &i.SystemName); err != nil {
+		var permission sql.NullString
+		if err := rows.Scan(&permission); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, permission)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -492,16 +432,16 @@ func (q *Queries) RemoveAllRolesFromUser(ctx context.Context, userID int64) erro
 
 const removePermissionFromRole = `-- name: RemovePermissionFromRole :exec
 DELETE FROM role_permissions 
-WHERE role_id = $1 AND permission_id = $2
+WHERE role_id = $1 AND permission = $2
 `
 
 type RemovePermissionFromRoleParams struct {
-	RoleID       int64
-	PermissionID int64
+	RoleID     int64
+	Permission string
 }
 
 func (q *Queries) RemovePermissionFromRole(ctx context.Context, arg RemovePermissionFromRoleParams) error {
-	_, err := q.db.ExecContext(ctx, removePermissionFromRole, arg.RoleID, arg.PermissionID)
+	_, err := q.db.ExecContext(ctx, removePermissionFromRole, arg.RoleID, arg.Permission)
 	return err
 }
 

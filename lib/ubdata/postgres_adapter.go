@@ -27,32 +27,6 @@ func (a *PostgresAdapter) DeleteRole(ctx context.Context, roleID int64) error {
 	}
 	return nil
 }
-func (a *PostgresAdapter) AddPermission(ctx context.Context, id int64, name string) error {
-	err := a.queries.AddPermission(ctx, dbpostgres.AddPermissionParams{
-		ID:         id,
-		SystemName: name,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to add permission: %w", err)
-	}
-	return nil
-}
-
-func (a *PostgresAdapter) GetPermissions(ctx context.Context) ([]Permission, error) {
-	perms, err := a.queries.GetPermissions(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get permissions: %w", err)
-	}
-
-	var result []Permission
-	for _, p := range perms {
-		result = append(result, Permission{
-			PermissionID: p.ID,
-			SystemName:   p.SystemName,
-		})
-	}
-	return result, nil
-}
 
 func (a *PostgresAdapter) AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error {
 	return a.queries.AddUser(ctx, dbpostgres.AddUserParams{
@@ -190,10 +164,10 @@ func (a *PostgresAdapter) UpdateOrganization(ctx context.Context, id int64, name
 	return nil
 }
 
-func (a *PostgresAdapter) AddPermissionToRole(ctx context.Context, roleID int64, permissionID int64) error {
+func (a *PostgresAdapter) AddPermissionToRole(ctx context.Context, roleID int64, permission string) error {
 	err := a.queries.AddPermissionToRole(ctx, dbpostgres.AddPermissionToRoleParams{
-		RoleID:       roleID,
-		PermissionID: permissionID,
+		RoleID:     roleID,
+		Permission: permission,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to add permission to role: %w", err)
@@ -201,10 +175,18 @@ func (a *PostgresAdapter) AddPermissionToRole(ctx context.Context, roleID int64,
 	return nil
 }
 
-func (a *PostgresAdapter) RemovePermissionFromRole(ctx context.Context, roleID int64, permissionID int64) error {
+func (a *PostgresAdapter) GetRolePermissions(ctx context.Context, roleID int64) ([]string, error) {
+	perms, err := a.queries.GetRolePermissions(ctx, roleID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get role permissions: %w", err)
+	}
+	return perms, nil
+}
+
+func (a *PostgresAdapter) RemovePermissionFromRole(ctx context.Context, roleID int64, permission string) error {
 	err := a.queries.RemovePermissionFromRole(ctx, dbpostgres.RemovePermissionFromRoleParams{
-		RoleID:       roleID,
-		PermissionID: permissionID,
+		RoleID:     roleID,
+		Permission: permission,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to remove permission from role: %w", err)

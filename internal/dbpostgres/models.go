@@ -11,11 +11,6 @@ type Organization struct {
 	Status     string
 }
 
-type Permission struct {
-	ID         int64
-	SystemName string
-}
-
 type ResourceType struct {
 	ID         int64
 	Name       string
@@ -30,8 +25,8 @@ type Role struct {
 }
 
 type RolePermission struct {
-	RoleID       int64
-	PermissionID int64
+	RoleID     int64
+	Permission string
 }
 
 type User struct {

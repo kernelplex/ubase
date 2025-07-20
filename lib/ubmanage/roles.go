@@ -12,12 +12,32 @@ type RoleAggregate struct {
 }
 
 func (t *RoleAggregate) ApplyEventState(eventState evercore.EventState, eventTime time.Time, reference string) error {
-	switch eventState.(type) {
+
+	switch ev := eventState.(type) {
 	case RoleDeletedEvent:
 		t.State.Deleted = true
 		return nil
 	case RoleUndeletedEvent:
 		t.State.Deleted = false
+		return nil
+
+	case RolePermissionAddedEvent:
+		if t.State.Permissions == nil {
+			t.State.Permissions = make([]string, 0, 1)
+		}
+		t.State.Permissions = append(t.State.Permissions, ev.Permission)
+		return nil
+
+	case RolePermissionRemovedEvent:
+		if t.State.Permissions == nil {
+			return nil
+		}
+		for i, p := range t.State.Permissions {
+			if p == ev.Permission {
+				t.State.Permissions = append(t.State.Permissions[:i], t.State.Permissions[i+1:]...)
+				return nil
+			}
+		}
 		return nil
 	default:
 		return t.StateAggregate.ApplyEventState(eventState, eventTime, reference)
@@ -30,6 +50,7 @@ type RoleState struct {
 	OrganizationId int64  `json:"organizationId"`
 	SystemName     string `json:"systemName"`
 	Deleted        bool   `json:"deleted"`
+	Permissions    []string
 }
 
 // ============================================================================
@@ -77,6 +98,33 @@ type RoleUndeleteCommand struct {
 	Id int64 `json:"id"`
 }
 
+type RolePermissionAddCommand struct {
+	Id         int64  `json:"id"`
+	Permission string `json:"permission"`
+}
+
+func (c RolePermissionAddCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
+	validationTracker := ubvalidation.NewValidationTracker()
+
+	validationTracker.ValidateField("Permission", c.Permission, true, 1)
+
+	return validationTracker.Valid()
+}
+
+type RolePermissionRemoveCommand struct {
+	Id         int64  `json:"id"`
+	Permission string `json:"permission"`
+}
+
+func (c RolePermissionRemoveCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
+	validationTracker := ubvalidation.NewValidationTracker()
+
+	validationTracker.ValidateIntMinValue("Id", c.Id, 1)
+	validationTracker.ValidateField("Permission", c.Permission, true, 1)
+
+	return validationTracker.Valid()
+}
+
 // ============================================================================
 // Events
 // ============================================================================
@@ -117,5 +165,31 @@ func (a RoleUndeletedEvent) GetEventType() string {
 }
 
 func (a RoleUndeletedEvent) Serialize() string {
+	return evercore.SerializeToJson(a)
+}
+
+// evercore:event
+type RolePermissionAddedEvent struct {
+	Permission string `json:"permission"`
+}
+
+func (a RolePermissionAddedEvent) GetEventType() string {
+	return "RolePermissionAddedEvent"
+}
+
+func (a RolePermissionAddedEvent) Serialize() string {
+	return evercore.SerializeToJson(a)
+}
+
+// evercore:event
+type RolePermissionRemovedEvent struct {
+	Permission string `json:"permission"`
+}
+
+func (a RolePermissionRemovedEvent) GetEventType() string {
+	return "RolePermissionRemovedEvent"
+}
+
+func (a RolePermissionRemovedEvent) Serialize() string {
 	return evercore.SerializeToJson(a)
 }

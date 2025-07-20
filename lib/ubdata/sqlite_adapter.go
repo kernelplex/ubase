@@ -27,32 +27,6 @@ func (a *SQLiteAdapter) DeleteRole(ctx context.Context, roleID int64) error {
 	}
 	return nil
 }
-func (a *SQLiteAdapter) AddPermission(ctx context.Context, id int64, name string) error {
-	err := a.queries.AddPermission(ctx, dbsqlite.AddPermissionParams{
-		ID:         id,
-		SystemName: name,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to add permission: %w", err)
-	}
-	return nil
-}
-
-func (a *SQLiteAdapter) GetPermissions(ctx context.Context) ([]Permission, error) {
-	perms, err := a.queries.GetPermissions(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get permissions: %w", err)
-	}
-
-	var result []Permission
-	for _, p := range perms {
-		result = append(result, Permission{
-			PermissionID: p.ID,
-			SystemName:   p.SystemName,
-		})
-	}
-	return result, nil
-}
 
 func (a *SQLiteAdapter) AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error {
 	return a.queries.AddUser(ctx, dbsqlite.AddUserParams{
@@ -190,10 +164,10 @@ func (a *SQLiteAdapter) UpdateOrganization(ctx context.Context, id int64, name s
 	return nil
 }
 
-func (a *SQLiteAdapter) AddPermissionToRole(ctx context.Context, roleID int64, permissionID int64) error {
+func (a *SQLiteAdapter) AddPermissionToRole(ctx context.Context, roleID int64, permission string) error {
 	err := a.queries.AddPermissionToRole(ctx, dbsqlite.AddPermissionToRoleParams{
-		RoleID:       roleID,
-		PermissionID: permissionID,
+		RoleID:     roleID,
+		Permission: permission,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to add permission to role: %w", err)
@@ -201,15 +175,23 @@ func (a *SQLiteAdapter) AddPermissionToRole(ctx context.Context, roleID int64, p
 	return nil
 }
 
-func (a *SQLiteAdapter) RemovePermissionFromRole(ctx context.Context, roleID int64, permissionID int64) error {
+func (a *SQLiteAdapter) RemovePermissionFromRole(ctx context.Context, roleID int64, permission string) error {
 	err := a.queries.RemovePermissionFromRole(ctx, dbsqlite.RemovePermissionFromRoleParams{
-		RoleID:       roleID,
-		PermissionID: permissionID,
+		RoleID:     roleID,
+		Permission: permission,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to remove permission from role: %w", err)
 	}
 	return nil
+}
+
+func (a *SQLiteAdapter) GetRolePermissions(ctx context.Context, roleID int64) ([]string, error) {
+	perms, err := a.queries.GetRolePermissions(ctx, roleID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get role permissions: %w", err)
+	}
+	return perms, nil
 }
 
 func (a *SQLiteAdapter) AddUserToRole(ctx context.Context, userID int64, roleID int64) error {

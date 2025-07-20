@@ -75,6 +75,20 @@ func EventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error) {
 			return nil, err
 		}
 		return eventState, nil
+	case events.RolePermissionAddedEventType:
+		eventState := ubmanage.RolePermissionAddedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.RolePermissionRemovedEventType:
+		eventState := ubmanage.RolePermissionRemovedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
 	case events.RoleUndeletedEventType:
 		eventState := ubmanage.RoleUndeletedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)

@@ -45,17 +45,11 @@ CREATE TABLE user_roles (
 	CONSTRAINT user_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id)
 );
 
-CREATE TABLE permissions (
-	id BIGINT PRIMARY KEY,
-	system_name VARCHAR(255) NOT NULL,
-	CONSTRAINT permissions_system_name_key UNIQUE (system_name)
-);
-
 CREATE TABLE role_permissions (
 	role_id BIGINT NOT NULL,
-	permission_id BIGINT NOT NULL,
+	permission VARCHAR(255) NOT NULL,
 	CONSTRAINT role_permissions_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id),
-	CONSTRAINT role_permissions_permission_id_fkey FOREIGN KEY (permission_id) REFERENCES permissions(id)
+	UNIQUE (role_id, permission)
 );
 
 -- Create indexes for foreign keys
@@ -63,18 +57,15 @@ CREATE INDEX idx_roles_organization_id ON roles(organization_id);
 CREATE INDEX idx_user_roles_user_id ON user_roles(user_id);
 CREATE INDEX idx_user_roles_organization_id ON user_roles(organization_id);
 CREATE INDEX idx_user_roles_role_id ON user_roles(role_id);
-CREATE INDEX idx_role_permissions_role_id ON role_permissions(role_id);
-CREATE INDEX idx_role_permissions_permission_id ON role_permissions(permission_id);
 
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
 
-DROP TABLE role_permissions;
-DROP TABLE permissions;
 DROP TABLE user_roles;
 DROP TABLE roles;
+DROP TABLE users;
 DROP TABLE resource_types;
 DROP TABLE organizations;
 

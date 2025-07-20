@@ -43,6 +43,8 @@ func (s *ManagmentServiceTestSuite) RunTests(t *testing.T) {
 	t.Run("UpdateRole", s.UpdateRole)
 	t.Run("DeleteRole", s.DeleteRole)
 	t.Run("UndeleteRole", s.UndeleteRole)
+	t.Run("AddPermissionToRole", s.AddPermissionToRole)
+	t.Run("RemovePermissionFromRole", s.RemovePermissionFromRole)
 	t.Run("AddUser", s.AddUser)
 	t.Run("GetUserByEmail", s.GetUserByEmail)
 	t.Run("UpdateUser", s.UpdateUser)

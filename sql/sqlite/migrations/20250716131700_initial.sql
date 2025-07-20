@@ -44,17 +44,11 @@ CREATE TABLE user_roles (
 	FOREIGN KEY(role_id) REFERENCES roles(id)
 );
 
-CREATE TABLE permissions (
-	id INTEGER PRIMARY KEY,
-	system_name VARCHAR(255) NOT NULL,
-	unique(system_name)
-);
-
 CREATE TABLE role_permissions (
 	role_id INTEGER NOT NULL,
-	permission_id INTEGER NOT NULL,
+	permission VARCHAR(255) NOT NULL,
 	FOREIGN KEY(role_id) REFERENCES roles(id),
-	FOREIGN KEY(permission_id) REFERENCES permissions(id)
+	UNIQUE (role_id, permission)
 );
 
 
@@ -64,8 +58,8 @@ CREATE TABLE role_permissions (
 -- +goose StatementBegin
 
 DROP TABLE role_permissions;
-DROP TABLE permissions;
 DROP TABLE user_roles;
+DROP TABLE users;
 DROP TABLE roles;
 DROP TABLE resource_types;
 DROP TABLE organizations;

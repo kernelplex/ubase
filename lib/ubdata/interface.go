@@ -30,12 +30,9 @@ type DataAdapter interface {
 	DeleteRole(ctx context.Context, roleID int64) error
 	GetOrganizationRoles(ctx context.Context, organizationID int64) ([]RoleRow, error)
 
-	// Permission operations
-	AddPermission(ctx context.Context, id int64, name string) error
-	GetPermissions(ctx context.Context) ([]Permission, error)
-
-	AddPermissionToRole(ctx context.Context, roleID int64, permissionID int64) error
-	RemovePermissionFromRole(ctx context.Context, roleID int64, permissionID int64) error
+	AddPermissionToRole(ctx context.Context, roleID int64, permission string) error
+	RemovePermissionFromRole(ctx context.Context, roleID int64, permission string) error
+	GetRolePermissions(ctx context.Context, roleID int64) ([]string, error)
 
 	// User-Role operations
 	AddUserToRole(ctx context.Context, userID int64, roleID int64) error

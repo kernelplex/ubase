@@ -38,12 +38,26 @@ type ManagementService interface {
 		command RoleUpdateCommand,
 		agent string) (Response[any], error)
 
+	RoleGetById(ctx context.Context,
+		roleId int64) (Response[RoleAggregate], error)
+
+	RoleGetBySystemName(ctx context.Context,
+		systemName string) (Response[RoleAggregate], error)
+
 	RoleDelete(ctx context.Context,
 		command RoleDeleteCommand,
 		agent string) (Response[any], error)
 
 	RoleUndelete(ctx context.Context,
 		command RoleUndeleteCommand,
+		agent string) (Response[any], error)
+
+	RolePermissionAdd(ctx context.Context,
+		command RolePermissionAddCommand,
+		agent string) (Response[any], error)
+
+	RolePermissionRemove(ctx context.Context,
+		command RolePermissionRemoveCommand,
 		agent string) (Response[any], error)
 
 	// User operations
@@ -468,6 +482,170 @@ func (m *ManagementImpl) RoleUndelete(ctx context.Context,
 
 	return Response[any]{
 		Status: ubstatus.Success,
+	}, nil
+}
+
+func (m *ManagementImpl) RolePermissionAdd(ctx context.Context,
+	command RolePermissionAddCommand,
+	agent string) (Response[any], error) {
+
+	// Validation
+	ok, issues := command.Validate()
+	if !ok {
+		return Response[any]{
+			Status:           ubstatus.ValidationError,
+			Message:          "Validation issues",
+			ValidationIssues: issues,
+		}, nil
+	}
+
+	err := m.store.WithContext(
+		ctx,
+		func(etx evercore.EventStoreContext) error {
+			aggregate := RoleAggregate{}
+			err := etx.LoadStateInto(&aggregate, command.Id)
+			if err != nil {
+				return fmt.Errorf("failed to load role: %w", err)
+			}
+
+			event := RolePermissionAddedEvent{
+				Permission: command.Permission,
+			}
+
+			err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)
+			if err != nil {
+				return fmt.Errorf("failed to apply role permission added event: %w", err)
+			}
+
+			err = m.dbadapter.AddPermissionToRole(ctx, command.Id, command.Permission)
+			if err != nil {
+				return fmt.Errorf("failed to add permission to role in database: %w", err)
+			}
+
+			return nil
+		})
+
+	if err != nil {
+		slog.Error("Error adding permission to role", "error", err)
+		return Response[any]{
+			Status:  ubstatus.UnexpectedError,
+			Message: "Error adding permission to role",
+		}, err
+	}
+
+	return Response[any]{
+		Status: ubstatus.Success,
+	}, nil
+}
+
+func (m *ManagementImpl) RolePermissionRemove(ctx context.Context,
+	command RolePermissionRemoveCommand,
+	agent string) (Response[any], error) {
+
+	// Validation
+	ok, issues := command.Validate()
+	if !ok {
+		return Response[any]{
+			Status:           ubstatus.ValidationError,
+			Message:          "Validation issues",
+			ValidationIssues: issues,
+		}, nil
+	}
+
+	err := m.store.WithContext(
+		ctx,
+		func(etx evercore.EventStoreContext) error {
+			aggregate := RoleAggregate{}
+			err := etx.LoadStateInto(&aggregate, command.Id)
+			if err != nil {
+				return fmt.Errorf("failed to load role: %w", err)
+			}
+
+			event := RolePermissionRemovedEvent{
+				Permission: command.Permission,
+			}
+
+			err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)
+			if err != nil {
+				return fmt.Errorf("failed to apply role permission removed event: %w", err)
+			}
+
+			err = m.dbadapter.RemovePermissionFromRole(ctx, command.Id, command.Permission)
+			if err != nil {
+				return fmt.Errorf("failed to remove permission from role in database: %w", err)
+			}
+
+			return nil
+		})
+
+	if err != nil {
+		slog.Error("Error removing permission from role", "error", err)
+		return Response[any]{
+			Status:  ubstatus.UnexpectedError,
+			Message: "Error removing permission from role",
+		}, err
+	}
+
+	return Response[any]{
+		Status: ubstatus.Success,
+	}, nil
+}
+
+func (m *ManagementImpl) RoleGetBySystemName(ctx context.Context,
+	systemName string) (Response[RoleAggregate], error) {
+
+	aggregate, err := evercore.InReadonlyContext(
+		ctx,
+		m.store,
+		func(etx evercore.EventStoreReadonlyContext) (*RoleAggregate, error) {
+			aggregate := RoleAggregate{}
+			err := etx.LoadStateByKeyInto(&aggregate, systemName)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load role by system name: %w", err)
+			}
+			return &aggregate, nil
+		})
+
+	if err != nil {
+		slog.Error("Error getting role by system name", "error", err)
+		return Response[RoleAggregate]{
+			Status:  ubstatus.UnexpectedError,
+			Message: "Error getting role",
+		}, err
+	}
+
+	return Response[RoleAggregate]{
+		Status: ubstatus.Success,
+		Data:   *aggregate,
+	}, nil
+}
+
+func (m *ManagementImpl) RoleGetById(ctx context.Context,
+	roleId int64) (Response[RoleAggregate], error) {
+
+	aggregate, err := evercore.InReadonlyContext(
+		ctx,
+		m.store,
+		func(etx evercore.EventStoreReadonlyContext) (*RoleAggregate, error) {
+			aggregate := RoleAggregate{}
+			err := etx.LoadStateInto(&aggregate, roleId)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load role: %w", err)
+			}
+			return &aggregate, nil
+		})
+
+	if err != nil {
+		slog.Error("Error getting role by ID", "error", err)
+		return Response[RoleAggregate]{
+			Status:  ubstatus.UnexpectedError,
+			Message: "Error getting role",
+		}, err
+	}
+
+	return Response[RoleAggregate]{
+		Status: ubstatus.Success,
+		Data:   *aggregate,
 	}, nil
 }
 

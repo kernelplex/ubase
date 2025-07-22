@@ -89,9 +89,10 @@ type ManagementService interface {
 		command UserVerifyCommand,
 		agent string) (Response[any], error)
 
-	UserGenerateTwoFactorSharedSecret(ctx context.Context,
+	UserGenerateTwoFactorSharedSecret(
+		ctx context.Context,
 		command UserGenerateTwoFactorSharedSecretCommand,
-		agent string) (Response[any], error)
+		agent string) (Response[UserGenerateTwoFactorSharedSecretResponse], error)
 
 	UserDisable(ctx context.Context,
 		command UserDisableCommand,

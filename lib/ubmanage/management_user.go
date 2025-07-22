@@ -235,7 +235,39 @@ func (m *ManagementImpl) UserAuthenticate(ctx context.Context,
 func (m *ManagementImpl) UserVerifyTwoFactorCode(ctx context.Context,
 	command UserVerifyTwoFactorLoginCommand,
 	agent string) (Response[any], error) {
-	panic("not implemented")
+
+	match, err := evercore.InContext(
+		ctx,
+		m.store,
+		func(etx evercore.EventStoreContext) (bool, error) {
+			aggregate := UserAggregate{}
+			err := etx.LoadStateInto(&aggregate, command.Id)
+			if err != nil {
+				return false, fmt.Errorf("failed to load user: %w", err)
+			}
+
+			if aggregate.State.TwoFactorSharedSecret == nil {
+				return false, fmt.Errorf("user does not have two factor enabled")
+			}
+
+			decryptedUrlBytes, err := m.encryptionService.Decrypt64(*aggregate.State.TwoFactorSharedSecret)
+			if err != nil {
+				return false, fmt.Errorf("failed to decrypt totp: %w", err)
+			}
+			decryptedUrl := string(decryptedUrlBytes)
+
+			return m.twoFactorService.ValidateTotp(command.Code, decryptedUrl)
+		})
+
+	if err != nil {
+		slog.Error("Error verifying two factor code", "error", err)
+		return Error[any]("Error verifying two factor code"), err
+	}
+	if !match {
+		slog.Error("Two factor code does not match", "code", command.Code)
+		return StatusError[any](ubstatus.NotAuthorized, "Two factor code does not match"), nil
+	}
+	return SuccessAny(), nil
 }
 
 func (m *ManagementImpl) UserGenerateVerificationToken(ctx context.Context,
@@ -276,12 +308,7 @@ func (m *ManagementImpl) UserGenerateVerificationToken(ctx context.Context,
 func (m *ManagementImpl) UserVerify(ctx context.Context,
 	command UserVerifyCommand,
 	agent string) (Response[any], error) {
-	panic("not implemented")
-}
 
-func (m *ManagementImpl) UserGenerateTwoFactorSharedSecret(ctx context.Context,
-	command UserGenerateTwoFactorSharedSecretCommand,
-	agent string) (Response[any], error) {
 	err := m.store.WithContext(
 		ctx,
 		func(etx evercore.EventStoreContext) error {
@@ -291,14 +318,50 @@ func (m *ManagementImpl) UserGenerateTwoFactorSharedSecret(ctx context.Context,
 				return fmt.Errorf("failed to load user: %w", err)
 			}
 
+			if aggregate.State.VerificationToken == nil {
+				return fmt.Errorf("user does not have verification token enabled")
+			}
+
+			if *aggregate.State.VerificationToken != command.Verification {
+				return fmt.Errorf("verification token does not match")
+			}
+
+			event := UserVerificationTokenVerifiedEvent{}
+			err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)
+			if err != nil {
+				return fmt.Errorf("failed to apply user verification token verified event: %w", err)
+			}
+
+			return nil
+		})
+	if err != nil {
+		slog.Error("Error verifying user", "error", err)
+		return Error[any]("Error verifying user"), err
+	}
+	return SuccessAny(), nil
+}
+
+func (m *ManagementImpl) UserGenerateTwoFactorSharedSecret(ctx context.Context,
+	command UserGenerateTwoFactorSharedSecretCommand,
+	agent string) (Response[UserGenerateTwoFactorSharedSecretResponse], error) {
+	sharedSecret, err := evercore.InContext(
+		ctx,
+		m.store,
+		func(etx evercore.EventStoreContext) (string, error) {
+			aggregate := UserAggregate{}
+			err := etx.LoadStateInto(&aggregate, command.Id)
+			if err != nil {
+				return "", fmt.Errorf("failed to load user: %w", err)
+			}
+
 			twoFactorUrl, err := m.twoFactorService.GenerateTotp(aggregate.State.Email)
 			if err != nil {
-				return fmt.Errorf("failed to generate totp: %w", err)
+				return "", fmt.Errorf("failed to generate totp: %w", err)
 			}
 
 			encryptedUrl, err := m.encryptionService.Encrypt64(twoFactorUrl)
 			if err != nil {
-				return fmt.Errorf("failed to encrypt totp: %w", err)
+				return "", fmt.Errorf("failed to encrypt totp: %w", err)
 			}
 
 			event := UserTwoFactorEnabledEvent{
@@ -307,17 +370,19 @@ func (m *ManagementImpl) UserGenerateTwoFactorSharedSecret(ctx context.Context,
 
 			err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)
 			if err != nil {
-				return fmt.Errorf("failed to apply user verification token generated event: %w", err)
+				return "", fmt.Errorf("failed to apply user verification token generated event: %w", err)
 			}
 
-			return nil
+			return twoFactorUrl, nil
 		})
 
 	if err != nil {
 		slog.Error("Error generating verification token", "error", err)
-		return Error[any]("Error generating verification token"), err
+		return Error[UserGenerateTwoFactorSharedSecretResponse]("Error generating verification token"), err
 	}
-	return SuccessAny(), nil
+	return Success(UserGenerateTwoFactorSharedSecretResponse{
+		SharedSecret: sharedSecret,
+	}), nil
 }
 
 func (m *ManagementImpl) UserDisable(ctx context.Context,

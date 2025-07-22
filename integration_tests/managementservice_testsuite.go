@@ -15,12 +15,14 @@ type ManagmentServiceTestSuite struct {
 	eventStore        *evercore.EventStore
 	dbadapter         ubdata.DataAdapter
 	managementService ubmanage.ManagementService
+	twoFactorService  ub2fa.TotpService
 
 	createdOrganizationId int64
 	createdUserId         int64
 	createdRoleId         int64
 
 	userPasswordHash string
+	twoFactorSecret  string
 }
 
 func NewManagementServiceTestSuite(eventStore *evercore.EventStore, dbadapter ubdata.DataAdapter) *ManagmentServiceTestSuite {
@@ -37,6 +39,7 @@ func NewManagementServiceTestSuite(eventStore *evercore.EventStore, dbadapter ub
 		eventStore:        eventStore,
 		dbadapter:         dbadapter,
 		managementService: managemntService,
+		twoFactorService:  totpService,
 	}
 }
 
@@ -56,6 +59,11 @@ func (s *ManagmentServiceTestSuite) RunTests(t *testing.T) {
 	t.Run("GetUserByEmailPostUpdate", s.GetUserByEmailPostUpdate)
 	t.Run("UpdateUserWithoutPassword", s.UpdateUserWithoutPassword)
 	t.Run("UpdateUserSamePassword", s.UpdateUserSamePassword)
+	t.Run("LoginWithCorrectPassword", s.TestLoginWithCorrectPassword)
+	t.Run("LoginWithIncorrectPassword", s.LoginWithIncorrectPassword)
+	t.Run("AddTwoFactorKey", s.AddTwoFactorKey)
+	t.Run("LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet", s.LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet)
+	t.Run("VerifyTwoFactorCode", s.VerifyTwoFactorCode)
 	t.Run("AddUserToRole", s.AddUserToRole)
 	t.Run("RemoveUserFromRole", s.RemoveUserFromRole)
 

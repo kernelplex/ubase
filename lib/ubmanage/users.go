@@ -152,8 +152,8 @@ type UserLoginCommand struct {
 }
 
 type UserVerifyTwoFactorLoginCommand struct {
-	Id   int64  `json:"id"`
-	Code string `json:"code"`
+	UserId int64  `json:"id"`
+	Code   string `json:"code"`
 }
 
 type UserDisableCommand struct {

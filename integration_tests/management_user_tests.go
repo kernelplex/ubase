@@ -261,3 +261,138 @@ func (s *ManagmentServiceTestSuite) UpdateUserSamePassword(t *testing.T) {
 		t.Fatalf("UpdateUserSamePassword password hash was not changed as expected")
 	}
 }
+
+func (s *ManagmentServiceTestSuite) TestLoginWithCorrectPassword(t *testing.T) {
+	// Test login with the correct password for the updated user
+	response, err := s.managementService.UserAuthenticate(context.Background(), ubmanage.UserLoginCommand{
+		Email:    updatedUser.Email,
+		Password: updatedUser.Password,
+	}, "test-runner")
+
+	if err != nil {
+		t.Fatalf("TestLoginWithCorrectPassword failed to authenticate: %v", err)
+	}
+
+	if response.Status != ubstatus.Success {
+		t.Fatalf("TestLoginWithCorrectPassword status is not success: %v", response.Status)
+	}
+
+	if response.Data == nil {
+		t.Fatal("LoginWithCorrectPassword response data is nil")
+	}
+
+	if response.Data.UserId != s.createdUserId {
+		t.Fatal("WithCorrectPassword user was not authenticated")
+	}
+
+	if response.Data.Email != updatedUser.Email {
+		t.Fatal("LoginWithCorrectPassword email does not match")
+	}
+
+	if response.Data.RequiresTwoFactor {
+		t.Fatal("WithCorrectPassword does not require two factor")
+	}
+
+}
+
+func (s *ManagmentServiceTestSuite) LoginWithIncorrectPassword(t *testing.T) {
+	// Test login with incorrect password for the updated user
+	response, err := s.managementService.UserAuthenticate(context.Background(), ubmanage.UserLoginCommand{
+		Email:    updatedUser.Email,
+		Password: "WrongPassword123!",
+	}, "test-runner")
+
+	if err != nil {
+		t.Fatalf("LoginWithIncorrectPassword failed during authentication: %v", err)
+	}
+
+	if response.Status != ubstatus.NotAuthorized {
+		t.Fatalf("LoginWithIncorrectPassword expected Unauthorized status but got: %v", response.Status)
+	}
+
+	if response.Data != nil {
+		t.Fatal("LoginWithIncorrectPassword should not have authenticated with wrong password")
+	}
+}
+
+func (s *ManagmentServiceTestSuite) AddTwoFactorKey(t *testing.T) {
+	// Add two factor authentication to the test user
+	response, err := s.managementService.UserGenerateTwoFactorSharedSecret(context.Background(), ubmanage.UserGenerateTwoFactorSharedSecretCommand{
+		Id: s.createdUserId,
+	}, "test-runner")
+
+	if err != nil {
+		t.Fatalf("AddTwoFactorKey failed to generate shared secret: %v", err)
+	}
+
+	if response.Status != ubstatus.Success {
+		t.Fatalf("AddTwoFactorKey status is not success: %v", response.Status)
+	}
+
+	if response.Data.SharedSecret == "" {
+		t.Fatal("AddTwoFactorKey did not return a shared secret")
+	}
+
+	// Store the secret for verification in later tests
+	s.twoFactorSecret = response.Data.SharedSecret
+}
+
+func (s *ManagmentServiceTestSuite) LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet(t *testing.T) {
+	// Test login with correct password after 2FA was added
+	response, err := s.managementService.UserAuthenticate(context.Background(), ubmanage.UserLoginCommand{
+		Email:    updatedUser.Email,
+		Password: updatedUser.Password,
+	}, "test-runner")
+
+	if err != nil {
+		t.Fatalf("LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet failed to authenticate: %v", err)
+	}
+
+	if response.Status != ubstatus.Success {
+		t.Fatalf("LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet status is not success: %v", response.Status)
+	}
+
+	if !response.Data.RequiresTwoFactor {
+		t.Fatal("LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet should require two factor after secret was added")
+	}
+
+	if response.Data.UserId != s.createdUserId {
+		t.Fatal("LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet user ID does not match")
+	}
+
+	if response.Data.Email != updatedUser.Email {
+		t.Fatal("LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet email does not match")
+	}
+}
+
+func (s *ManagmentServiceTestSuite) VerifyTwoFactorCode(t *testing.T) {
+	code, err := s.twoFactorService.GetTotpCode(s.twoFactorSecret)
+
+	// Verify the code
+	response, err := s.managementService.UserVerifyTwoFactorCode(context.Background(), ubmanage.UserVerifyTwoFactorLoginCommand{
+		UserId: s.createdUserId,
+		Code:   code,
+	}, "test-runner")
+
+	if err != nil {
+		t.Fatalf("VerifyTwoFactorCode failed during verification: %v", err)
+	}
+
+	if response.Status != ubstatus.Success {
+		t.Fatalf("VerifyTwoFactorCode expected Success status but got: %v", response.Status)
+	}
+
+	// Test with invalid code
+	invalidResponse, err := s.managementService.UserVerifyTwoFactorCode(context.Background(), ubmanage.UserVerifyTwoFactorLoginCommand{
+		UserId: s.createdUserId,
+		Code:   "123456", // Invalid code
+	}, "test-runner")
+
+	if err != nil {
+		t.Fatalf("VerifyTwoFactorCode failed during invalid code test: %v", err)
+	}
+
+	if invalidResponse.Status != ubstatus.NotAuthorized {
+		t.Fatalf("VerifyTwoFactorCode expected NotAuthorized for invalid code but got: %v", invalidResponse.Status)
+	}
+}

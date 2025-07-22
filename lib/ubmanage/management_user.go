@@ -241,7 +241,7 @@ func (m *ManagementImpl) UserVerifyTwoFactorCode(ctx context.Context,
 		m.store,
 		func(etx evercore.EventStoreContext) (bool, error) {
 			aggregate := UserAggregate{}
-			err := etx.LoadStateInto(&aggregate, command.Id)
+			err := etx.LoadStateInto(&aggregate, command.UserId)
 			if err != nil {
 				return false, fmt.Errorf("failed to load user: %w", err)
 			}
@@ -256,13 +256,14 @@ func (m *ManagementImpl) UserVerifyTwoFactorCode(ctx context.Context,
 			}
 			decryptedUrl := string(decryptedUrlBytes)
 
-			return m.twoFactorService.ValidateTotp(command.Code, decryptedUrl)
+			return m.twoFactorService.ValidateTotp(decryptedUrl, command.Code)
 		})
 
 	if err != nil {
 		slog.Error("Error verifying two factor code", "error", err)
 		return Error[any]("Error verifying two factor code"), err
 	}
+
 	if !match {
 		slog.Error("Two factor code does not match", "code", command.Code)
 		return StatusError[any](ubstatus.NotAuthorized, "Two factor code does not match"), nil

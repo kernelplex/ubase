@@ -77,7 +77,6 @@ func ConfigFromEnv(cfg any) error {
 				return fmt.Errorf("invalid %s value: must be base64 encoded", envTag)
 			}
 		default:
-			//panic(fmt.Sprintf("unsupported field type %s for field %s", fieldValue.Kind(), field.Name))
 			return fmt.Errorf("unsupported field type %s for field %s", fieldValue.Kind(), field.Name)
 		}
 	}

@@ -7,8 +7,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"strings"
 )
-
 
 type EncryptionServiceImpl struct {
 	key []byte
@@ -21,10 +21,10 @@ type EncryptionService interface {
 	Decrypt64(data string) ([]byte, error)
 }
 
-func CreateEncryptionService(key []byte) EncryptionService {
+func NewEncryptionService(key []byte) EncryptionService {
 	// Validate key size - must be 16, 24 or 32 bytes for AES
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
-		return nil
+		panic(fmt.Errorf("invalid key size - must be 16, 24 or 32 bytes"))
 	}
 	service := EncryptionServiceImpl{
 		key: key,
@@ -146,4 +146,18 @@ func GenerateSecureRandom(length uint32) []byte {
 		panic(fmt.Errorf("failed to generate secure random bytes: %w", err)) // This should not happen since 'rand' is initialized with 'crypto/rand'
 	}
 	return bytes
+}
+
+func GenerateSecureRandomStringWithChars(length uint32, chars []rune) string {
+	var b strings.Builder
+	randBytes := GenerateSecureRandom(length)
+	for _, c := range randBytes {
+		b.WriteRune(chars[c%uint8(len(chars))])
+	}
+	return b.String()
+}
+
+func GenerateSecureRandomString(length uint32) string {
+	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	return GenerateSecureRandomStringWithChars(length, chars)
 }

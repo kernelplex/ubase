@@ -38,6 +38,7 @@ type DataAdapter interface {
 	AddUserToRole(ctx context.Context, userID int64, roleID int64) error
 	RemoveUserFromRole(ctx context.Context, userID int64, roleID int64) error
 	RemoveAllRolesFromUser(ctx context.Context, userID int64) error
+	GetUserOrganizationRoles(ctx context.Context, userID int64, organizationId int64) ([]RoleRow, error)
 }
 
 // User represents a user in the system

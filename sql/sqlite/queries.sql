@@ -59,7 +59,7 @@ VALUES (sqlc.arg(user_id), sqlc.arg(role_id));
 
 -- name: GetUserOrganizationRoles :many
 SELECT r.id, r.name, r.system_name FROM user_roles ur
-LEFT JOIN roles r ON r.id = ur.role_id
+JOIN roles r ON r.id = ur.role_id
 WHERE ur.user_id = sqlc.arg(user_id) AND r.organization_id = sqlc.arg(organization_id);
 
 -- name: AddPermissionToRole :exec
@@ -83,8 +83,9 @@ WHERE ur.user_id = sqlc.arg(user_id);
 
 -- name: GetUserOrganizationPermissions :many
 SELECT rp.permission FROM user_roles ur
-LEFT JOIN role_permissions rp ON rp.role_id = ur.role_id
-WHERE ur.user_id = sqlc.arg(user_id) AND ur.organization_id = sqlc.arg(organization_id);
+JOIN roles r ON r.id = ur.role_id
+JOIN role_permissions rp ON rp.role_id = ur.role_id
+WHERE ur.user_id = sqlc.arg(user_id) AND r.organization_id = sqlc.arg(organization_id);
 
 -- ---------------------------------------------------------------------------
 --

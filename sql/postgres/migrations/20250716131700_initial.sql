@@ -38,18 +38,18 @@ CREATE TABLE resource_types (
 
 CREATE TABLE user_roles (
 	user_id BIGINT NOT NULL,
-	organization_id BIGINT NOT NULL,
 	role_id BIGINT NOT NULL,
 	CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id),
-	CONSTRAINT user_roles_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES organizations(id),
-	CONSTRAINT user_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id)
+	CONSTRAINT user_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id),
+	CONSTRAINT user_roles_user_id_role_id_key UNIQUE (user_id, role_id)
+	
 );
 
 CREATE TABLE role_permissions (
 	role_id BIGINT NOT NULL,
 	permission VARCHAR(255) NOT NULL,
 	CONSTRAINT role_permissions_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id),
-	UNIQUE (role_id, permission)
+	CONSTRAINT role_permissions_role_id_fkey UNIQUE (role_id, permission)
 );
 
 -- Create indexes for foreign keys

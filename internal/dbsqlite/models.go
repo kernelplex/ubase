@@ -38,7 +38,6 @@ type User struct {
 }
 
 type UserRole struct {
-	UserID         int64
-	OrganizationID int64
-	RoleID         int64
+	UserID int64
+	RoleID int64
 }

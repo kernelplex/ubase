@@ -312,8 +312,9 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 
 const getUserOrganizationPermissions = `-- name: GetUserOrganizationPermissions :many
 SELECT rp.permission FROM user_roles ur
-LEFT JOIN role_permissions rp ON rp.role_id = ur.role_id
-WHERE ur.user_id = $1 AND ur.organization_id = $2
+JOIN roles r ON r.id = ur.role_id
+JOIN role_permissions rp ON rp.role_id = ur.role_id
+WHERE ur.user_id = $1 AND r.organization_id = $2
 `
 
 type GetUserOrganizationPermissionsParams struct {
@@ -321,15 +322,15 @@ type GetUserOrganizationPermissionsParams struct {
 	OrganizationID int64
 }
 
-func (q *Queries) GetUserOrganizationPermissions(ctx context.Context, arg GetUserOrganizationPermissionsParams) ([]sql.NullString, error) {
+func (q *Queries) GetUserOrganizationPermissions(ctx context.Context, arg GetUserOrganizationPermissionsParams) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, getUserOrganizationPermissions, arg.UserID, arg.OrganizationID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []sql.NullString
+	var items []string
 	for rows.Next() {
-		var permission sql.NullString
+		var permission string
 		if err := rows.Scan(&permission); err != nil {
 			return nil, err
 		}
@@ -346,7 +347,7 @@ func (q *Queries) GetUserOrganizationPermissions(ctx context.Context, arg GetUse
 
 const getUserOrganizationRoles = `-- name: GetUserOrganizationRoles :many
 SELECT r.id, r.name, r.system_name FROM user_roles ur
-LEFT JOIN roles r ON r.id = ur.role_id
+JOIN roles r ON r.id = ur.role_id
 WHERE ur.user_id = $1 AND r.organization_id = $2
 `
 
@@ -356,9 +357,9 @@ type GetUserOrganizationRolesParams struct {
 }
 
 type GetUserOrganizationRolesRow struct {
-	ID         sql.NullInt64
-	Name       sql.NullString
-	SystemName sql.NullString
+	ID         int64
+	Name       string
+	SystemName string
 }
 
 func (q *Queries) GetUserOrganizationRoles(ctx context.Context, arg GetUserOrganizationRolesParams) ([]GetUserOrganizationRolesRow, error) {

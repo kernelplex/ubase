@@ -9,7 +9,7 @@ func TestEncryptionService(t *testing.T) {
 	key := GenerateSecureRandom(32)
 
 	// Create encryption service
-	service := CreateEncryptionService(key)
+	service := NewEncryptionService(key)
 
 	// Test data
 	testString := "This is a secret message!"
@@ -52,7 +52,7 @@ func TestEncryptionService(t *testing.T) {
 	t.Run("Invalid key size", func(t *testing.T) {
 		// Test with invalid key size
 		invalidKey := GenerateSecureRandom(17) // Not 16, 24 or 32 bytes
-		invalidService := CreateEncryptionService(invalidKey)
+		invalidService := NewEncryptionService(invalidKey)
 
 		if invalidService != nil {
 			t.Error("Expected nil service with invalid key size")

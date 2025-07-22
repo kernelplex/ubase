@@ -37,18 +37,17 @@ CREATE TABLE resource_types (
 
 CREATE TABLE user_roles (
 	user_id INTEGER NOT NULL,
-	organization_id INTEGER NOT NULL,
 	role_id INTEGER NOT NULL,
 	FOREIGN KEY(user_id) REFERENCES users(id),
-	FOREIGN KEY(organization_id) REFERENCES organizations(id),
-	FOREIGN KEY(role_id) REFERENCES roles(id)
+	FOREIGN KEY(role_id) REFERENCES roles(id),
+	CONSTRAINT user_roles_user_id_role_id_key UNIQUE (user_id, role_id)
 );
 
 CREATE TABLE role_permissions (
 	role_id INTEGER NOT NULL,
 	permission VARCHAR(255) NOT NULL,
 	FOREIGN KEY(role_id) REFERENCES roles(id),
-	UNIQUE (role_id, permission)
+	CONSTRAINT role_permissions_role_id_fkey UNIQUE (role_id, permission)
 );
 
 

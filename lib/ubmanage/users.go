@@ -120,6 +120,10 @@ type UserGenerateVerificationTokenCommand struct {
 	Id int64 `json:"id"`
 }
 
+type UserGenerateVerificationTokenResponse struct {
+	Token string `json:"token"`
+}
+
 func (c UserGenerateVerificationTokenCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 	validationTracker := ubvalidation.NewValidationTracker()
 
@@ -135,6 +139,10 @@ type UserVerifyCommand struct {
 
 type UserGenerateTwoFactorSharedSecretCommand struct {
 	Id           int64  `json:"id"`
+	SharedSecret string `json:"sharedSecret"`
+}
+
+type UserGenerateTwoFactorSharedSecretResponse struct {
 	SharedSecret string `json:"sharedSecret"`
 }
 

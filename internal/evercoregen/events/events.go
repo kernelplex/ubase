@@ -12,10 +12,12 @@ const (
 	RolePermissionAddedEventType = "RolePermissionAddedEvent"
 	RolePermissionRemovedEventType = "RolePermissionRemovedEvent"
 	RoleUndeletedEventType = "RoleUndeletedEvent"
+	UserAddedToRoleEventType = "UserAddedToRoleEvent"
 	UserDisabledEventType = "UserDisabledEvent"
 	UserEnabledEventType = "UserEnabledEvent"
 	UserLoginFailedEventType = "UserLoginFailedEvent"
 	UserLoginSucceededEventType = "UserLoginSucceededEvent"
+	UserRemovedFromRoleEventType = "UserRemovedFromRoleEvent"
 	UserTwoFactorAuthenticatedEventType = "UserTwoFactorAuthenticatedEvent"
 	UserTwoFactorDisabledEventType = "UserTwoFactorDisabledEvent"
 	UserTwoFactorEnabledEventType = "UserTwoFactorEnabledEvent"
@@ -34,10 +36,12 @@ var List = []string{
 	RolePermissionAddedEventType,
 	RolePermissionRemovedEventType,
 	RoleUndeletedEventType,
+	UserAddedToRoleEventType,
 	UserDisabledEventType,
 	UserEnabledEventType,
 	UserLoginFailedEventType,
 	UserLoginSucceededEventType,
+	UserRemovedFromRoleEventType,
 	UserTwoFactorAuthenticatedEventType,
 	UserTwoFactorDisabledEventType,
 	UserTwoFactorEnabledEventType,

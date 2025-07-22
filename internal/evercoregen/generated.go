@@ -96,6 +96,13 @@ func EventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error) {
 			return nil, err
 		}
 		return eventState, nil
+	case events.UserAddedToRoleEventType:
+		eventState := ubmanage.UserAddedToRoleEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
 	case events.UserDisabledEventType:
 		eventState := ubmanage.UserDisabledEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
@@ -119,6 +126,13 @@ func EventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error) {
 		return eventState, nil
 	case events.UserLoginSucceededEventType:
 		eventState := ubmanage.UserLoginSucceededEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserRemovedFromRoleEventType:
+		eventState := ubmanage.UserRemovedFromRoleEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err

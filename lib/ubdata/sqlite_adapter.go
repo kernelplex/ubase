@@ -223,3 +223,21 @@ func (a *SQLiteAdapter) RemoveAllRolesFromUser(ctx context.Context, userID int64
 	}
 	return nil
 }
+
+func (a *SQLiteAdapter) GetUserOrganizationRoles(ctx context.Context, userID int64, organizationId int64) ([]RoleRow, error) {
+	roles, err := a.queries.GetUserOrganizationRoles(ctx, dbsqlite.GetUserOrganizationRolesParams{
+		UserID:         userID,
+		OrganizationID: organizationId,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user organization roles: %w", err)
+	}
+
+	result := make([]RoleRow, len(roles))
+	for i, r := range roles {
+		result[i] = RoleRow(r)
+	}
+
+	return result, nil
+}

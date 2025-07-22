@@ -5,12 +5,14 @@ const (
 	OrganizationAggregateType = "OrganizationAggregate"
 	OrganizationStateType = "OrganizationState"
 	UserAggregateType = "UserAggregate"
+	UserRolesAggregateType = "UserRolesAggregate"
 )
 
 var List = []string{
 	OrganizationAggregateType,
 	OrganizationStateType,
 	UserAggregateType,
+	UserRolesAggregateType,
 }
 
 

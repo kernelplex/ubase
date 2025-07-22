@@ -365,34 +365,37 @@ func (s *ManagmentServiceTestSuite) LoginWithCorrectPasswordEnsureTwoFactorRequi
 	}
 }
 
-func (s *ManagmentServiceTestSuite) VerifyTwoFactorCode(t *testing.T) {
+func (s *ManagmentServiceTestSuite) VerifyCorrectTwoFactorCode(t *testing.T) {
 	code, err := s.twoFactorService.GetTotpCode(s.twoFactorSecret)
+	if err != nil {
+		t.Fatalf("VerifyCorrectTwoFactorCode failed to generate code: %v", err)
+	}
 
-	// Verify the code
 	response, err := s.managementService.UserVerifyTwoFactorCode(context.Background(), ubmanage.UserVerifyTwoFactorLoginCommand{
 		UserId: s.createdUserId,
 		Code:   code,
 	}, "test-runner")
 
 	if err != nil {
-		t.Fatalf("VerifyTwoFactorCode failed during verification: %v", err)
+		t.Fatalf("VerifyCorrectTwoFactorCode failed during verification: %v", err)
 	}
 
 	if response.Status != ubstatus.Success {
-		t.Fatalf("VerifyTwoFactorCode expected Success status but got: %v", response.Status)
+		t.Fatalf("VerifyCorrectTwoFactorCode expected Success status but got: %v", response.Status)
 	}
+}
 
-	// Test with invalid code
+func (s *ManagmentServiceTestSuite) VerifyIncorrectTwoFactorCode(t *testing.T) {
 	invalidResponse, err := s.managementService.UserVerifyTwoFactorCode(context.Background(), ubmanage.UserVerifyTwoFactorLoginCommand{
 		UserId: s.createdUserId,
 		Code:   "123456", // Invalid code
 	}, "test-runner")
 
 	if err != nil {
-		t.Fatalf("VerifyTwoFactorCode failed during invalid code test: %v", err)
+		t.Fatalf("VerifyIncorrectTwoFactorCode failed during verification: %v", err)
 	}
 
 	if invalidResponse.Status != ubstatus.NotAuthorized {
-		t.Fatalf("VerifyTwoFactorCode expected NotAuthorized for invalid code but got: %v", invalidResponse.Status)
+		t.Fatalf("VerifyIncorrectTwoFactorCode expected NotAuthorized status but got: %v", invalidResponse.Status)
 	}
 }

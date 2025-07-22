@@ -63,7 +63,8 @@ func (s *ManagmentServiceTestSuite) RunTests(t *testing.T) {
 	t.Run("LoginWithIncorrectPassword", s.LoginWithIncorrectPassword)
 	t.Run("AddTwoFactorKey", s.AddTwoFactorKey)
 	t.Run("LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet", s.LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet)
-	t.Run("VerifyTwoFactorCode", s.VerifyTwoFactorCode)
+	t.Run("VerifyCorrectTwoFactorCode", s.VerifyCorrectTwoFactorCode)
+	t.Run("VerifyIncorrectTwoFactorCode", s.VerifyIncorrectTwoFactorCode)
 	t.Run("AddUserToRole", s.AddUserToRole)
 	t.Run("RemoveUserFromRole", s.RemoveUserFromRole)
 

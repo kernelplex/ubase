@@ -9,6 +9,9 @@
 *.dylib
 *.db
 
+*.goz
+*.got
+
 # Test binary, built with `go test -c`
 *.test
 
@@ -38,3 +41,4 @@ OpenCode.md
 tok
 .tok/
 .test/
+

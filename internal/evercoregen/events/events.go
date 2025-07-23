@@ -2,25 +2,51 @@
 package evercoregen_events
 
 const (
-	UserCreatedEventType = "UserCreatedEvent"
-	UserLoginFailedEventType = "UserLoginFailedEvent"
-	UserLoginSucceededEventType = "UserLoginSucceededEvent"
-	UserRolesUpdatedEventType = "UserRolesUpdatedEvent"
-	UserUpdatedEventType = "UserUpdatedEvent"
+	OrganizationAddedEventType = "OrganizationAddedEvent"
+	OrganizationUpdatedEventType = "OrganizationUpdatedEvent"
 	RoleCreatedEventType = "RoleCreatedEvent"
+	RoleUpdatedEventType = "RoleUpdatedEvent"
+	UserAddedEventType = "UserAddedEvent"
+	UserUpdatedEventType = "UserUpdatedEvent"
+	RoleDeletedEventType = "RoleDeletedEvent"
 	RolePermissionAddedEventType = "RolePermissionAddedEvent"
 	RolePermissionRemovedEventType = "RolePermissionRemovedEvent"
+	RoleUndeletedEventType = "RoleUndeletedEvent"
+	UserAddedToRoleEventType = "UserAddedToRoleEvent"
+	UserDisabledEventType = "UserDisabledEvent"
+	UserEnabledEventType = "UserEnabledEvent"
+	UserLoginFailedEventType = "UserLoginFailedEvent"
+	UserLoginSucceededEventType = "UserLoginSucceededEvent"
+	UserRemovedFromRoleEventType = "UserRemovedFromRoleEvent"
+	UserTwoFactorAuthenticatedEventType = "UserTwoFactorAuthenticatedEvent"
+	UserTwoFactorDisabledEventType = "UserTwoFactorDisabledEvent"
+	UserTwoFactorEnabledEventType = "UserTwoFactorEnabledEvent"
+	UserVerificationTokenGeneratedEventType = "UserVerificationTokenGeneratedEvent"
+	UserVerificationTokenVerifiedEventType = "UserVerificationTokenVerifiedEvent"
 )
 
 var List = []string{
-	UserCreatedEventType,
-	UserLoginFailedEventType,
-	UserLoginSucceededEventType,
-	UserRolesUpdatedEventType,
-	UserUpdatedEventType,
+	OrganizationAddedEventType,
+	OrganizationUpdatedEventType,
 	RoleCreatedEventType,
+	RoleUpdatedEventType,
+	UserAddedEventType,
+	UserUpdatedEventType,
+	RoleDeletedEventType,
 	RolePermissionAddedEventType,
 	RolePermissionRemovedEventType,
+	RoleUndeletedEventType,
+	UserAddedToRoleEventType,
+	UserDisabledEventType,
+	UserEnabledEventType,
+	UserLoginFailedEventType,
+	UserLoginSucceededEventType,
+	UserRemovedFromRoleEventType,
+	UserTwoFactorAuthenticatedEventType,
+	UserTwoFactorDisabledEventType,
+	UserTwoFactorEnabledEventType,
+	UserVerificationTokenGeneratedEventType,
+	UserVerificationTokenVerifiedEventType,
 }
 
 

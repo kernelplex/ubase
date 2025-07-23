@@ -1,6 +1,6 @@
 
-main: evercoregen sqlc
-	go build -o build/example examples/*.go
+main: evercoregen sqlc test
+	# go build -o build/example examples/*.go
 
 .PHONY: evercoregen
 evercoregen:
@@ -11,5 +11,5 @@ sqlc:
 	sqlc generate
 
 .PHONY: test
-test: sqlc evercoregen main
+test: sqlc evercoregen
 	go test integration_tests/*.go

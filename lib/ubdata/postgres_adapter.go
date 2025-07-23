@@ -4,9 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/kernelplex/ubase/lib/dbpostgres"
-	"github.com/kernelplex/ubase/lib/ubstate"
-	"log/slog"
+
+	"github.com/kernelplex/ubase/internal/dbpostgres"
 )
 
 type PostgresAdapter struct {
@@ -21,9 +20,17 @@ func NewPostgresAdapter(db *sql.DB) *PostgresAdapter {
 	}
 }
 
+func (a *PostgresAdapter) DeleteRole(ctx context.Context, roleID int64) error {
+	err := a.queries.DeleteRole(ctx, roleID)
+	if err != nil {
+		return fmt.Errorf("failed to delete role: %w", err)
+	}
+	return nil
+}
+
 func (a *PostgresAdapter) AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error {
 	return a.queries.AddUser(ctx, dbpostgres.AddUserParams{
-		UserID:      userID,
+		ID:          userID,
 		FirstName:   firstName,
 		LastName:    lastName,
 		DisplayName: displayName,
@@ -37,7 +44,7 @@ func (a *PostgresAdapter) GetUser(ctx context.Context, userID int64) (User, erro
 		return User{}, fmt.Errorf("failed to get user: %w", err)
 	}
 	return User{
-		UserID:      user.UserID,
+		UserID:      user.ID,
 		FirstName:   user.FirstName,
 		LastName:    user.LastName,
 		DisplayName: user.DisplayName,
@@ -51,7 +58,7 @@ func (a *PostgresAdapter) GetUserByEmail(ctx context.Context, email string) (Use
 		return User{}, fmt.Errorf("failed to get user by email: %w", err)
 	}
 	return User{
-		UserID:      user.UserID,
+		UserID:      user.ID,
 		FirstName:   user.FirstName,
 		LastName:    user.LastName,
 		DisplayName: user.DisplayName,
@@ -61,7 +68,7 @@ func (a *PostgresAdapter) GetUserByEmail(ctx context.Context, email string) (Use
 
 func (a *PostgresAdapter) UpdateUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error {
 	return a.queries.UpdateUser(ctx, dbpostgres.UpdateUserParams{
-		UserID:      userID,
+		ID:          userID,
 		FirstName:   firstName,
 		LastName:    lastName,
 		DisplayName: displayName,
@@ -69,215 +76,168 @@ func (a *PostgresAdapter) UpdateUser(ctx context.Context, userID int64, firstNam
 	})
 }
 
-func (a *PostgresAdapter) AddRole(ctx context.Context, roleID int64, name string) error {
+func (a *PostgresAdapter) AddRole(ctx context.Context, roleID int64, organizationID int64, name string, systemName string) error {
 	return a.queries.AddRole(ctx, dbpostgres.AddRoleParams{
-		RoleID: roleID,
-		Name:   name,
+		ID:             roleID,
+		OrganizationID: organizationID,
+		Name:           name,
+		SystemName:     systemName,
 	})
 }
 
-func (a *PostgresAdapter) UpdateRole(ctx context.Context, roleID int64, name string) error {
-	return a.queries.UpdateRole(ctx, dbpostgres.UpdateRoleParams{
-		Name:   name,
-		RoleID: roleID,
-	})
-}
-
-func (a *PostgresAdapter) GetRoles(ctx context.Context) ([]Role, error) {
-	roles, err := a.queries.GetRoles(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get roles: %w", err)
+func (a *PostgresAdapter) UpdateRole(ctx context.Context, roleID int64, name string, systemName string) error {
+	params := dbpostgres.UpdateRoleParams{
+		Name:       name,
+		SystemName: systemName,
+		ID:         roleID,
 	}
-	result := make([]Role, len(roles))
+
+	err := a.queries.UpdateRole(ctx, params)
+	if err != nil {
+		return fmt.Errorf("failed to update role: %w", err)
+	}
+	return nil
+}
+
+func (a *PostgresAdapter) AddOrganization(ctx context.Context, id int64, name string, systemName string, status string) error {
+
+	err := a.queries.AddOrganization(ctx, dbpostgres.AddOrganizationParams{
+		ID:         id,
+		Name:       name,
+		SystemName: systemName,
+		Status:     status,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to add organization: %w", err)
+	}
+	return nil
+}
+
+func (a *PostgresAdapter) GetOrganization(ctx context.Context, organizationID int64) (Organization, error) {
+	org, err := a.queries.GetOrganization(ctx, organizationID)
+	if err != nil {
+		return Organization{}, fmt.Errorf("failed to get organization: %w", err)
+	}
+	return Organization{
+		OrganizationID: org.ID,
+		Name:           org.Name,
+		SystemName:     org.SystemName,
+		Status:         org.Status,
+	}, nil
+}
+
+func (a *PostgresAdapter) GetOrganizationBySystemName(ctx context.Context, systemName string) (Organization, error) {
+	org, err := a.queries.GetOrganizationBySystemName(ctx, systemName)
+	if err != nil {
+		return Organization{}, fmt.Errorf("failed to get organization by system name: %w", err)
+	}
+	return Organization{
+		OrganizationID: org.ID,
+		Name:           org.Name,
+		SystemName:     org.SystemName,
+		Status:         org.Status,
+	}, nil
+}
+
+func (a *PostgresAdapter) GetOrganizationRoles(ctx context.Context, organizationID int64) ([]RoleRow, error) {
+	roles, err := a.queries.GetOrganizationRoles(ctx, organizationID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization roles: %w", err)
+	}
+	result := make([]RoleRow, len(roles))
 	for i, r := range roles {
-		result[i] = Role{
-			RoleID: r.RoleID,
-			Name:   r.Name,
-		}
+		result[i] = RoleRow(r)
 	}
 	return result, nil
 }
 
-func (a *PostgresAdapter) CreatePermission(ctx context.Context, name string) (int64, error) {
-	var id int64
-
-	id, err := a.queries.CreatePermission(ctx, name)
-	if err != nil {
-		return 0, fmt.Errorf("failed to create permission: %w", err)
-	}
-	return id, nil
-}
-
-func (a *PostgresAdapter) GetPermissions(ctx context.Context) ([]Permission, error) {
-	perms, err := a.queries.GetPermissions(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get permissions: %w", err)
-	}
-	result := make([]Permission, len(perms))
-	for i, p := range perms {
-		result[i] = Permission{
-			PermissionID: p.PermissionID,
-			Name:         p.Name,
-		}
-	}
-	return result, nil
-}
-
-func (a *PostgresAdapter) AddPermissionToRole(ctx context.Context, roleID, permissionID int64) error {
-	return a.queries.AddPermissionToRole(ctx, dbpostgres.AddPermissionToRoleParams{
-		RoleID:       roleID,
-		PermissionID: permissionID,
+func (a *PostgresAdapter) UpdateOrganization(ctx context.Context, id int64, name string, systemName string, status string) error {
+	err := a.queries.UpdateOrganization(ctx, dbpostgres.UpdateOrganizationParams{
+		ID:         id,
+		Name:       name,
+		SystemName: systemName,
+		Status:     status,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to update organization: %w", err)
+	}
+	return nil
 }
 
-func (a *PostgresAdapter) RemovePermissionFromRole(ctx context.Context, roleID, permissionID int64) error {
-	return a.queries.RemovePermissionFromRole(ctx, dbpostgres.RemovePermissionFromRoleParams{
-		RoleID:       roleID,
-		PermissionID: permissionID,
+func (a *PostgresAdapter) AddPermissionToRole(ctx context.Context, roleID int64, permission string) error {
+	err := a.queries.AddPermissionToRole(ctx, dbpostgres.AddPermissionToRoleParams{
+		RoleID:     roleID,
+		Permission: permission,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to add permission to role: %w", err)
+	}
+	return nil
 }
 
-func (a *PostgresAdapter) GetRolePermissions(ctx context.Context, roleID int64) ([]Permission, error) {
+func (a *PostgresAdapter) GetRolePermissions(ctx context.Context, roleID int64) ([]string, error) {
 	perms, err := a.queries.GetRolePermissions(ctx, roleID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get role permissions: %w", err)
 	}
-	result := make([]Permission, 0, len(perms))
-	for _, p := range perms {
-		if p.PermissionID.Valid && p.Name.Valid {
-			result = append(result, Permission{
-				PermissionID: p.PermissionID.Int64,
-				Name:         p.Name.String,
-			})
-		}
-	}
-	return result, nil
+	return perms, nil
 }
 
-func (a *PostgresAdapter) AddRoleToUser(ctx context.Context, userID, roleID int64) error {
-	return a.queries.AddRoleToUser(ctx, dbpostgres.AddRoleToUserParams{
+func (a *PostgresAdapter) RemovePermissionFromRole(ctx context.Context, roleID int64, permission string) error {
+	err := a.queries.RemovePermissionFromRole(ctx, dbpostgres.RemovePermissionFromRoleParams{
+		RoleID:     roleID,
+		Permission: permission,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to remove permission from role: %w", err)
+	}
+	return nil
+}
+
+func (a *PostgresAdapter) AddUserToRole(ctx context.Context, userID int64, roleID int64) error {
+	err := a.queries.AddUserToRole(ctx, dbpostgres.AddUserToRoleParams{
 		UserID: userID,
 		RoleID: roleID,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to add user to role: %w", err)
+	}
+	return nil
+}
+
+func (a *PostgresAdapter) RemoveUserFromRole(ctx context.Context, userID int64, roleID int64) error {
+	err := a.queries.RemoveUserFromRole(ctx, dbpostgres.RemoveUserFromRoleParams{
+		UserID: userID,
+		RoleID: roleID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to remove user from role: %w", err)
+	}
+	return nil
 }
 
 func (a *PostgresAdapter) RemoveAllRolesFromUser(ctx context.Context, userID int64) error {
-	return a.queries.RemoveAllRolesFromUser(ctx, userID)
-}
-
-func (a *PostgresAdapter) GetUserRoles(ctx context.Context, userID int64) ([]Role, error) {
-	roles, err := a.queries.GetUserRoles(ctx, userID)
+	err := a.queries.RemoveAllRolesFromUser(ctx, userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user roles: %w", err)
-	}
-	result := make([]Role, 0, len(roles))
-	for _, r := range roles {
-		if r.RoleID.Valid && r.Name.Valid {
-			result = append(result, Role{
-				RoleID: r.RoleID.Int64,
-				Name:   r.Name.String,
-			})
-		}
-	}
-	return result, nil
-}
-
-func (a *PostgresAdapter) GetUserPermissions(ctx context.Context, userID int64) ([]Permission, error) {
-	perms, err := a.queries.GetUserPermissions(ctx, userID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user permissions: %w", err)
-	}
-	result := make([]Permission, 0, len(perms))
-	for _, p := range perms {
-		if p.PermissionID.Valid && p.Name.Valid {
-			result = append(result, Permission{
-				PermissionID: p.PermissionID.Int64,
-				Name:         p.Name.String,
-			})
-		}
-	}
-	return result, nil
-}
-
-func (a *PostgresAdapter) ProjectUser(ctx context.Context, userID int64, userState ubstate.UserState) error {
-	tx, err := a.db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback()
-	queries := dbpostgres.New(tx)
-	_, err = queries.GetUser(ctx, userID)
-
-	// If the user doesn't exist, create it
-	if err != nil {
-		if err != sql.ErrNoRows {
-			slog.Error("Failed to get user", "error", err)
-			return fmt.Errorf("failed to get user: %w", err)
-		}
-
-		addUserParams := dbpostgres.AddUserParams{
-			UserID:      userID,
-			FirstName:   userState.FirstName,
-			LastName:    userState.LastName,
-			DisplayName: userState.DisplayName,
-			Email:       userState.Email,
-		}
-
-		err = queries.AddUser(ctx, addUserParams)
-		if err != nil {
-			slog.Error("Failed to project user", "error", err)
-			return fmt.Errorf("failed to add user: %w", err)
-		}
-	} else {
-		// If the user exists, update it
-		updateUserParams := dbpostgres.UpdateUserParams{
-			LastName:    userState.LastName,
-			FirstName:   userState.FirstName,
-			DisplayName: userState.DisplayName,
-			Email:       userState.Email,
-			UserID:      userID,
-		}
-		err = queries.UpdateUser(ctx, updateUserParams)
-		if err != nil {
-			slog.Error("Failed to project user", "error", err)
-			return fmt.Errorf("failed to update user: %w", err)
-		}
-	}
-
-	err = a.projectUserRoles(ctx, queries, userID, userState.Roles)
-	if err != nil {
-		slog.Error("Failed to project user roles", "error", err)
-		return fmt.Errorf("failed to project user roles: %w", err)
-	}
-
-	tx.Commit()
-
-	return nil
-}
-
-func (a *PostgresAdapter) projectUserRoles(ctx context.Context, queries *dbpostgres.Queries, userID int64, stateRoles []int64) error {
-	// Remove all existing roles
-	err := queries.RemoveAllRolesFromUser(ctx, userID)
-	if err != nil {
-		slog.Error("Failed to remove all roles from user", "error", err)
 		return fmt.Errorf("failed to remove all roles from user: %w", err)
 	}
-
-	// Add roles
-	for _, roleId := range stateRoles {
-		addRoleToUserParams := dbpostgres.AddRoleToUserParams{
-			UserID: userID,
-			RoleID: roleId,
-		}
-		err = queries.AddRoleToUser(ctx, addRoleToUserParams)
-		if err != nil {
-			slog.Error("Failed to add role to user", "error", err)
-			return fmt.Errorf("failed to add role to user: %w", err)
-		}
-	}
 	return nil
 }
 
-func (a *PostgresAdapter) ProjectUserRoles(ctx context.Context, userID int64, stateRoles []int64) error {
-	return a.projectUserRoles(ctx, a.queries, userID, stateRoles)
+func (a *PostgresAdapter) GetUserOrganizationRoles(ctx context.Context, userID int64, organizationId int64) ([]RoleRow, error) {
+	roles, err := a.queries.GetUserOrganizationRoles(ctx, dbpostgres.GetUserOrganizationRolesParams{
+		UserID:         userID,
+		OrganizationID: organizationId,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user organization roles: %w", err)
+	}
+
+	result := make([]RoleRow, len(roles))
+	for i, r := range roles {
+		result[i] = RoleRow(r)
+	}
+
+	return result, nil
 }

@@ -1,8 +1,12 @@
 package ubstatus
 
-var Success = "success"
-var NotFound = "not_found"
-var NotAuthorized = "not_authorizee"
-var AlreadyExists = "already_exists"
-var ValidationError = "validation_error"
-var UnexpectedError = "unexpected_error"
+type StatusCode string
+
+const (
+	Success         StatusCode = "success"
+	NotFound        StatusCode = "not_found"
+	NotAuthorized   StatusCode = "not_authorized"
+	AlreadyExists   StatusCode = "already_exists"
+	ValidationError StatusCode = "validation_error"
+	UnexpectedError StatusCode = "unexpected_error"
+)

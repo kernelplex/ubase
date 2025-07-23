@@ -7,11 +7,11 @@ sql:
     gen:
       go:
         package: dbsqlite
-        out: lib/dbsqlite/
+        out: internal/dbsqlite/
   - engine: postgresql
     queries: sql/postgres/queries.sql
     schema: sql/postgres/migrations
     gen:
       go:
         package: dbpostgres
-        out: lib/dbpostgres/
+        out: internal/dbpostgres/

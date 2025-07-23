@@ -5,7 +5,7 @@ import (
 	"github.com/kernelplex/evercore/base"
 
 	events "github.com/kernelplex/ubase/internal/evercoregen/events"
-	"github.com/kernelplex/ubase/lib/ubevents"
+	"github.com/kernelplex/ubase/lib/ubmanage"
 )
 
 func StateEventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error) {
@@ -14,32 +14,40 @@ func StateEventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error)
 	// ================================================== 
 	// State Events
 	// ==================================================
-	case events.UserCreatedEventType:
-		eventState := ubevents.UserCreatedEvent {}
+	case events.OrganizationAddedEventType:
+		eventState := ubmanage.OrganizationAddedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
 		}
 		state := evercore.NewStateEvent(eventState)
 		return state, nil
-	case events.UserLoginFailedEventType:
-		eventState := ubevents.UserLoginFailedEvent {}
+	case events.OrganizationUpdatedEventType:
+		eventState := ubmanage.OrganizationUpdatedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
 		}
 		state := evercore.NewStateEvent(eventState)
 		return state, nil
-	case events.UserLoginSucceededEventType:
-		eventState := ubevents.UserLoginSucceededEvent {}
+	case events.RoleCreatedEventType:
+		eventState := ubmanage.RoleCreatedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
 		}
 		state := evercore.NewStateEvent(eventState)
 		return state, nil
-	case events.UserRolesUpdatedEventType:
-		eventState := ubevents.UserRolesUpdatedEvent {}
+	case events.RoleUpdatedEventType:
+		eventState := ubmanage.RoleUpdatedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		state := evercore.NewStateEvent(eventState)
+		return state, nil
+	case events.UserAddedEventType:
+		eventState := ubmanage.UserAddedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
@@ -47,7 +55,7 @@ func StateEventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error)
 		state := evercore.NewStateEvent(eventState)
 		return state, nil
 	case events.UserUpdatedEventType:
-		eventState := ubevents.UserUpdatedEvent {}
+		eventState := ubmanage.UserUpdatedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
@@ -60,27 +68,111 @@ func StateEventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error)
 
 func EventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error) {
 	switch ev.EventType {
-	case events.RoleCreatedEventType:
-		eventState := ubevents.RoleCreatedEvent {}
+	case events.RoleDeletedEventType:
+		eventState := ubmanage.RoleDeletedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
 		}
-		return &eventState, nil
+		return eventState, nil
 	case events.RolePermissionAddedEventType:
-		eventState := ubevents.RolePermissionAddedEvent {}
+		eventState := ubmanage.RolePermissionAddedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
 		}
-		return &eventState, nil
+		return eventState, nil
 	case events.RolePermissionRemovedEventType:
-		eventState := ubevents.RolePermissionRemovedEvent {}
+		eventState := ubmanage.RolePermissionRemovedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)
 		if err != nil {
 			return nil, err
 		}
-		return &eventState, nil
+		return eventState, nil
+	case events.RoleUndeletedEventType:
+		eventState := ubmanage.RoleUndeletedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserAddedToRoleEventType:
+		eventState := ubmanage.UserAddedToRoleEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserDisabledEventType:
+		eventState := ubmanage.UserDisabledEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserEnabledEventType:
+		eventState := ubmanage.UserEnabledEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserLoginFailedEventType:
+		eventState := ubmanage.UserLoginFailedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserLoginSucceededEventType:
+		eventState := ubmanage.UserLoginSucceededEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserRemovedFromRoleEventType:
+		eventState := ubmanage.UserRemovedFromRoleEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserTwoFactorAuthenticatedEventType:
+		eventState := ubmanage.UserTwoFactorAuthenticatedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserTwoFactorDisabledEventType:
+		eventState := ubmanage.UserTwoFactorDisabledEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserTwoFactorEnabledEventType:
+		eventState := ubmanage.UserTwoFactorEnabledEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserVerificationTokenGeneratedEventType:
+		eventState := ubmanage.UserVerificationTokenGeneratedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserVerificationTokenVerifiedEventType:
+		eventState := ubmanage.UserVerificationTokenVerifiedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
 	}
 	return nil, nil
 }

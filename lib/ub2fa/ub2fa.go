@@ -21,7 +21,7 @@ type TotpServiceImpl struct {
 	issuer string
 }
 
-func NewTotpService(issuer string) *TotpServiceImpl {
+func NewTotpService(issuer string) TotpService {
 	return &TotpServiceImpl{
 		issuer: issuer,
 	}

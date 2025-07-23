@@ -1,6 +1,5 @@
 package ubapp
 
-/*
 import (
 	"database/sql"
 	"fmt"
@@ -8,17 +7,18 @@ import (
 
 	evercore "github.com/kernelplex/evercore/base"
 	"github.com/kernelplex/evercore/evercoreuri"
-	ubase "github.com/kernelplex/ubase/lib"
+	"github.com/kernelplex/ubase/lib/ub2fa"
 	"github.com/kernelplex/ubase/lib/ubconst"
 	"github.com/kernelplex/ubase/lib/ubdata"
 	"github.com/kernelplex/ubase/lib/ubenv"
+	"github.com/kernelplex/ubase/lib/ubmanage"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
-	// "github.com/kernelplex/ubase/sql/postgres"
+	"github.com/kernelplex/ubase/sql/postgres"
 	"github.com/kernelplex/ubase/sql/sqlite"
 	"github.com/xo/dburl"
 )
 
-type Config struct {
+type UbaseConfig struct {
 	DatabaseConnection        string `env:"DATABASE_CONNECTION" default:"/var/data/main.db"`
 	EventStoreConnection      string `env:"EVENT_STORE_CONNECTION" default:"/var/data/main.db"`
 	Pepper                    []byte `env:"PEPPER" required:"true"`
@@ -26,43 +26,32 @@ type Config struct {
 	Environment               string `env:"ENVIRONMENT" default:"production"`
 	TokenMaxSoftExpirySeconds int    `env:"TOKEN_SOFT_EXPIRY_SECONDS" default:"3600"`  // 1 hour
 	TokenMaxHardExpirySeconds int    `env:"TOKEN_HARD_EXPIRY_SECONDS" default:"86400"` // 24 hours
+	TOTPIssuer                string `env:"TOTP_ISSUER" required:"true"`
 }
 
-type App struct {
-	config            Config
+func UbaseConfigFromEnv() UbaseConfig {
+	config := UbaseConfig{}
+	err := ubenv.ConfigFromEnv(&config)
+	if err != nil {
+		panic(err)
+	}
+	return config
+}
+
+type UbaseApp struct {
+	config            UbaseConfig
 	db                *sql.DB
 	dbadapter         ubdata.DataAdapter
 	store             *evercore.EventStore // Event store
 	hashService       ubsecurity.HashGenerator
 	encryptionService ubsecurity.EncryptionService
-	permissionService ubase.PermissionService
-	roleService       ubase.RoleService
-	userService       ubase.UserService
+	totpService       ub2fa.TotpService
+	managementService ubmanage.ManagementService
 }
 
-func (app *App) SetupFromEnv() error {
-	config := Config{}
-	err := ubenv.ConfigFromEnv(&config)
-	if err != nil {
-		return fmt.Errorf("failed to load config from environment: %w", err)
-	}
-	return app.Setup(config)
-}
-
-func (app *App) GetConfig() *Config {
-	return &app.config
-}
-
-func (app *App) GetDB() *sql.DB {
-	return app.db
-}
-
-func (app *App) GetEventStore() *evercore.EventStore {
-	return app.store
-}
-
-func (app *App) Setup(config Config) error {
-	app.config = config
+func NewUbaseAppEnvConfig() UbaseApp {
+	config := UbaseConfigFromEnv()
+	app := UbaseApp{}
 
 	// ======================================================================
 	// Hashing service
@@ -76,63 +65,87 @@ func (app *App) Setup(config Config) error {
 	// ====================================================st==================
 	eventStore, err := evercoreuri.Connect(config.EventStoreConnection)
 	if err != nil {
-		return fmt.Errorf("failed to connect to event store: %w", err)
+		panic(fmt.Errorf("failed to connect to event store: %w", err))
 	}
 
 	app.store = eventStore
 
 	// ======================================================================
-	// UBase services
+	// UBase database
 	// ======================================================================
 	dburl, err := dburl.Parse(config.DatabaseConnection)
 	if err != nil {
-		return fmt.Errorf("failed to parse database connection URL: %w", err)
+		panic(fmt.Errorf("failed to parse database connection URL: %w", err))
 	}
 	app.db, err = sql.Open(dburl.Driver, dburl.DSN)
 	if err != nil {
-		return fmt.Errorf("failed to open database connection: %w", err)
+		panic(fmt.Errorf("failed to open database connection: %w", err))
 	}
 
 	var databaseType ubconst.DatabaseType
 
-	if dburl.Driver == "postgres" {
+	switch dburl.Driver {
+	case "postgres":
 		ubase_postgres.MigrateUp(app.db)
 		databaseType = ubconst.DatabaseTypePostgres
-	} else if dburl.Driver == "sqlite3" {
+	case "sqlite3":
 		ubase_sqlite.MigrateUp(app.db)
 		databaseType = ubconst.DatabaseTypeSQLite
-	} else {
-		return fmt.Errorf("unsupported database type: %s", dburl.Driver)
+	default:
+		panic(fmt.Sprintf("unsupported database type: %s", dburl.Driver))
 	}
 
 	dbadapter := ubdata.NewDatabase(databaseType, app.db)
+	app.dbadapter = dbadapter
+
+	// ======================================================================
+	// UBase TOTP
+	// ======================================================================
+
+	app.totpService = ub2fa.NewTotpService(config.TOTPIssuer)
+
+	// ======================================================================
+	// UBase services
+	// ======================================================================
+
+	app.encryptionService = ubsecurity.NewEncryptionService(config.SecretKey)
+
+	app.managementService = ubmanage.NewManagement(app.store, dbadapter, app.hashService, app.encryptionService, app.totpService)
 
 	app.dbadapter = dbadapter
 
-	app.roleService = ubase.CreateRoleService(app.store, dbadapter)
-	app.userService = ubase.CreateUserService(app.store, app.hashService, dbadapter)
-	app.permissionService = ubase.NewPermissionService(dbadapter, app.roleService)
-	return nil
+	return app
 }
 
-func NewAppFromEnv() (*App, error) {
-	config := Config{}
-	err := ubenv.ConfigFromEnv(&config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load config from environment: %w", err)
-	}
-	return NewApp(config)
+func (app *UbaseApp) GetConfig() *UbaseConfig {
+	return &app.config
 }
 
-func NewApp(config Config) (*App, error) {
-	app := App{
-		config: config,
-	}
-
-	return &app, nil
+func (app *UbaseApp) GetDB() *sql.DB {
+	return app.db
 }
 
-func (app *App) Shutdown() {
+func (app *UbaseApp) GetEventStore() *evercore.EventStore {
+	return app.store
+}
+
+func (app *UbaseApp) GetManagementService(config UbaseConfig) ubmanage.ManagementService {
+	return app.managementService
+}
+
+func (app *UbaseApp) GetHashService() ubsecurity.HashGenerator {
+	return app.hashService
+}
+
+func (app *UbaseApp) GetEncryptionService() ubsecurity.EncryptionService {
+	return app.encryptionService
+}
+
+func (app *UbaseApp) GetTOTPService() ub2fa.TotpService {
+	return app.totpService
+}
+
+func (app *UbaseApp) Shutdown() {
 	err := app.db.Close()
 	if err != nil {
 		slog.Error("Error closing database", "error", err)
@@ -142,4 +155,3 @@ func (app *App) Shutdown() {
 		slog.Error("Error closing event store", "error", err)
 	}
 }
-*/

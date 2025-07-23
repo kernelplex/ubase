@@ -10,6 +10,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/pquerna/otp v1.5.0
 	github.com/pressly/goose/v3 v3.24.1
+	github.com/xo/dburl v0.23.8
 	golang.org/x/crypto v0.37.0
 )
 

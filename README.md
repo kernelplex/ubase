@@ -1,65 +1,58 @@
-# UBase - User and Role Management System
+# UBase - Modern Identity and Access Management Framework
 
-UBase is a Go-based framework for managing users, roles, and permissions with
-support for multiple database backends and event-driven architecture.
+UBase is a comprehensive Go framework for identity management, authentication, and authorization with event sourcing capabilities.
 
-## Features
+## Key Components
 
-- **User Management**:
-  - Create, update, and retrieve users
-  - Email-based authentication
-  - Password hashing with Argon2id
-  - Login attempt tracking
+### Core Services
+- **ManagementService**: Unified interface for all identity operations
+- **EncryptionService**: AES-256 encryption with configurable keys
+- **HashService**: Argon2id password hashing with pepper
+- **TOTPService**: Time-based one-time password generation/validation
 
-- **Role-Based Access Control**:
-  - Role creation and management
-  - Permission assignment to roles
-  - User-role assignment
+### Event Sourcing
+- Built on Evercore event store
+- All state changes captured as events
+- Event replay capabilities
+- Strong consistency guarantees
 
-- **Database Support**:
-  - PostgreSQL adapter
-  - SQLite adapter
-  - Database migrations
-  - Common interface for multiple backends
-
-- **Security**:
-  - AES encryption/decryption
-  - Secure random generation
-  - Password hashing with configurable parameters
-
-- **Event System**:
-  - User events (created, updated, login)
-  - Role events (created, permissions changed)
-  - Extensible event types
-
-- **Utilities**:
-  - LRU Cache implementation
-  - Priority Queue
-  - CLI command framework
-  - Validation helpers
+### Security Features
+- End-to-end encryption
+- Secure secret generation
+- Two-factor authentication
+- Configurable password policies
+- Automatic database migrations
 
 ## Getting Started
 
 ### Prerequisites
-
-- Go 1.18+
-- PostgreSQL or SQLite (depending on your backend choice)
+- Go 1.20+
+- PostgreSQL or SQLite
+- Event store (compatible with Evercore)
 
 ### Installation
-
 ```bash
-go get github.com/your-repo/ubase
+go get github.com/kernelplex/ubase
 ```
 
-## Configuration
+### Configuration (via Environment Variables)
+```bash
+# Required
+export PEPPER="your-pepper-value" 
+export SECRET_KEY="32-byte-encryption-key"
+export TOTP_ISSUER="YourAppName"
 
-Configure your database connection via environment variables:
-- `DB_TYPE`: "postgres" or "sqlite"
-- `DB_DSN`: Connection string for your database
+# Database (defaults to SQLite)
+export DATABASE_CONNECTION="postgres://user:pass@localhost/dbname"
+export EVENT_STORE_CONNECTION="sqlite:///var/data/events.db"
 
-TODO: Example is sketchy. Need to improve.
-## Usage Example
+# Optional
+export ENVIRONMENT="development"
+export TOKEN_SOFT_EXPIRY_SECONDS="3600"  # 1 hour
+export TOKEN_HARD_EXPIRY_SECONDS="86400" # 24 hours
+```
 
+### Basic Usage
 ```go
 package main
 
@@ -68,29 +61,65 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/your-repo/ubase/lib/dbinterface"
-	"github.com/your-repo/ubase/lib/dbinterface/postgres_adapter"
+	"github.com/kernelplex/ubase/lib/ubapp"
 )
 
 func main() {
-	// Initialize database adapter
-	db := /* your database connection */
-	adapter := postgres_adapter.NewPostgresAdapter(db)
+	// Initialize app with environment config
+	app := ubapp.NewUbaseAppEnvConfig()
+	defer app.Shutdown()
 
-	// Create a new user
-	err := adapter.AddUser(context.Background(), 1, "John", "Doe", "johndoe", "john@example.com")
+	// Get management service
+	mgmt := app.GetManagementService()
+
+	// Create organization
+	orgResp, err := mgmt.OrganizationAdd(context.Background(), ubmanage.OrganizationCreateCommand{
+		Name:       "Acme Corp",
+		SystemName: "acme",
+		Status:     "active",
+	}, "setup-script")
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Printf("Created org ID: %d\n", orgResp.Data.Id)
 
-	// Retrieve user
-	user, err := adapter.GetUser(context.Background(), 1)
+	// Create admin user
+	userResp, err := mgmt.UserAdd(context.Background(), ubmanage.UserCreateCommand{
+		Email:       "admin@acme.com",
+		Password:    "SecurePassword123!",
+		FirstName:   "Admin",
+		LastName:    "User",
+		DisplayName: "Admin",
+		Verified:    true,
+	}, "setup-script")
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("User: %+v\n", user)
+	fmt.Printf("Created user ID: %d\n", userResp.Data.Id)
 }
 ```
+
+## Advanced Features
+
+### Two-Factor Authentication
+```go
+// Generate 2FA secret
+secretResp, err := mgmt.UserGenerateTwoFactorSharedSecret(ctx, ubmanage.UserGenerateTwoFactorSharedSecretCommand{
+	Id: userID,
+}, "admin")
+
+// Verify code
+verifyResp, err := mgmt.UserVerifyTwoFactorCode(ctx, ubmanage.UserVerifyTwoFactorLoginCommand{
+	UserId: userID,
+	Code:   "123456", 
+}, "admin")
+```
+
+### Event Sourcing
+All state changes are automatically recorded as events in the event store. You can:
+- Rebuild state from events
+- Subscribe to specific event types
+- Implement event handlers for side effects
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)

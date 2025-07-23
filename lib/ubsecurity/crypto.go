@@ -129,11 +129,11 @@ func Encrypt64(key []byte, data []byte) (string, error) {
 func Decrypt64(key []byte, data string) ([]byte, error) {
 	decoded, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decrypt data: %w", err)
+		return nil, fmt.Errorf("failed to decode base64 data: %w", err)
 	}
 	decrypted, err := Decrypt(key, decoded)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode base64 data: %w", err)
+		return nil, fmt.Errorf("failed to decrypt decoded data: %w", err)
 	}
 	return decrypted, nil
 }

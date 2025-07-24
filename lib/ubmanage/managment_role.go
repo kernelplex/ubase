@@ -7,8 +7,29 @@ import (
 	"time"
 
 	evercore "github.com/kernelplex/evercore/base"
+	"github.com/kernelplex/ubase/lib/ubdata"
 	"github.com/kernelplex/ubase/lib/ubstatus"
 )
+
+func (m *ManagementImpl) RoleList(ctx context.Context, OrganizationId int64) (Response[[]ubdata.RoleRow], error) {
+	roles, err := m.dbadapter.GetOrganizationRoles(ctx, OrganizationId)
+	if err != nil {
+		return Response[[]ubdata.RoleRow]{
+			Status:  ubstatus.UnexpectedError,
+			Message: "Error listing roles",
+		}, err
+	}
+
+	result := make([]ubdata.RoleRow, len(roles))
+	for i, r := range roles {
+		result[i] = ubdata.RoleRow(r)
+	}
+
+	return Response[[]ubdata.RoleRow]{
+		Status: ubstatus.Success,
+		Data:   result,
+	}, nil
+}
 
 func (m *ManagementImpl) RoleAdd(ctx context.Context,
 	command RoleCreateCommand,
@@ -324,10 +345,10 @@ func (m *ManagementImpl) RolePermissionRemove(ctx context.Context,
 func (m *ManagementImpl) RoleGetBySystemName(ctx context.Context,
 	systemName string) (Response[RoleAggregate], error) {
 
-	aggregate, err := evercore.InReadonlyContext(
+	aggregate, err := evercore.InContext(
 		ctx,
 		m.store,
-		func(etx evercore.EventStoreReadonlyContext) (*RoleAggregate, error) {
+		func(etx evercore.EventStoreContext) (*RoleAggregate, error) {
 			aggregate := RoleAggregate{}
 			err := etx.LoadStateByKeyInto(&aggregate, systemName)
 			if err != nil {

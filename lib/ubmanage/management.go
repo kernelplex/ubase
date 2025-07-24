@@ -54,6 +54,9 @@ type ManagementService interface {
 		command RoleUpdateCommand,
 		agent string) (Response[any], error)
 
+	// RoleList lists all roles for a given organization
+	RoleList(ctx context.Context, OrganizationId int64) (Response[[]ubdata.RoleRow], error)
+
 	// RoleGetById retrieves a role by its ID
 	// Returns the role details or an error if not found
 	RoleGetById(ctx context.Context,

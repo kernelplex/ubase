@@ -7,6 +7,7 @@ import (
 
 	evercore "github.com/kernelplex/evercore/base"
 	"github.com/kernelplex/evercore/evercoreuri"
+	_ "github.com/kernelplex/ubase/internal/evercoregen"
 	"github.com/kernelplex/ubase/lib/ub2fa"
 	"github.com/kernelplex/ubase/lib/ubconst"
 	"github.com/kernelplex/ubase/lib/ubdata"

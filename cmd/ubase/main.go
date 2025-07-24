@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log/slog"
+	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -15,13 +15,10 @@ func main() {
 		panic(err)
 	}
 
-	opts := slog.HandlerOptions{
-		Level: slog.LevelError,
-	}
-	handler := slog.NewTextHandler(os.Stderr, &opts)
-	logger := slog.New(handler)
-	slog.SetDefault(logger)
-
 	commands := commands.GetCommands(os.Args[0])
-	commands.Run(os.Args)
+	err = commands.Run(os.Args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 }

@@ -19,19 +19,21 @@ type ManagementService interface {
 
 	// Organization operations
 
+	// OrganizationList lists all organizations
+	OrganizationList(ctx context.Context) (Response[[]ubdata.Organization], error)
+
 	// OrganizationAdd creates a new organization with the given details
 	// Returns the ID of the newly created organization or an error
-
 	OrganizationAdd(ctx context.Context,
 		command OrganizationCreateCommand,
 		agent string) (Response[IdValue], error)
-	
+
 	// OrganizationGetBySystemName retrieves an organization by its system name
 	// Returns the organization details or an error if not found
 	OrganizationGetBySystemName(
 		ctx context.Context,
 		systemName string) (Response[OrganizationAggregate], error)
-	
+
 	// OrganizationUpdate modifies an existing organization's details
 	// Returns success/failure status or an error
 	OrganizationUpdate(ctx context.Context,
@@ -51,6 +53,9 @@ type ManagementService interface {
 	RoleUpdate(ctx context.Context,
 		command RoleUpdateCommand,
 		agent string) (Response[any], error)
+
+	// RoleList lists all roles for a given organization
+	RoleList(ctx context.Context, OrganizationId int64) (Response[[]ubdata.RoleRow], error)
 
 	// RoleGetById retrieves a role by its ID
 	// Returns the role details or an error if not found
@@ -93,6 +98,11 @@ type ManagementService interface {
 	UserAdd(ctx context.Context,
 		command UserCreateCommand,
 		agent string) (Response[IdValue], error)
+
+	// UserGetById retrieves a user by their ID
+	// Returns the user details or an error if not found
+	UserGetById(ctx context.Context,
+		userId int64) (Response[UserAggregate], error)
 
 	// UserGetByEmail retrieves a user by email address
 	// Returns the user details or an error if not found

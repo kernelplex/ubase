@@ -118,12 +118,7 @@ func (a *SQLiteAdapter) GetOrganization(ctx context.Context, organizationID int6
 	if err != nil {
 		return Organization{}, fmt.Errorf("failed to get organization: %w", err)
 	}
-	return Organization{
-		OrganizationID: org.ID,
-		Name:           org.Name,
-		SystemName:     org.SystemName,
-		Status:         org.Status,
-	}, nil
+	return Organization(org), nil
 }
 
 func (a *SQLiteAdapter) GetOrganizationBySystemName(ctx context.Context, systemName string) (Organization, error) {
@@ -131,12 +126,7 @@ func (a *SQLiteAdapter) GetOrganizationBySystemName(ctx context.Context, systemN
 	if err != nil {
 		return Organization{}, fmt.Errorf("failed to get organization by system name: %w", err)
 	}
-	return Organization{
-		OrganizationID: org.ID,
-		Name:           org.Name,
-		SystemName:     org.SystemName,
-		Status:         org.Status,
-	}, nil
+	return Organization(org), nil
 }
 
 func (a *SQLiteAdapter) GetOrganizationRoles(ctx context.Context, organizationID int64) ([]RoleRow, error) {
@@ -239,5 +229,29 @@ func (a *SQLiteAdapter) GetUserOrganizationRoles(ctx context.Context, userID int
 		result[i] = RoleRow(r)
 	}
 
+	return result, nil
+}
+
+func (a *SQLiteAdapter) ListOrganizations(ctx context.Context) ([]Organization, error) {
+	orgs, err := a.queries.ListOrganizations(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list organizations: %w", err)
+	}
+	result := make([]Organization, len(orgs))
+	for i, o := range orgs {
+		result[i] = Organization(o)
+	}
+	return result, nil
+}
+
+func (a *SQLiteAdapter) ListUserOrganizationRoles(ctx context.Context, userID int64) ([]ListUserOrganizationRolesRow, error) {
+	roles, err := a.queries.ListUserOrganizationRoles(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list user organization roles: %w", err)
+	}
+	result := make([]ListUserOrganizationRolesRow, len(roles))
+	for i, r := range roles {
+		result[i] = ListUserOrganizationRolesRow(r)
+	}
 	return result, nil
 }

@@ -118,12 +118,8 @@ func (a *PostgresAdapter) GetOrganization(ctx context.Context, organizationID in
 	if err != nil {
 		return Organization{}, fmt.Errorf("failed to get organization: %w", err)
 	}
-	return Organization{
-		OrganizationID: org.ID,
-		Name:           org.Name,
-		SystemName:     org.SystemName,
-		Status:         org.Status,
-	}, nil
+
+	return Organization(org), nil
 }
 
 func (a *PostgresAdapter) GetOrganizationBySystemName(ctx context.Context, systemName string) (Organization, error) {
@@ -131,12 +127,7 @@ func (a *PostgresAdapter) GetOrganizationBySystemName(ctx context.Context, syste
 	if err != nil {
 		return Organization{}, fmt.Errorf("failed to get organization by system name: %w", err)
 	}
-	return Organization{
-		OrganizationID: org.ID,
-		Name:           org.Name,
-		SystemName:     org.SystemName,
-		Status:         org.Status,
-	}, nil
+	return Organization(org), nil
 }
 
 func (a *PostgresAdapter) GetOrganizationRoles(ctx context.Context, organizationID int64) ([]RoleRow, error) {
@@ -239,5 +230,29 @@ func (a *PostgresAdapter) GetUserOrganizationRoles(ctx context.Context, userID i
 		result[i] = RoleRow(r)
 	}
 
+	return result, nil
+}
+
+func (a *PostgresAdapter) ListOrganizations(ctx context.Context) ([]Organization, error) {
+	orgs, err := a.queries.ListOrganizations(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list organizations: %w", err)
+	}
+	result := make([]Organization, len(orgs))
+	for i, o := range orgs {
+		result[i] = Organization(o)
+	}
+	return result, nil
+}
+
+func (a *PostgresAdapter) ListUserOrganizationRoles(ctx context.Context, userID int64) ([]ListUserOrganizationRolesRow, error) {
+	roles, err := a.queries.ListUserOrganizationRoles(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list user organization roles: %w", err)
+	}
+	result := make([]ListUserOrganizationRolesRow, len(roles))
+	for i, r := range roles {
+		result[i] = ListUserOrganizationRolesRow(r)
+	}
 	return result, nil
 }

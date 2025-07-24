@@ -68,7 +68,7 @@ func (c RoleCreateCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 	validationTracker := ubvalidation.NewValidationTracker()
 
 	validationTracker.ValidateField("Name", c.Name, true, 1)
-	validationTracker.ValidateField("SystemName", c.SystemName, true, 1)
+	validationTracker.ValidateSystemName("SystemName", &c.SystemName, true)
 	validationTracker.ValidateIntMinValue("OrganizationId", c.OrganizationId, 1)
 
 	return validationTracker.Valid()

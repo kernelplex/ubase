@@ -7,7 +7,20 @@ import (
 	"time"
 
 	evercore "github.com/kernelplex/evercore/base"
+	"github.com/kernelplex/ubase/lib/ubdata"
 )
+
+func (m *ManagementImpl) OrganizationList(ctx context.Context) (Response[[]ubdata.Organization], error) {
+	organizations, err := m.dbadapter.ListOrganizations(ctx)
+	if err != nil {
+		return Error[[]ubdata.Organization]("Error listing organizations"), err
+	}
+	result := make([]ubdata.Organization, len(organizations))
+	for i, o := range organizations {
+		result[i] = ubdata.Organization(o)
+	}
+	return Success(result), nil
+}
 
 func (m *ManagementImpl) OrganizationAdd(ctx context.Context,
 	command OrganizationCreateCommand,

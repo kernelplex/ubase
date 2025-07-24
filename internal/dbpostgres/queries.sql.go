@@ -422,6 +422,38 @@ func (q *Queries) GetUserOrganizations(ctx context.Context, userID int64) ([]Get
 	return items, nil
 }
 
+const listOrganizations = `-- name: ListOrganizations :many
+SELECT id, name, system_name, status FROM organizations
+`
+
+func (q *Queries) ListOrganizations(ctx context.Context) ([]Organization, error) {
+	rows, err := q.db.QueryContext(ctx, listOrganizations)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Organization
+	for rows.Next() {
+		var i Organization
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.SystemName,
+			&i.Status,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const removeAllRolesFromUser = `-- name: RemoveAllRolesFromUser :exec
 DELETE FROM user_roles WHERE user_id = $1
 `

@@ -175,8 +175,8 @@ func (s *AdapterExercises) TestGetOrganization(t *testing.T) {
 		t.Fatalf("GetOrganization failed: %v", err)
 	}
 
-	if organization.OrganizationID != sampleOrganization.OrganizationID {
-		t.Errorf("Expected organization ID %d, got %d", sampleOrganization.OrganizationID, organization.OrganizationID)
+	if organization.ID != sampleOrganization.OrganizationID {
+		t.Errorf("Expected organization ID %d, got %d", sampleOrganization.OrganizationID, organization.ID)
 	}
 	if organization.Name != sampleOrganization.Name {
 		t.Errorf("Expected organization name %s, got %s", sampleOrganization.Name, organization.Name)
@@ -198,8 +198,8 @@ func (s *AdapterExercises) TestGetOrganizationBySystemName(t *testing.T) {
 		t.Fatalf("GetOrganizationBySystemName failed: %v", err)
 	}
 
-	if organization.OrganizationID != sampleOrganization.OrganizationID {
-		t.Errorf("Expected organization ID %d, got %d", sampleOrganization.OrganizationID, organization.OrganizationID)
+	if organization.ID != sampleOrganization.OrganizationID {
+		t.Errorf("Expected organization ID %d, got %d", sampleOrganization.OrganizationID, organization.ID)
 	}
 	if organization.Name != sampleOrganization.Name {
 		t.Errorf("Expected organization name %s, got %s", sampleOrganization.Name, organization.Name)

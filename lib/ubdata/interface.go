@@ -21,6 +21,7 @@ type DataAdapter interface {
 	UpdateUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error
 	AddOrganization(ctx context.Context, id int64, name string, systemName string, status string) error
 	GetOrganization(ctx context.Context, organizationID int64) (Organization, error)
+	ListOrganizations(ctx context.Context) ([]Organization, error)
 	GetOrganizationBySystemName(ctx context.Context, systemName string) (Organization, error)
 	UpdateOrganization(ctx context.Context, id int64, name string, systemName string, status string) error
 
@@ -51,10 +52,10 @@ type User struct {
 }
 
 type Organization struct {
-	OrganizationID int64
-	Name           string
-	SystemName     string
-	Status         string
+	ID         int64
+	Name       string
+	SystemName string
+	Status     string
 }
 
 // Role represents a role in the system

@@ -19,19 +19,21 @@ type ManagementService interface {
 
 	// Organization operations
 
+	// OrganizationList lists all organizations
+	OrganizationList(ctx context.Context) (Response[[]ubdata.Organization], error)
+
 	// OrganizationAdd creates a new organization with the given details
 	// Returns the ID of the newly created organization or an error
-
 	OrganizationAdd(ctx context.Context,
 		command OrganizationCreateCommand,
 		agent string) (Response[IdValue], error)
-	
+
 	// OrganizationGetBySystemName retrieves an organization by its system name
 	// Returns the organization details or an error if not found
 	OrganizationGetBySystemName(
 		ctx context.Context,
 		systemName string) (Response[OrganizationAggregate], error)
-	
+
 	// OrganizationUpdate modifies an existing organization's details
 	// Returns success/failure status or an error
 	OrganizationUpdate(ctx context.Context,

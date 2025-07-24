@@ -15,6 +15,8 @@ import (
 	"github.com/kernelplex/ubase/lib/ubsecurity"
 	"github.com/kernelplex/ubase/sql/postgres"
 	"github.com/kernelplex/ubase/sql/sqlite"
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/xo/dburl"
 )
 
@@ -41,6 +43,7 @@ func UbaseConfigFromEnv() UbaseConfig {
 type UbaseApp struct {
 	config            UbaseConfig
 	db                *sql.DB
+	dburl             *dburl.URL
 	dbadapter         ubdata.DataAdapter
 	store             *evercore.EventStore // Event store
 	hashService       ubsecurity.HashGenerator
@@ -77,6 +80,8 @@ func NewUbaseAppEnvConfig() UbaseApp {
 	if err != nil {
 		panic(fmt.Errorf("failed to parse database connection URL: %w", err))
 	}
+	app.dburl = dburl
+
 	app.db, err = sql.Open(dburl.Driver, dburl.DSN)
 	if err != nil {
 		panic(fmt.Errorf("failed to open database connection: %w", err))
@@ -129,7 +134,7 @@ func (app *UbaseApp) GetEventStore() *evercore.EventStore {
 	return app.store
 }
 
-func (app *UbaseApp) GetManagementService(config UbaseConfig) ubmanage.ManagementService {
+func (app *UbaseApp) GetManagementService() ubmanage.ManagementService {
 	return app.managementService
 }
 
@@ -153,5 +158,17 @@ func (app *UbaseApp) Shutdown() {
 	err = app.store.Close()
 	if err != nil {
 		slog.Error("Error closing event store", "error", err)
+	}
+}
+
+// Runs the migrations for the ubase database.
+func (app *UbaseApp) MigrateUp() error {
+	switch app.dburl.Driver {
+	case "postgres":
+		return ubase_postgres.MigrateUp(app.db)
+	case "sqlite3":
+		return ubase_sqlite.MigrateUp(app.db)
+	default:
+		return fmt.Errorf("unsupported database driver: %s", app.dburl.Driver)
 	}
 }

@@ -1,6 +1,6 @@
 
-main: evercoregen sqlc test
-	# go build -o build/example examples/*.go
+main: evercoregen sqlc
+	go build -o build/ubase cmd/ubase/main.go
 
 .PHONY: evercoregen
 evercoregen:

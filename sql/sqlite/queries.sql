@@ -13,6 +13,9 @@ UPDATE organizations SET
 name = sqlc.arg(name), system_name = sqlc.arg(system_name), status = sqlc.arg(status)
 WHERE id = sqlc.arg(id);
 
+-- name: ListOrganizations :many
+SELECT id, name, system_name, status FROM organizations;
+
 -- name: GetOrganization :one
 SELECT id, name, system_name, status FROM organizations WHERE id = sqlc.arg(id);
 

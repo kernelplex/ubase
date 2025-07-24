@@ -77,6 +77,32 @@ func (m *ManagementImpl) UserAdd(ctx context.Context,
 	}, nil
 }
 
+func (m *ManagementImpl) UserGetById(ctx context.Context,
+	userId int64) (Response[UserAggregate], error) {
+
+	aggregate, err := evercore.InReadonlyContext(
+		ctx,
+		m.store,
+		func(etx evercore.EventStoreReadonlyContext) (*UserAggregate, error) {
+			aggregate := UserAggregate{}
+			err := etx.LoadStateInto(&aggregate, userId)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load user: %w", err)
+			}
+			return &aggregate, nil
+		})
+	if err != nil {
+		return Response[UserAggregate]{
+			Status:  ubstatus.UnexpectedError,
+			Message: "Error getting user",
+		}, err
+	}
+	return Response[UserAggregate]{
+		Status: ubstatus.Success,
+		Data:   *aggregate,
+	}, nil
+}
+
 func (m *ManagementImpl) UserGetByEmail(ctx context.Context,
 	email string) (Response[UserAggregate], error) {
 

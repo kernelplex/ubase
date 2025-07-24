@@ -14,6 +14,7 @@ require (
 	github.com/pressly/goose/v3 v3.24.1
 	github.com/xo/dburl v0.23.8
 	golang.org/x/crypto v0.37.0
+	golang.org/x/term v0.31.0
 )
 
 replace github.com/kernelplex/evercore => /mnt/data/seddy/proj/evercore

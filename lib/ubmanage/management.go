@@ -99,6 +99,11 @@ type ManagementService interface {
 		command UserCreateCommand,
 		agent string) (Response[IdValue], error)
 
+	// UserGetById retrieves a user by their ID
+	// Returns the user details or an error if not found
+	UserGetById(ctx context.Context,
+		userId int64) (Response[UserAggregate], error)
+
 	// UserGetByEmail retrieves a user by email address
 	// Returns the user details or an error if not found
 	UserGetByEmail(ctx context.Context,

@@ -86,6 +86,65 @@ func (t *ValidationTracker) ValidateEmail(fieldName string, email string) {
 	}
 }
 
+func (t *ValidationTracker) ValidatePermission(fieldName string, value string) {
+	if value == "" {
+		t.AddIssue(fieldName, fmt.Sprintf("%s cannot be empty", formatFieldName(fieldName)))
+		return
+	}
+
+	// Check first character is a letter
+	firstChar := value[0]
+	if !((firstChar >= 'a' && firstChar <= 'z') || (firstChar >= 'A' && firstChar <= 'Z')) {
+		t.AddIssue(fieldName, fmt.Sprintf("%s must start with a letter", formatFieldName(fieldName)))
+	}
+
+	// Check all characters are valid
+	for _, c := range value {
+		if !((c >= 'a' && c <= 'z') ||
+			(c >= 'A' && c <= 'Z') ||
+			(c >= '0' && c <= '9') ||
+			c == '_' || c == '-' || c == ':') {
+			t.AddIssue(fieldName, fmt.Sprintf("%s can only contain letters, numbers, underscores, dashes and colons", formatFieldName(fieldName)))
+			break
+		}
+	}
+}
+
+func (t *ValidationTracker) ValidateSystemName(fieldName string, value *string, required bool) {
+	if value == nil {
+		if required {
+			t.AddIssue(fieldName, fmt.Sprintf(ErrFieldRequiredTemplate, formatFieldName(fieldName)))
+		}
+		return
+	}
+
+	if *value == "" {
+		if required {
+			t.AddIssue(fieldName, fmt.Sprintf(ErrFieldRequiredTemplate, formatFieldName(fieldName)))
+		}
+		return
+	}
+
+	// Check first character is a letter
+	if len(*value) > 0 {
+		firstChar := (*value)[0]
+		if !((firstChar >= 'a' && firstChar <= 'z') || (firstChar >= 'A' && firstChar <= 'Z')) {
+			t.AddIssue(fieldName, fmt.Sprintf("%s must start with a letter", formatFieldName(fieldName)))
+		}
+	}
+
+	// Check all characters are valid
+	for _, c := range *value {
+		if !((c >= 'a' && c <= 'z') ||
+			(c >= 'A' && c <= 'Z') ||
+			(c >= '0' && c <= '9') ||
+			c == '_') {
+			t.AddIssue(fieldName, fmt.Sprintf("%s can only contain letters, numbers and underscores", formatFieldName(fieldName)))
+			break
+		}
+	}
+}
+
 func (t *ValidationTracker) ValidateField(fieldName string, value string, required bool, minLength int) {
 	if value == "" {
 		if required {

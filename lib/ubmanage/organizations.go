@@ -32,7 +32,7 @@ func (c OrganizationCreateCommand) Validate() (bool, []ubvalidation.ValidationIs
 	validationTracker := ubvalidation.NewValidationTracker()
 
 	validationTracker.ValidateField("Name", c.Name, true, 0)
-	validationTracker.ValidateField("SystemName", c.SystemName, true, 0)
+	validationTracker.ValidateSystemName("SystemName", &c.SystemName, true)
 	validationTracker.ValidateField("Status", c.Status, true, 0)
 
 	return validationTracker.Valid()

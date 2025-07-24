@@ -46,6 +46,7 @@ func UserViewCommand() ubcli.Command {
 		fmt.Printf("Last Name: %s\n", response.Data.State.LastName)
 		fmt.Printf("Display Name: %s\n", response.Data.State.DisplayName)
 		fmt.Printf("Verified: %t\n", response.Data.State.Verified)
+		fmt.Printf("Disabled: %t\n", response.Data.State.Disabled)
 
 		dataAdapter := app.GetDBAdapter()
 		userOrgRoles, err := dataAdapter.ListUserOrganizationRoles(context.Background(), response.Data.Id)

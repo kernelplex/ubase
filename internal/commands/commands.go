@@ -8,10 +8,6 @@ func GetCommands(name string) *ubcli.CommandLine {
 	commandLine := ubcli.NewCommandLine(name)
 
 	// Utility commands
-	commandLine.Add(UserAddCommand())
-	commandLine.Add(UserUpdateCommand())
-
-	// Organization commands
 	commandLine.Add(MigrateUpCommand())
 	commandLine.Add(SecretCommand())
 
@@ -27,21 +23,11 @@ func GetCommands(name string) *ubcli.CommandLine {
 	commandLine.Add(RoleAddPermissionsCommand())
 
 	// User commands
+	commandLine.Add(UserAddCommand())
+	commandLine.Add(UserUpdateCommand())
 	commandLine.Add(UserViewCommand())
+	commandLine.Add(UserAddRoleCommand())
+	commandLine.Add(UserRemoveRoleCommand())
 
-	/*
-		commandLine.Add(ServeCommand())
-		commandLine.Add(GenerateSecretCommand())
-		commandLine.Add(RoleAddCommand())
-		commandLine.Add(RoleListCommand())
-		commandLine.Add(RoleAddPermissionCommand())
-		commandLine.Add(RoleRemovePermissionCommand())
-		commandLine.Add(RoleShowCommand())
-		commandLine.Add(PermissionListCommand())
-		commandLine.Add(UserAddCommand())
-		commandLine.Add(UserGetCommand())
-		commandLine.Add(UserUpdateCommand())
-		commandLine.Add(UserAddRoleCommand())
-	*/
 	return commandLine
 }

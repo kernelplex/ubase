@@ -454,6 +454,55 @@ func (q *Queries) ListOrganizations(ctx context.Context) ([]Organization, error)
 	return items, nil
 }
 
+const listUserOrganizationRoles = `-- name: ListUserOrganizationRoles :many
+SELECT o.id as organization_id, o.name as organization, 
+	o.system_name as organization_system_name,
+	r.id as role_id, r.name as role_name, r.system_name as role_system_name 
+FROM user_roles ur
+JOIN roles r ON r.id = ur.role_id
+JOIN organizations o ON o.id = r.organization_id
+WHERE ur.user_id = $1
+`
+
+type ListUserOrganizationRolesRow struct {
+	OrganizationID         int64
+	Organization           string
+	OrganizationSystemName string
+	RoleID                 int64
+	RoleName               string
+	RoleSystemName         string
+}
+
+func (q *Queries) ListUserOrganizationRoles(ctx context.Context, userID int64) ([]ListUserOrganizationRolesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listUserOrganizationRoles, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUserOrganizationRolesRow
+	for rows.Next() {
+		var i ListUserOrganizationRolesRow
+		if err := rows.Scan(
+			&i.OrganizationID,
+			&i.Organization,
+			&i.OrganizationSystemName,
+			&i.RoleID,
+			&i.RoleName,
+			&i.RoleSystemName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const removeAllRolesFromUser = `-- name: RemoveAllRolesFromUser :exec
 DELETE FROM user_roles WHERE user_id = $1
 `

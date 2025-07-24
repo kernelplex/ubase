@@ -4,10 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/kernelplex/ubase/lib/ubapp"
 	"github.com/kernelplex/ubase/lib/ubcli"
 	"github.com/kernelplex/ubase/lib/ubstatus"
+	"github.com/olekukonko/tablewriter"
 )
 
 func UserViewCommand() ubcli.Command {
@@ -45,25 +47,31 @@ func UserViewCommand() ubcli.Command {
 		fmt.Printf("Display Name: %s\n", response.Data.State.DisplayName)
 		fmt.Printf("Verified: %t\n", response.Data.State.Verified)
 
-		/*
-			// Print roles in a table if available
-			if len(response.Data.State.Roles) > 0 {
-				fmt.Println("\nRoles:")
-				table := tablewriter.NewWriter(os.Stdout)
-				table.Header([]string{"Role ID", "Name", "System Name"})
-				for _, role := range response.Data.State.Roles {
-					table.Append([]string{
-						fmt.Sprintf("%d", role.),
-						role.Name,
-						role.SystemName,
-					})
-				}
-				table.Render()
-			} else {
-				fmt.Println("\nNo roles assigned")
-			}
-		*/
+		dataAdapter := app.GetDBAdapter()
+		userOrgRoles, err := dataAdapter.ListUserOrganizationRoles(context.Background(), response.Data.Id)
+		if err != nil {
+			return fmt.Errorf("failed to list user organization roles: %w", err)
+		}
 
+		if len(userOrgRoles) > 0 {
+			fmt.Println("\nRoles:")
+			table := tablewriter.NewWriter(os.Stdout)
+			table.Header([]string{"Organization ID", "Organization", "Organization Sys",
+				"Role ID", "Role Name", "Role Sys"})
+			for _, role := range userOrgRoles {
+				// Role is a ListUserOrganizationRolesRow
+				table.Append([]string{
+					fmt.Sprintf("%d", role.OrganizationID),
+					role.Organization,
+					role.OrganizationSystemName,
+					fmt.Sprintf("%d", role.RoleID),
+					role.RoleName,
+					role.RoleSystemName,
+				})
+
+			}
+			table.Render()
+		}
 		return nil
 	}
 

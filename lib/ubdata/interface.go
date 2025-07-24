@@ -11,6 +11,15 @@ type RoleRow struct {
 	SystemName string
 }
 
+type ListUserOrganizationRolesRow struct {
+	OrganizationID         int64
+	Organization           string
+	OrganizationSystemName string
+	RoleID                 int64
+	RoleName               string
+	RoleSystemName         string
+}
+
 // DataAdapter defines the common interface for user/role/permission operations
 type DataAdapter interface {
 
@@ -40,6 +49,7 @@ type DataAdapter interface {
 	RemoveUserFromRole(ctx context.Context, userID int64, roleID int64) error
 	RemoveAllRolesFromUser(ctx context.Context, userID int64) error
 	GetUserOrganizationRoles(ctx context.Context, userID int64, organizationId int64) ([]RoleRow, error)
+	ListUserOrganizationRoles(ctx context.Context, userID int64) ([]ListUserOrganizationRolesRow, error)
 }
 
 // User represents a user in the system

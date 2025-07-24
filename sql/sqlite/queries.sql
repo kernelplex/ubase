@@ -109,4 +109,11 @@ SELECT id, first_name, last_name, display_name, email FROM users WHERE email = s
 -- name: UpdateUser :exec
 UPDATE users SET first_name = sqlc.arg(first_name), last_name = sqlc.arg(last_name), display_name = sqlc.arg(display_name), email = sqlc.arg(email) WHERE id = sqlc.arg(id);
 
-
+-- name: ListUserOrganizationRoles :many
+SELECT o.id as organization_id, o.name as organization, 
+	o.system_name as organization_system_name,
+	r.id as role_id, r.name as role_name, r.system_name as role_system_name 
+FROM user_roles ur
+JOIN roles r ON r.id = ur.role_id
+JOIN organizations o ON o.id = r.organization_id
+WHERE ur.user_id = sqlc.arg(user_id);

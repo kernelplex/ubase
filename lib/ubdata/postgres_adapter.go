@@ -244,3 +244,15 @@ func (a *PostgresAdapter) ListOrganizations(ctx context.Context) ([]Organization
 	}
 	return result, nil
 }
+
+func (a *PostgresAdapter) ListUserOrganizationRoles(ctx context.Context, userID int64) ([]ListUserOrganizationRolesRow, error) {
+	roles, err := a.queries.ListUserOrganizationRoles(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list user organization roles: %w", err)
+	}
+	result := make([]ListUserOrganizationRolesRow, len(roles))
+	for i, r := range roles {
+		result[i] = ListUserOrganizationRolesRow(r)
+	}
+	return result, nil
+}

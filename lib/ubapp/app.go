@@ -131,6 +131,10 @@ func (app *UbaseApp) GetDB() *sql.DB {
 	return app.db
 }
 
+func (app *UbaseApp) GetDBAdapter() ubdata.DataAdapter {
+	return app.dbadapter
+}
+
 func (app *UbaseApp) GetEventStore() *evercore.EventStore {
 	return app.store
 }

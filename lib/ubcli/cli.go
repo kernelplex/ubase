@@ -6,7 +6,29 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+
+	"github.com/kernelplex/ubase/lib/ubenv"
 )
+
+type CliConfig struct {
+	LogLevel string `env:"LOG_LEVEL" required:"true"`
+}
+
+func LogLevelFromString(level string) slog.Level {
+	level = strings.ToLower(level)
+	switch level {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "warn":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		panic(fmt.Errorf("invalid log level: %s", level))
+	}
+}
 
 type Command struct {
 	Name    string
@@ -69,8 +91,18 @@ func (c *CommandLine) Help(args []string) {
 }
 
 func (c *CommandLine) Run(args []string) error {
+
+	config := CliConfig{}
+	err := ubenv.ConfigFromEnv(&config)
+
+	if err != nil {
+		return err
+	}
+
+	logLevel := LogLevelFromString(config.LogLevel)
+
 	// Parse global flags first
-	err := c.globalFlags.Parse(args[1:])
+	err = c.globalFlags.Parse(args[1:])
 	if err != nil {
 		return err
 	}
@@ -84,6 +116,8 @@ func (c *CommandLine) Run(args []string) error {
 	defaultLevel := slog.LevelError
 	if c.verbose {
 		defaultLevel = slog.LevelDebug
+	} else {
+		defaultLevel = logLevel
 	}
 
 	opts := slog.HandlerOptions{

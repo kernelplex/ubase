@@ -20,6 +20,7 @@ var ENV_SQLITE_TEST_DB = "SQLITE_TEST_DB"
 var ENV_TEST_SQLITE_EVENTSTORE_DB = "SQLITE_TEST_EVENTSTORE_DB"
 
 func openDatabase(connectionString string) (*sql.DB, error) {
+
 	db, err := sql.Open("sqlite3", connectionString)
 	if err != nil {
 		return nil, err

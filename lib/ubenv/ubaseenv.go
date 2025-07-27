@@ -45,7 +45,8 @@ func ConfigFromEnv(cfg any) error {
 		required := field.Tag.Get(RequiredTag) == "true"
 		defaultValue := field.Tag.Get(DefaultTag)
 		envValue, exists := getEnv(envTag, defaultValue)
-		if !exists {
+
+		if !exists && envValue == "" {
 			if required {
 				return fmt.Errorf("required environment variable %s not found", envTag)
 			}

@@ -11,7 +11,8 @@ import (
 )
 
 type CliConfig struct {
-	LogLevel string `env:"LOG_LEVEL" required:"true"`
+	LogLevel string `env:"LOG_LEVEL" default:"info"`
+	// TokenMaxSoftExpirySeconds int    `env:"TOKEN_SOFT_EXPIRY_SECONDS" default:"3600"`  // 1 hour
 }
 
 func LogLevelFromString(level string) slog.Level {
@@ -26,7 +27,7 @@ func LogLevelFromString(level string) slog.Level {
 	case "error":
 		return slog.LevelError
 	default:
-		panic(fmt.Errorf("invalid log level: %s", level))
+		panic(fmt.Errorf("invalid log level: '%s'", level))
 	}
 }
 

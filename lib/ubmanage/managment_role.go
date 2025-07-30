@@ -8,13 +8,14 @@ import (
 
 	evercore "github.com/kernelplex/evercore/base"
 	"github.com/kernelplex/ubase/lib/ubdata"
+	r "github.com/kernelplex/ubase/lib/ubresponse"
 	"github.com/kernelplex/ubase/lib/ubstatus"
 )
 
-func (m *ManagementImpl) RoleList(ctx context.Context, OrganizationId int64) (Response[[]ubdata.RoleRow], error) {
+func (m *ManagementImpl) RoleList(ctx context.Context, OrganizationId int64) (r.Response[[]ubdata.RoleRow], error) {
 	roles, err := m.dbadapter.GetOrganizationRoles(ctx, OrganizationId)
 	if err != nil {
-		return Response[[]ubdata.RoleRow]{
+		return r.Response[[]ubdata.RoleRow]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error listing roles",
 		}, err
@@ -25,7 +26,7 @@ func (m *ManagementImpl) RoleList(ctx context.Context, OrganizationId int64) (Re
 		result[i] = ubdata.RoleRow(r)
 	}
 
-	return Response[[]ubdata.RoleRow]{
+	return r.Response[[]ubdata.RoleRow]{
 		Status: ubstatus.Success,
 		Data:   result,
 	}, nil
@@ -33,12 +34,12 @@ func (m *ManagementImpl) RoleList(ctx context.Context, OrganizationId int64) (Re
 
 func (m *ManagementImpl) RoleAdd(ctx context.Context,
 	command RoleCreateCommand,
-	agent string) (Response[IdValue], error) {
+	agent string) (r.Response[IdValue], error) {
 
 	// Validation
 	ok, issues := command.Validate()
 	if !ok {
-		return Response[IdValue]{
+		return r.Response[IdValue]{
 			Status:           ubstatus.ValidationError,
 			Message:          "Validation issues",
 			ValidationIssues: issues,
@@ -74,13 +75,13 @@ func (m *ManagementImpl) RoleAdd(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error creating role", "error", err)
-		return Response[IdValue]{
+		return r.Response[IdValue]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error creating role",
 		}, err
 	}
 
-	return Response[IdValue]{
+	return r.Response[IdValue]{
 		Status: ubstatus.Success,
 		Data: IdValue{
 			Id: id,
@@ -90,12 +91,12 @@ func (m *ManagementImpl) RoleAdd(ctx context.Context,
 
 func (m *ManagementImpl) RoleUpdate(ctx context.Context,
 	command RoleUpdateCommand,
-	agent string) (Response[any], error) {
+	agent string) (r.Response[any], error) {
 
 	// Validation
 	ok, issues := command.Validate()
 	if !ok {
-		return Response[any]{
+		return r.Response[any]{
 			Status:           ubstatus.ValidationError,
 			Message:          "Validation issues",
 			ValidationIssues: issues,
@@ -143,20 +144,20 @@ func (m *ManagementImpl) RoleUpdate(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error updating role", "error", err)
-		return Response[any]{
+		return r.Response[any]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error updating role",
 		}, err
 	}
 
-	return Response[any]{
+	return r.Response[any]{
 		Status: ubstatus.Success,
 	}, nil
 }
 
 func (m *ManagementImpl) RoleDelete(ctx context.Context,
 	command RoleDeleteCommand,
-	agent string) (Response[any], error) {
+	agent string) (r.Response[any], error) {
 
 	err := m.store.WithContext(
 		ctx,
@@ -184,20 +185,20 @@ func (m *ManagementImpl) RoleDelete(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error deleting role", "error", err)
-		return Response[any]{
+		return r.Response[any]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error deleting role",
 		}, err
 	}
 
-	return Response[any]{
+	return r.Response[any]{
 		Status: ubstatus.Success,
 	}, nil
 }
 
 func (m *ManagementImpl) RoleUndelete(ctx context.Context,
 	command RoleUndeleteCommand,
-	agent string) (Response[any], error) {
+	agent string) (r.Response[any], error) {
 
 	err := m.store.WithContext(
 		ctx,
@@ -225,25 +226,25 @@ func (m *ManagementImpl) RoleUndelete(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error undeleting role", "error", err)
-		return Response[any]{
+		return r.Response[any]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error undeleting role",
 		}, err
 	}
 
-	return Response[any]{
+	return r.Response[any]{
 		Status: ubstatus.Success,
 	}, nil
 }
 
 func (m *ManagementImpl) RolePermissionAdd(ctx context.Context,
 	command RolePermissionAddCommand,
-	agent string) (Response[any], error) {
+	agent string) (r.Response[any], error) {
 
 	// Validation
 	ok, issues := command.Validate()
 	if !ok {
-		return Response[any]{
+		return r.Response[any]{
 			Status:           ubstatus.ValidationError,
 			Message:          "Validation issues",
 			ValidationIssues: issues,
@@ -278,25 +279,25 @@ func (m *ManagementImpl) RolePermissionAdd(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error adding permission to role", "error", err)
-		return Response[any]{
+		return r.Response[any]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error adding permission to role",
 		}, err
 	}
 
-	return Response[any]{
+	return r.Response[any]{
 		Status: ubstatus.Success,
 	}, nil
 }
 
 func (m *ManagementImpl) RolePermissionRemove(ctx context.Context,
 	command RolePermissionRemoveCommand,
-	agent string) (Response[any], error) {
+	agent string) (r.Response[any], error) {
 
 	// Validation
 	ok, issues := command.Validate()
 	if !ok {
-		return Response[any]{
+		return r.Response[any]{
 			Status:           ubstatus.ValidationError,
 			Message:          "Validation issues",
 			ValidationIssues: issues,
@@ -331,19 +332,19 @@ func (m *ManagementImpl) RolePermissionRemove(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error removing permission from role", "error", err)
-		return Response[any]{
+		return r.Response[any]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error removing permission from role",
 		}, err
 	}
 
-	return Response[any]{
+	return r.Response[any]{
 		Status: ubstatus.Success,
 	}, nil
 }
 
 func (m *ManagementImpl) RoleGetBySystemName(ctx context.Context,
-	systemName string) (Response[RoleAggregate], error) {
+	systemName string) (r.Response[RoleAggregate], error) {
 
 	aggregate, err := evercore.InContext(
 		ctx,
@@ -359,20 +360,20 @@ func (m *ManagementImpl) RoleGetBySystemName(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error getting role by system name", "error", err)
-		return Response[RoleAggregate]{
+		return r.Response[RoleAggregate]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error getting role",
 		}, err
 	}
 
-	return Response[RoleAggregate]{
+	return r.Response[RoleAggregate]{
 		Status: ubstatus.Success,
 		Data:   *aggregate,
 	}, nil
 }
 
 func (m *ManagementImpl) RoleGetById(ctx context.Context,
-	roleId int64) (Response[RoleAggregate], error) {
+	roleId int64) (r.Response[RoleAggregate], error) {
 
 	aggregate, err := evercore.InReadonlyContext(
 		ctx,
@@ -388,13 +389,13 @@ func (m *ManagementImpl) RoleGetById(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error getting role by ID", "error", err)
-		return Response[RoleAggregate]{
+		return r.Response[RoleAggregate]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error getting role",
 		}, err
 	}
 
-	return Response[RoleAggregate]{
+	return r.Response[RoleAggregate]{
 		Status: ubstatus.Success,
 		Data:   *aggregate,
 	}, nil

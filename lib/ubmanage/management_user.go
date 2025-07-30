@@ -7,16 +7,17 @@ import (
 	"time"
 
 	evercore "github.com/kernelplex/evercore/base"
+	r "github.com/kernelplex/ubase/lib/ubresponse"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
 	"github.com/kernelplex/ubase/lib/ubstatus"
 )
 
 func (m *ManagementImpl) UserAdd(ctx context.Context,
 	command UserCreateCommand,
-	agent string) (Response[IdValue], error) {
+	agent string) (r.Response[IdValue], error) {
 
 	if ok, issues := command.Validate(); !ok {
-		return Response[IdValue]{
+		return r.Response[IdValue]{
 			Status:           ubstatus.ValidationError,
 			Message:          "Validation issues",
 			ValidationIssues: issues,
@@ -64,12 +65,12 @@ func (m *ManagementImpl) UserAdd(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error creating user", "error", err)
-		return Response[IdValue]{
+		return r.Response[IdValue]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error creating user",
 		}, err
 	}
-	return Response[IdValue]{
+	return r.Response[IdValue]{
 		Status: ubstatus.Success,
 		Data: IdValue{
 			Id: id,
@@ -78,7 +79,7 @@ func (m *ManagementImpl) UserAdd(ctx context.Context,
 }
 
 func (m *ManagementImpl) UserGetById(ctx context.Context,
-	userId int64) (Response[UserAggregate], error) {
+	userId int64) (r.Response[UserAggregate], error) {
 
 	aggregate, err := evercore.InReadonlyContext(
 		ctx,
@@ -92,19 +93,19 @@ func (m *ManagementImpl) UserGetById(ctx context.Context,
 			return &aggregate, nil
 		})
 	if err != nil {
-		return Response[UserAggregate]{
+		return r.Response[UserAggregate]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error getting user",
 		}, err
 	}
-	return Response[UserAggregate]{
+	return r.Response[UserAggregate]{
 		Status: ubstatus.Success,
 		Data:   *aggregate,
 	}, nil
 }
 
 func (m *ManagementImpl) UserGetByEmail(ctx context.Context,
-	email string) (Response[UserAggregate], error) {
+	email string) (r.Response[UserAggregate], error) {
 
 	aggregate, err := evercore.InReadonlyContext(
 		ctx,
@@ -115,12 +116,12 @@ func (m *ManagementImpl) UserGetByEmail(ctx context.Context,
 			return &aggregate, nil
 		})
 	if err != nil {
-		return Response[UserAggregate]{
+		return r.Response[UserAggregate]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error getting user",
 		}, err
 	}
-	return Response[UserAggregate]{
+	return r.Response[UserAggregate]{
 		Status: ubstatus.Success,
 		Data:   *aggregate,
 	}, nil
@@ -128,12 +129,12 @@ func (m *ManagementImpl) UserGetByEmail(ctx context.Context,
 
 func (m *ManagementImpl) UserUpdate(ctx context.Context,
 	command UserUpdateCommand,
-	agent string) (Response[any], error) {
+	agent string) (r.Response[any], error) {
 
 	// Validation
 	ok, issues := command.Validate()
 	if !ok {
-		return Response[any]{
+		return r.Response[any]{
 			Status:           ubstatus.ValidationError,
 			Message:          "Validation issues",
 			ValidationIssues: issues,
@@ -201,13 +202,13 @@ func (m *ManagementImpl) UserUpdate(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error updating user", "error", err)
-		return Response[any]{
+		return r.Response[any]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error updating user",
 		}, err
 	}
 
-	return Response[any]{
+	return r.Response[any]{
 		Status: ubstatus.Success,
 	}, nil
 }
@@ -220,36 +221,36 @@ type UserAuthenticationResponse struct {
 
 func (m *ManagementImpl) UserAuthenticate(ctx context.Context,
 	command UserLoginCommand,
-	agent string) (Response[*UserAuthenticationResponse], error) {
+	agent string) (r.Response[*UserAuthenticationResponse], error) {
 
 	return evercore.InReadonlyContext(
 		ctx,
 		m.store,
-		func(etx evercore.EventStoreReadonlyContext) (Response[*UserAuthenticationResponse], error) {
+		func(etx evercore.EventStoreReadonlyContext) (r.Response[*UserAuthenticationResponse], error) {
 			aggregate := UserAggregate{}
 			err := etx.LoadStateByKeyInto(&aggregate, command.Email)
 			if err != nil {
 				slog.Error("Error getting user", "error", err)
-				return Error[*UserAuthenticationResponse]("Email or password is incorrect"), err
+				return r.Error[*UserAuthenticationResponse]("Email or password is incorrect"), err
 			}
 
 			match, err := m.hashingService.VerifyBase64(command.Password, aggregate.State.PasswordHash)
 			if err != nil {
 				slog.Error("Error verifying password", "error", err)
-				return Error[*UserAuthenticationResponse]("Could not verify this account at this time."), err
+				return r.Error[*UserAuthenticationResponse]("Could not verify this account at this time."), err
 			}
 
 			if !match {
 				slog.Error("Password does not match", "email", command.Email)
-				return StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "Email or password is incorrect"), nil
+				return r.StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "Email or password is incorrect"), nil
 			}
 
 			if aggregate.State.Disabled {
 				slog.Error("User is disabled", "email", command.Email)
-				return StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "This account is not currently active. Please contact support."), nil
+				return r.StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "This account is not currently active. Please contact support."), nil
 			}
 
-			return Success(&UserAuthenticationResponse{
+			return r.Success(&UserAuthenticationResponse{
 				UserId: aggregate.Id,
 				Email:  aggregate.State.Email,
 				RequiresTwoFactor: aggregate.State.TwoFactorSharedSecret != nil &&
@@ -260,7 +261,7 @@ func (m *ManagementImpl) UserAuthenticate(ctx context.Context,
 
 func (m *ManagementImpl) UserVerifyTwoFactorCode(ctx context.Context,
 	command UserVerifyTwoFactorLoginCommand,
-	agent string) (Response[any], error) {
+	agent string) (r.Response[any], error) {
 
 	match, err := evercore.InContext(
 		ctx,
@@ -287,19 +288,19 @@ func (m *ManagementImpl) UserVerifyTwoFactorCode(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error verifying two factor code", "error", err)
-		return Error[any]("Error verifying two factor code"), err
+		return r.Error[any]("Error verifying two factor code"), err
 	}
 
 	if !match {
 		slog.Error("Two factor code does not match", "code", command.Code)
-		return StatusError[any](ubstatus.NotAuthorized, "Two factor code does not match"), nil
+		return r.StatusError[any](ubstatus.NotAuthorized, "Two factor code does not match"), nil
 	}
-	return SuccessAny(), nil
+	return r.SuccessAny(), nil
 }
 
 func (m *ManagementImpl) UserGenerateVerificationToken(ctx context.Context,
 	command UserGenerateVerificationTokenCommand,
-	agent string) (Response[UserGenerateVerificationTokenResponse], error) {
+	agent string) (r.Response[UserGenerateVerificationTokenResponse], error) {
 
 	token, err := evercore.InContext(
 		ctx,
@@ -325,16 +326,16 @@ func (m *ManagementImpl) UserGenerateVerificationToken(ctx context.Context,
 		})
 	if err != nil {
 		slog.Error("Error generating verification token", "error", err)
-		return Error[UserGenerateVerificationTokenResponse]("Error generating verification token"), err
+		return r.Error[UserGenerateVerificationTokenResponse]("Error generating verification token"), err
 	}
-	return Success(UserGenerateVerificationTokenResponse{
+	return r.Success(UserGenerateVerificationTokenResponse{
 		Token: token,
 	}), nil
 }
 
 func (m *ManagementImpl) UserVerify(ctx context.Context,
 	command UserVerifyCommand,
-	agent string) (Response[any], error) {
+	agent string) (r.Response[any], error) {
 
 	err := m.store.WithContext(
 		ctx,
@@ -363,14 +364,14 @@ func (m *ManagementImpl) UserVerify(ctx context.Context,
 		})
 	if err != nil {
 		slog.Error("Error verifying user", "error", err)
-		return Error[any]("Error verifying user"), err
+		return r.Error[any]("Error verifying user"), err
 	}
-	return SuccessAny(), nil
+	return r.SuccessAny(), nil
 }
 
 func (m *ManagementImpl) UserGenerateTwoFactorSharedSecret(ctx context.Context,
 	command UserGenerateTwoFactorSharedSecretCommand,
-	agent string) (Response[UserGenerateTwoFactorSharedSecretResponse], error) {
+	agent string) (r.Response[UserGenerateTwoFactorSharedSecretResponse], error) {
 	sharedSecret, err := evercore.InContext(
 		ctx,
 		m.store,
@@ -405,15 +406,15 @@ func (m *ManagementImpl) UserGenerateTwoFactorSharedSecret(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error generating verification token", "error", err)
-		return Error[UserGenerateTwoFactorSharedSecretResponse]("Error generating verification token"), err
+		return r.Error[UserGenerateTwoFactorSharedSecretResponse]("Error generating verification token"), err
 	}
-	return Success(UserGenerateTwoFactorSharedSecretResponse{
+	return r.Success(UserGenerateTwoFactorSharedSecretResponse{
 		SharedSecret: sharedSecret,
 	}), nil
 }
 
 func (m *ManagementImpl) UserDisable(ctx context.Context,
-	command UserDisableCommand, agent string) (Response[any], error) {
+	command UserDisableCommand, agent string) (r.Response[any], error) {
 	err := m.store.WithContext(
 		ctx,
 		func(etx evercore.EventStoreContext) error {
@@ -434,14 +435,14 @@ func (m *ManagementImpl) UserDisable(ctx context.Context,
 		})
 	if err != nil {
 		slog.Error("Error disabling user", "error", err)
-		return Error[any]("Error disabling user"), err
+		return r.Error[any]("Error disabling user"), err
 	}
-	return SuccessAny(), nil
+	return r.SuccessAny(), nil
 }
 
 func (m *ManagementImpl) UserEnable(ctx context.Context,
 	command UserEnableCommand,
-	agent string) (Response[any], error) {
+	agent string) (r.Response[any], error) {
 	err := m.store.WithContext(
 		ctx,
 		func(etx evercore.EventStoreContext) error {
@@ -462,7 +463,7 @@ func (m *ManagementImpl) UserEnable(ctx context.Context,
 		})
 	if err != nil {
 		slog.Error("Error enabling user", "error", err)
-		return Error[any]("Error enabling user"), err
+		return r.Error[any]("Error enabling user"), err
 	}
-	return SuccessAny(), nil
+	return r.SuccessAny(), nil
 }

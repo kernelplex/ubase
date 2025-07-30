@@ -8,28 +8,29 @@ import (
 
 	evercore "github.com/kernelplex/evercore/base"
 	"github.com/kernelplex/ubase/lib/ubdata"
+	r "github.com/kernelplex/ubase/lib/ubresponse"
 )
 
-func (m *ManagementImpl) OrganizationList(ctx context.Context) (Response[[]ubdata.Organization], error) {
+func (m *ManagementImpl) OrganizationList(ctx context.Context) (r.Response[[]ubdata.Organization], error) {
 	organizations, err := m.dbadapter.ListOrganizations(ctx)
 	if err != nil {
-		return Error[[]ubdata.Organization]("Error listing organizations"), err
+		return r.Error[[]ubdata.Organization]("Error listing organizations"), err
 	}
 	result := make([]ubdata.Organization, len(organizations))
 	for i, o := range organizations {
 		result[i] = ubdata.Organization(o)
 	}
-	return Success(result), nil
+	return r.Success(result), nil
 }
 
 func (m *ManagementImpl) OrganizationAdd(ctx context.Context,
 	command OrganizationCreateCommand,
-	agent string) (Response[IdValue], error) {
+	agent string) (r.Response[IdValue], error) {
 
 	// Validation
 	ok, issues := command.Validate()
 	if !ok {
-		return ValidationError[IdValue](issues), nil
+		return r.ValidationError[IdValue](issues), nil
 	}
 
 	id, err := evercore.InContext(
@@ -62,22 +63,22 @@ func (m *ManagementImpl) OrganizationAdd(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error creating organization", "error", err)
-		return Error[IdValue]("Error creating organization"), err
+		return r.Error[IdValue]("Error creating organization"), err
 	}
 
-	return Success(IdValue{
+	return r.Success(IdValue{
 		Id: id,
 	}), nil
 }
 
 func (m *ManagementImpl) OrganizationUpdate(ctx context.Context,
 	command OrganizationUpdateCommand,
-	agent string) (Response[any], error) {
+	agent string) (r.Response[any], error) {
 
 	// Validation
 	ok, issues := command.Validate()
 	if !ok {
-		return ValidationError[any](issues), nil
+		return r.ValidationError[any](issues), nil
 	}
 
 	err := m.store.WithContext(
@@ -123,15 +124,15 @@ func (m *ManagementImpl) OrganizationUpdate(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error updating organization", "error", err)
-		return Error[any]("Error updating organization"), err
+		return r.Error[any]("Error updating organization"), err
 	}
 
-	return SuccessAny(), nil
+	return r.SuccessAny(), nil
 }
 
 func (m *ManagementImpl) OrganizationGetBySystemName(
 	ctx context.Context,
-	systemName string) (Response[OrganizationAggregate], error) {
+	systemName string) (r.Response[OrganizationAggregate], error) {
 
 	aggregate, err := evercore.InContext(
 		ctx,
@@ -147,8 +148,8 @@ func (m *ManagementImpl) OrganizationGetBySystemName(
 		})
 
 	if err != nil {
-		return Error[OrganizationAggregate]("Error getting organization"), err
+		return r.Error[OrganizationAggregate]("Error getting organization"), err
 	}
 
-	return Success(*aggregate), nil
+	return r.Success(*aggregate), nil
 }

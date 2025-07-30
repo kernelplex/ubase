@@ -2,6 +2,7 @@ package integration_tests
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	_ "github.com/kernelplex/ubase/internal/evercoregen"
@@ -11,13 +12,13 @@ import (
 
 var anOrganization = ubmanage.OrganizationState{
 	Name:       "Test Organization",
-	SystemName: "test-organization",
+	SystemName: "test_organization",
 	Status:     "active",
 }
 
 var updatedOrganization = ubmanage.OrganizationState{
 	Name:       "Updated Organization",
-	SystemName: "updated-organization",
+	SystemName: "updated_organization",
 	Status:     "inactive",
 }
 
@@ -30,6 +31,11 @@ func (s *ManagmentServiceTestSuite) AddOrganization(t *testing.T) {
 
 	if err != nil {
 		t.Fatalf("AddOrganization failed to add organization: %v", err)
+	}
+
+	if response.Status != ubstatus.Success {
+		slog.Error("AddOrganization status is not success", "response", response)
+		t.Fatalf("AddOrganization status is not success: %v", response.Status)
 	}
 
 	s.createdOrganizationId = response.Data.Id

@@ -11,12 +11,12 @@ import (
 
 var aRole = ubmanage.RoleState{
 	Name:       "Test Role",
-	SystemName: "test-role",
+	SystemName: "test_role",
 }
 
 var updatedRole = ubmanage.RoleState{
 	Name:       "Updated Role",
-	SystemName: "updated-role",
+	SystemName: "updated_role",
 }
 
 func (s *ManagmentServiceTestSuite) AddRole(t *testing.T) {

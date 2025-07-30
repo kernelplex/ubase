@@ -60,6 +60,7 @@ func ConfigFromEnv(cfg any) error {
 			}
 			fieldValue.SetString(envValue)
 		case reflect.Int:
+		case reflect.Int64:
 			{
 				intValue, err := strconv.Atoi(envValue)
 				if err != nil {
@@ -87,8 +88,12 @@ func ConfigFromEnv(cfg any) error {
 
 // getEnv remains as a private helper function
 func getEnv(key, defaultValue string) (string, bool) {
-	if value, exists := os.LookupEnv(key); exists {
-		return value, true
+	value := defaultValue
+	exists := false
+	newValue, exists := os.LookupEnv(key)
+	if exists {
+		value = newValue
 	}
-	return defaultValue, false
+
+	return value, exists
 }

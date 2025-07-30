@@ -8,19 +8,20 @@ import (
 
 	evercore "github.com/kernelplex/evercore/base"
 	"github.com/kernelplex/ubase/lib/ubdata"
+	r "github.com/kernelplex/ubase/lib/ubresponse"
 	"github.com/kernelplex/ubase/lib/ubstatus"
 )
 
-func (m *ManagementImpl) UserGetOrganizationRoles(ctx context.Context, userId int64, organizationId int64) (Response[[]ubdata.RoleRow], error) {
+func (m *ManagementImpl) UserGetOrganizationRoles(ctx context.Context, userId int64, organizationId int64) (r.Response[[]ubdata.RoleRow], error) {
 	roles, err := m.dbadapter.GetUserOrganizationRoles(ctx, userId, organizationId)
 	if err != nil {
-		return Response[[]ubdata.RoleRow]{
+		return r.Response[[]ubdata.RoleRow]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error getting user organization roles",
 		}, err
 	}
 
-	return Response[[]ubdata.RoleRow]{
+	return r.Response[[]ubdata.RoleRow]{
 		Status: ubstatus.Success,
 		Data:   roles,
 	}, nil
@@ -28,12 +29,12 @@ func (m *ManagementImpl) UserGetOrganizationRoles(ctx context.Context, userId in
 
 func (m *ManagementImpl) UserAddToRole(ctx context.Context,
 	command UserAddToRoleCommand,
-	agent string) (Response[any], error) {
+	agent string) (r.Response[any], error) {
 
 	// Validation
 	ok, issues := command.Validate()
 	if !ok {
-		return Response[any]{
+		return r.Response[any]{
 			Status:           ubstatus.ValidationError,
 			Message:          "Validation issues",
 			ValidationIssues: issues,
@@ -69,25 +70,25 @@ func (m *ManagementImpl) UserAddToRole(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error adding user to role", "error", err)
-		return Response[any]{
+		return r.Response[any]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error adding user to role",
 		}, err
 	}
 
-	return Response[any]{
+	return r.Response[any]{
 		Status: ubstatus.Success,
 	}, nil
 }
 
 func (m *ManagementImpl) UserRemoveFromRole(ctx context.Context,
 	command UserRemoveFromRoleCommand,
-	agent string) (Response[any], error) {
+	agent string) (r.Response[any], error) {
 
 	// Validation
 	ok, issues := command.Validate()
 	if !ok {
-		return Response[any]{
+		return r.Response[any]{
 			Status:           ubstatus.ValidationError,
 			Message:          "Validation issues",
 			ValidationIssues: issues,
@@ -122,13 +123,13 @@ func (m *ManagementImpl) UserRemoveFromRole(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error removing user from role", "error", err)
-		return Response[any]{
+		return r.Response[any]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error removing user from role",
 		}, err
 	}
 
-	return Response[any]{
+	return r.Response[any]{
 		Status: ubstatus.Success,
 	}, nil
 }

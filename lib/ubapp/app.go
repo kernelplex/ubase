@@ -125,13 +125,16 @@ func NewUbaseAppEnvConfig() UbaseApp {
 	// UBase mailer
 	// ======================================================================
 	app.mailer = ubmailer.MaybeNewMailer(ubmailer.MailerConfig{
-		Type:      ubmailer.File,
+		Type:      ubmailer.MailerType(config.MailerType),
 		From:      config.MailerFrom,
 		OutputDir: config.MailerOutputDir,
 	})
-	if app.mailer == nil {
+	if app.mailer != nil {
+		slog.Info("Mailer enabled")
 		app.backgroundMailer = ubmailer.NewBackgroundMailer(app.mailer)
 		app.backgroundMailer.Start()
+	} else {
+		slog.Info("Mailer disabled")
 	}
 
 	// ======================================================================

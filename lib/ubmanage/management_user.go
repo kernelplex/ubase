@@ -276,6 +276,24 @@ func (m *ManagementImpl) UserAuthenticate(ctx context.Context,
 				return r.StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "This account is not currently active. Please contact support."), nil
 			}
 
+			if aggregate.State.TwoFactorSharedSecret != nil && len(*aggregate.State.TwoFactorSharedSecret) > 0 {
+				return r.PartialSuccess(&UserAuthenticationResponse{
+					UserId:               aggregate.Id,
+					Email:                aggregate.State.Email,
+					RequiresTwoFactor:    true,
+					RequiresVerification: aggregate.State.Verified == false,
+				}), nil
+			}
+
+			if !aggregate.State.Verified {
+				return r.PartialSuccess(&UserAuthenticationResponse{
+					UserId:               aggregate.Id,
+					Email:                aggregate.State.Email,
+					RequiresTwoFactor:    aggregate.State.TwoFactorSharedSecret != nil && len(*aggregate.State.TwoFactorSharedSecret) > 0,
+					RequiresVerification: true,
+				}), nil
+			}
+
 			return r.Success(&UserAuthenticationResponse{
 				UserId: aggregate.Id,
 				Email:  aggregate.State.Email,

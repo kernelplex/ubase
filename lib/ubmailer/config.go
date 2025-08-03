@@ -1,6 +1,9 @@
 package ubmailer
 
-import "fmt"
+import (
+	"fmt"
+	"log/slog"
+)
 
 type MailerType string
 
@@ -34,6 +37,7 @@ type MailerConfig struct {
 }
 
 func MaybeNewMailer(config MailerConfig) Mailer {
+	slog.Info("Creating mailer", "type", config.Type)
 	switch config.Type {
 	case File:
 		if config.From == "" {

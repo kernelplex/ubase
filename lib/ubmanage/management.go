@@ -17,7 +17,7 @@ type IdValue struct {
 
 type UserCreatedResponse struct {
 	Id                int64   `json:"id"`
-	VerificationToken *string `json:"verificationToken,omitempty"`
+	VerificationToken *string `json:"-"`
 }
 
 // ManagementService defines the interface for user, organization and role management operations

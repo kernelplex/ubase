@@ -47,7 +47,7 @@ func (t *ValidationTracker) AddIssue(fieldName string, error string) {
 	if !ok {
 		existingIssue = &ValidationIssue{
 			Field: fieldName,
-			Error: []string{error},
+			Error: []string{},
 		}
 		t.issueMap[fieldName] = existingIssue
 		t.IsValid = false

@@ -37,6 +37,13 @@ func Success[T any](data T) Response[T] {
 	}
 }
 
+func PartialSuccess[T any](data T) Response[T] {
+	return Response[T]{
+		Status: ubstatus.PartialSuccess,
+		Data:   data,
+	}
+}
+
 func Error[T any](message string) Response[T] {
 	return Response[T]{
 		Status:  ubstatus.UnexpectedError,

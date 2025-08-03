@@ -316,10 +316,16 @@ func (s *ManagmentServiceTestSuite) LoginWithIncorrectPassword(t *testing.T) {
 }
 
 func (s *ManagmentServiceTestSuite) AddTwoFactorKey(t *testing.T) {
+
+	sharedSecret := "otpauth://totp/MyIssuer:chavez@example.com?algorithm=SHA1&digits=6&issuer=MyIssuer&period=30&secret=74S6UFOJSZYSCRGTELKDDGPS6EW524ZZ"
+
 	// Add two factor authentication to the test user
-	response, err := s.managementService.UserGenerateTwoFactorSharedSecret(context.Background(), ubmanage.UserGenerateTwoFactorSharedSecretCommand{
-		Id: s.createdUserId,
-	}, "test-runner")
+
+	command := ubmanage.UserSetTwoFactorSharedSecretCommand{
+		Id:     s.createdUserId,
+		Secret: sharedSecret,
+	}
+	response, err := s.managementService.UserSetTwoFactorSharedSecret(context.Background(), command, "test-runner")
 
 	if err != nil {
 		t.Fatalf("AddTwoFactorKey failed to generate shared secret: %v", err)
@@ -329,12 +335,7 @@ func (s *ManagmentServiceTestSuite) AddTwoFactorKey(t *testing.T) {
 		t.Fatalf("AddTwoFactorKey status is not success: %v", response.Status)
 	}
 
-	if response.Data.SharedSecret == "" {
-		t.Fatal("AddTwoFactorKey did not return a shared secret")
-	}
-
-	// Store the secret for verification in later tests
-	s.twoFactorSecret = response.Data.SharedSecret
+	s.twoFactorSecret = sharedSecret
 }
 
 func (s *ManagmentServiceTestSuite) LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet(t *testing.T) {

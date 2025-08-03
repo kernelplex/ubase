@@ -12,6 +12,7 @@ import (
 	"github.com/kernelplex/ubase/lib/ubconst"
 	"github.com/kernelplex/ubase/lib/ubdata"
 	"github.com/kernelplex/ubase/lib/ubenv"
+	"github.com/kernelplex/ubase/lib/ubmailer"
 	"github.com/kernelplex/ubase/lib/ubmanage"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
 	ubase_postgres "github.com/kernelplex/ubase/sql/postgres"
@@ -30,6 +31,14 @@ type UbaseConfig struct {
 	TokenMaxSoftExpirySeconds int    `env:"TOKEN_SOFT_EXPIRY_SECONDS" default:"3600"`  // 1 hour
 	TokenMaxHardExpirySeconds int    `env:"TOKEN_HARD_EXPIRY_SECONDS" default:"86400"` // 24 hours
 	TOTPIssuer                string `env:"TOTP_ISSUER" required:"true"`
+
+	// Mailer
+	MailerType      string `env:"MAILER_TYPE" default:"none"`
+	MailerFrom      string `env:"MAILER_FROM" required:"true"`
+	MailerUsername  string `env:"MAILER_USERNAME"`
+	MailerPassword  string `env:"MAILER_PASSWORD"`
+	MailerHost      string `env:"MAILER_HOST"`
+	MailerOutputDir string `env:"MAILER_OUTPUT_DIR"`
 }
 
 func UbaseConfigFromEnv() UbaseConfig {
@@ -51,6 +60,8 @@ type UbaseApp struct {
 	encryptionService ubsecurity.EncryptionService
 	totpService       ub2fa.TotpService
 	managementService ubmanage.ManagementService
+	mailer            ubmailer.Mailer
+	backgroundMailer  *ubmailer.BackgroundMailer
 }
 
 func NewUbaseAppEnvConfig() UbaseApp {
@@ -111,6 +122,19 @@ func NewUbaseAppEnvConfig() UbaseApp {
 	app.totpService = ub2fa.NewTotpService(config.TOTPIssuer)
 
 	// ======================================================================
+	// UBase mailer
+	// ======================================================================
+	app.mailer = ubmailer.MaybeNewMailer(ubmailer.MailerConfig{
+		Type:      ubmailer.File,
+		From:      config.MailerFrom,
+		OutputDir: config.MailerOutputDir,
+	})
+	if app.mailer == nil {
+		app.backgroundMailer = ubmailer.NewBackgroundMailer(app.mailer)
+		app.backgroundMailer.Start()
+	}
+
+	// ======================================================================
 	// UBase services
 	// ======================================================================
 
@@ -155,6 +179,14 @@ func (app *UbaseApp) GetTOTPService() ub2fa.TotpService {
 	return app.totpService
 }
 
+func (app *UbaseApp) GetMailer() ubmailer.Mailer {
+	return app.mailer
+}
+
+func (app *UbaseApp) GetBackgroundMailer() *ubmailer.BackgroundMailer {
+	return app.backgroundMailer
+}
+
 func (app *UbaseApp) Shutdown() {
 	err := app.db.Close()
 	if err != nil {
@@ -163,6 +195,10 @@ func (app *UbaseApp) Shutdown() {
 	err = app.store.Close()
 	if err != nil {
 		slog.Error("Error closing event store", "error", err)
+	}
+
+	if app.backgroundMailer != nil {
+		app.backgroundMailer.Stop()
 	}
 }
 

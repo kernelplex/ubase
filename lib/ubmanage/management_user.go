@@ -14,29 +14,38 @@ import (
 
 func (m *ManagementImpl) UserAdd(ctx context.Context,
 	command UserCreateCommand,
-	agent string) (r.Response[IdValue], error) {
+	agent string) (r.Response[UserCreatedResponse], error) {
 
 	if ok, issues := command.Validate(); !ok {
-		return r.Response[IdValue]{
+		return r.Response[UserCreatedResponse]{
 			Status:           ubstatus.ValidationError,
 			Message:          "Validation issues",
 			ValidationIssues: issues,
 		}, nil
 	}
 
-	id, err := evercore.InContext(
+	type IdCode struct {
+		Id   int64
+		Code *string
+	}
+
+	result, err := evercore.InContext(
 		ctx,
 		m.store,
-		func(etx evercore.EventStoreContext) (int64, error) {
+		func(etx evercore.EventStoreContext) (IdCode, error) {
 			aggregate := UserAggregate{}
 			err := etx.CreateAggregateWithKeyInto(&aggregate, command.Email)
 			if err != nil {
-				return 0, fmt.Errorf("failed to create aggregate: %w", err)
+				return IdCode{}, fmt.Errorf("failed to create aggregate: %w", err)
 			}
 
 			passwordHash, err := m.hashingService.GenerateHashBase64(command.Password)
 			if err != nil {
-				return 0, fmt.Errorf("failed to generate password hash: %w", err)
+				return IdCode{}, fmt.Errorf("failed to generate password hash: %w", err)
+			}
+
+			if command.GenerateVerificationToken {
+				command.Verified = false
 			}
 
 			stateEvent := evercore.NewStateEvent(
@@ -46,10 +55,24 @@ func (m *ManagementImpl) UserAdd(ctx context.Context,
 					FirstName:    command.FirstName,
 					LastName:     command.LastName,
 					DisplayName:  command.DisplayName,
+					Verified:     command.Verified,
 				})
 
 			currentTime := time.Now()
 			etx.ApplyEventTo(&aggregate, stateEvent, currentTime, agent)
+
+			var token string
+			if command.GenerateVerificationToken {
+				token = ubsecurity.GenerateSecureRandomString(10)
+				event := UserVerificationTokenGeneratedEvent{
+					Token: token,
+				}
+
+				err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)
+				if err != nil {
+					return IdCode{}, fmt.Errorf("failed to apply user verification token generated event: %w", err)
+				}
+			}
 
 			err = m.dbadapter.AddUser(
 				ctx, aggregate.Id,
@@ -58,22 +81,24 @@ func (m *ManagementImpl) UserAdd(ctx context.Context,
 				aggregate.State.DisplayName,
 				aggregate.State.Email)
 			if err != nil {
-				return 0, fmt.Errorf("failed to add user in database: %w", err)
+				return IdCode{}, fmt.Errorf("failed to add user in database: %w", err)
 			}
-			return aggregate.Id, nil
+			return IdCode{Id: aggregate.Id, Code: &token}, nil
 		})
 
 	if err != nil {
 		slog.Error("Error creating user", "error", err)
-		return r.Response[IdValue]{
+		return r.Response[UserCreatedResponse]{
 			Status:  ubstatus.UnexpectedError,
 			Message: "Error creating user",
 		}, err
 	}
-	return r.Response[IdValue]{
+
+	return r.Response[UserCreatedResponse]{
 		Status: ubstatus.Success,
-		Data: IdValue{
-			Id: id,
+		Data: UserCreatedResponse{
+			Id:                result.Id,
+			VerificationToken: result.Code,
 		},
 	}, nil
 }
@@ -214,9 +239,10 @@ func (m *ManagementImpl) UserUpdate(ctx context.Context,
 }
 
 type UserAuthenticationResponse struct {
-	UserId            int64
-	Email             string
-	RequiresTwoFactor bool
+	UserId               int64  `json:"user_id"`
+	Email                string `json:"email"`
+	RequiresTwoFactor    bool   `json:"requires_two_factor"`
+	RequiresVerification bool   `json:"requires_verification"`
 }
 
 func (m *ManagementImpl) UserAuthenticate(ctx context.Context,
@@ -255,6 +281,7 @@ func (m *ManagementImpl) UserAuthenticate(ctx context.Context,
 				Email:  aggregate.State.Email,
 				RequiresTwoFactor: aggregate.State.TwoFactorSharedSecret != nil &&
 					len(*aggregate.State.TwoFactorSharedSecret) > 0,
+				RequiresVerification: aggregate.State.Verified == false,
 			}), nil
 		})
 }
@@ -369,13 +396,13 @@ func (m *ManagementImpl) UserVerify(ctx context.Context,
 	return r.SuccessAny(), nil
 }
 
-func (m *ManagementImpl) UserGenerateTwoFactorSharedSecret(ctx context.Context,
-	command UserGenerateTwoFactorSharedSecretCommand,
-	agent string) (r.Response[UserGenerateTwoFactorSharedSecretResponse], error) {
-	sharedSecret, err := evercore.InContext(
+func (m *ManagementImpl) GenerateTwoFactorSharedSecret(ctx context.Context,
+	command GenerateTwoFactorSharedSecretCommand) (r.Response[GenerateTwoFactorSharedSecretResponse], error) {
+
+	sharedSecret, err := evercore.InReadonlyContext(
 		ctx,
 		m.store,
-		func(etx evercore.EventStoreContext) (string, error) {
+		func(etx evercore.EventStoreReadonlyContext) (string, error) {
 			aggregate := UserAggregate{}
 			err := etx.LoadStateInto(&aggregate, command.Id)
 			if err != nil {
@@ -386,31 +413,47 @@ func (m *ManagementImpl) UserGenerateTwoFactorSharedSecret(ctx context.Context,
 			if err != nil {
 				return "", fmt.Errorf("failed to generate totp: %w", err)
 			}
-
-			encryptedUrl, err := m.encryptionService.Encrypt64(twoFactorUrl)
-			if err != nil {
-				return "", fmt.Errorf("failed to encrypt totp: %w", err)
-			}
-
-			event := UserTwoFactorEnabledEvent{
-				SharedSecret: encryptedUrl,
-			}
-
-			err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)
-			if err != nil {
-				return "", fmt.Errorf("failed to apply user verification token generated event: %w", err)
-			}
-
 			return twoFactorUrl, nil
 		})
 
 	if err != nil {
 		slog.Error("Error generating verification token", "error", err)
-		return r.Error[UserGenerateTwoFactorSharedSecretResponse]("Error generating verification token"), err
+		return r.Error[GenerateTwoFactorSharedSecretResponse]("Error generating verification token"), err
 	}
-	return r.Success(UserGenerateTwoFactorSharedSecretResponse{
+	return r.Success(GenerateTwoFactorSharedSecretResponse{
 		SharedSecret: sharedSecret,
 	}), nil
+}
+
+func (m *ManagementImpl) UserSetTwoFactorSharedSecret(ctx context.Context, command UserSetTwoFactorSharedSecretCommand, agent string) (r.Response[any], error) {
+	err := m.store.WithContext(
+		ctx,
+		func(etx evercore.EventStoreContext) error {
+			aggregate := UserAggregate{}
+			err := etx.LoadStateInto(&aggregate, command.Id)
+			if err != nil {
+				return fmt.Errorf("failed to load user: %w", err)
+			}
+
+			encryptedSecret, err := m.encryptionService.Encrypt64(command.Secret)
+
+			event := UserTwoFactorEnabledEvent{
+				SharedSecret: encryptedSecret,
+			}
+
+			err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)
+			if err != nil {
+				return fmt.Errorf("failed to apply user verification token generated event: %w", err)
+			}
+
+			return nil
+		})
+	if err != nil {
+		slog.Error("Error setting two factor shared secret", "error", err)
+		return r.Error[any]("Error setting two factor shared secret"), err
+	}
+
+	return r.SuccessAny(), nil
 }
 
 func (m *ManagementImpl) UserDisable(ctx context.Context,

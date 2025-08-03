@@ -10,8 +10,9 @@ func GetCommands(name string) *ubcli.CommandLine {
 	// Utility commands
 	commandLine.Add(MigrateUpCommand())
 	commandLine.Add(SecretCommand())
+	commandLine.Add(TotpGenerateCommand())
 
-	// Organization commands
+	// GenerateTotpCommandOrganization commands
 	commandLine.Add(OrganizationAddCommand())
 	commandLine.Add(OrganizationListCommand())
 	commandLine.Add(OrganizationUpdateCommand())
@@ -30,6 +31,7 @@ func GetCommands(name string) *ubcli.CommandLine {
 	commandLine.Add(UserRemoveRoleCommand())
 	commandLine.Add(UserDisableCommand())
 	commandLine.Add(UserEnableCommand())
+	commandLine.Add(UserSetTwoFactorSharedSecretCommand())
 
 	return commandLine
 }

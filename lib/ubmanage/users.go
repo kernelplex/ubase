@@ -42,6 +42,7 @@ func (t *UserAggregate) ApplyEventState(eventState evercore.EventState, eventTim
 		return nil
 	case UserVerificationTokenGeneratedEvent:
 		t.State.VerificationToken = &ev.Token
+		t.State.Verified = false
 		return nil
 	case UserVerificationTokenVerifiedEvent:
 		t.State.Verified = true
@@ -71,12 +72,13 @@ func (t *UserAggregate) ApplyEventState(eventState evercore.EventState, eventTim
 // ============================================================================
 
 type UserCreateCommand struct {
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	FirstName   string `json:"firstName"`
-	LastName    string `json:"lastName"`
-	DisplayName string `json:"displayName"`
-	Verified    bool   `json:"verified"`
+	Email                     string `json:"email"`
+	Password                  string `json:"password"`
+	FirstName                 string `json:"firstName"`
+	LastName                  string `json:"lastName"`
+	DisplayName               string `json:"displayName"`
+	Verified                  bool   `json:"verified"`
+	GenerateVerificationToken bool   `json:"verificationRequired"`
 }
 
 func (c UserCreateCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
@@ -137,18 +139,23 @@ type UserVerifyCommand struct {
 	Verification string `json:"verification"`
 }
 
-type UserGenerateTwoFactorSharedSecretCommand struct {
+type GenerateTwoFactorSharedSecretCommand struct {
 	Id           int64  `json:"id"`
 	SharedSecret string `json:"sharedSecret"`
 }
 
-type UserGenerateTwoFactorSharedSecretResponse struct {
+type GenerateTwoFactorSharedSecretResponse struct {
 	SharedSecret string `json:"sharedSecret"`
 }
 
 type UserLoginCommand struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type UserSetTwoFactorSharedSecretCommand struct {
+	Id     int64  `json:"id"`
+	Secret string `json:"secret"`
 }
 
 type UserVerifyTwoFactorLoginCommand struct {

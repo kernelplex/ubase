@@ -59,6 +59,15 @@ func ConfigFromEnv(cfg any) error {
 				return fmt.Errorf("cannot set string field %s", field.Name)
 			}
 			fieldValue.SetString(envValue)
+		case reflect.Bool:
+			if !fieldValue.CanSet() {
+				return fmt.Errorf("cannot set bool field %s", field.Name)
+			}
+			boolValue, err := strconv.ParseBool(envValue)
+			if err != nil {
+				return fmt.Errorf("invalid %s value: %w", envTag, err)
+			}
+			fieldValue.SetBool(boolValue)
 		case reflect.Int:
 		case reflect.Int64:
 			{

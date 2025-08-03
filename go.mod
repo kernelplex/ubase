@@ -12,6 +12,7 @@ require (
 	github.com/olekukonko/tablewriter v1.0.8
 	github.com/pquerna/otp v1.5.0
 	github.com/pressly/goose/v3 v3.24.1
+	github.com/wneessen/go-mail v0.6.2
 	github.com/xo/dburl v0.23.8
 	golang.org/x/crypto v0.37.0
 	golang.org/x/term v0.31.0
@@ -34,4 +35,5 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
+	golang.org/x/text v0.26.0 // indirect
 )

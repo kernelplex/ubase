@@ -15,6 +15,11 @@ type IdValue struct {
 	Id int64 `json:"id"`
 }
 
+type UserCreatedResponse struct {
+	Id                int64   `json:"id"`
+	VerificationToken *string `json:"verificationToken,omitempty"`
+}
+
 // ManagementService defines the interface for user, organization and role management operations
 type ManagementService interface {
 
@@ -98,7 +103,7 @@ type ManagementService interface {
 	// Returns the ID of the newly created user or an error
 	UserAdd(ctx context.Context,
 		command UserCreateCommand,
-		agent string) (r.Response[IdValue], error)
+		agent string) (r.Response[UserCreatedResponse], error)
 
 	// UserGetById retrieves a user by their ID
 	// Returns the user details or an error if not found
@@ -142,10 +147,12 @@ type ManagementService interface {
 
 	// UserGenerateTwoFactorSharedSecret generates a new 2FA shared secret for the user
 	// Returns the secret and setup details or an error
-	UserGenerateTwoFactorSharedSecret(
+	GenerateTwoFactorSharedSecret(
 		ctx context.Context,
-		command UserGenerateTwoFactorSharedSecretCommand,
-		agent string) (r.Response[UserGenerateTwoFactorSharedSecretResponse], error)
+		command GenerateTwoFactorSharedSecretCommand) (r.Response[GenerateTwoFactorSharedSecretResponse], error)
+
+	// UserSetTwoFactorSharedSecret sets the 2FA shared secret for the user
+	UserSetTwoFactorSharedSecret(ctx context.Context, command UserSetTwoFactorSharedSecretCommand, agent string) (r.Response[any], error)
 
 	// UserDisable deactivates a user account
 	// Returns success/failure status or an error

@@ -64,8 +64,13 @@ func (m *ManagementImpl) UserAdd(ctx context.Context,
 			var token string
 			if command.GenerateVerificationToken {
 				token = ubsecurity.GenerateSecureRandomString(10)
+				encryptedToken, err := m.encryptionService.Encrypt64(token)
+				if err != nil {
+					return IdCode{}, fmt.Errorf("failed to encrypt verification token: %w", err)
+				}
+
 				event := UserVerificationTokenGeneratedEvent{
-					Token: token,
+					Token: encryptedToken,
 				}
 
 				err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)
@@ -358,8 +363,12 @@ func (m *ManagementImpl) UserGenerateVerificationToken(ctx context.Context,
 			}
 
 			token := ubsecurity.GenerateSecureRandomString(10)
+			encryptedToken, err := m.encryptionService.Encrypt64(token)
+			if err != nil {
+				return "", fmt.Errorf("failed to encrypt verification token: %w", err)
+			}
 			event := UserVerificationTokenGeneratedEvent{
-				Token: token,
+				Token: encryptedToken,
 			}
 
 			err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)
@@ -395,7 +404,12 @@ func (m *ManagementImpl) UserVerify(ctx context.Context,
 				return fmt.Errorf("user does not have verification token enabled")
 			}
 
-			if *aggregate.State.VerificationToken != command.Verification {
+			bytesOfDecryptedToken, err := m.encryptionService.Decrypt64(*aggregate.State.VerificationToken)
+			if err != nil {
+				return fmt.Errorf("failed to decrypt verification token: %w", err)
+			}
+			decryptedToken := string(bytesOfDecryptedToken)
+			if decryptedToken != command.Verification {
 				return fmt.Errorf("verification token does not match")
 			}
 

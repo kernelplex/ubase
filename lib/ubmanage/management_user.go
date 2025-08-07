@@ -406,6 +406,7 @@ func (m *ManagementImpl) UserVerify(ctx context.Context,
 
 			bytesOfDecryptedToken, err := m.encryptionService.Decrypt64(*aggregate.State.VerificationToken)
 			if err != nil {
+				slog.Error("Error decrypting verification token", "error", err, "token", *aggregate.State.VerificationToken)
 				return fmt.Errorf("failed to decrypt verification token: %w", err)
 			}
 			decryptedToken := string(bytesOfDecryptedToken)

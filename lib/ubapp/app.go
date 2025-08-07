@@ -103,10 +103,17 @@ func NewUbaseAppEnvConfig() UbaseApp {
 
 	switch dburl.Driver {
 	case "postgres":
-		ubase_postgres.MigrateUp(app.db)
+		err := ubase_postgres.MigrateUp(app.db)
+		if err != nil {
+			panic(fmt.Errorf("failed to migrate database: %w", err))
+		}
 		databaseType = ubconst.DatabaseTypePostgres
 	case "sqlite3":
-		ubase_sqlite.MigrateUp(app.db)
+		err := ubase_sqlite.MigrateUp(app.db)
+		if err != nil {
+			panic(fmt.Errorf("failed to migrate database: %w", err))
+		}
+
 		databaseType = ubconst.DatabaseTypeSQLite
 	default:
 		panic(fmt.Sprintf("unsupported database type: %s", dburl.Driver))

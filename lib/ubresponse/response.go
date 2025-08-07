@@ -3,6 +3,7 @@ package ubresponse
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/kernelplex/ubase/lib/ubstatus"
 	"github.com/kernelplex/ubase/lib/ubvalidation"
@@ -58,9 +59,34 @@ func ValidationError[T any](issues []ubvalidation.ValidationIssue) Response[T] {
 	}
 }
 
+func NotAuthorized[T any](message string) Response[T] {
+
+	return Response[T]{
+		Status:  ubstatus.NotAuthorized,
+		Message: message,
+	}
+}
+
 func StatusError[T any](status ubstatus.StatusCode, message string) Response[T] {
 	return Response[T]{
 		Status:  status,
 		Message: message,
 	}
+}
+
+func MapStatusToHttpStatus(status ubstatus.StatusCode) int {
+	var statusHeader = http.StatusOK
+	switch status {
+	case ubstatus.Success:
+		statusHeader = http.StatusCreated
+	case ubstatus.ValidationError:
+		statusHeader = http.StatusBadRequest
+	case ubstatus.NotFound:
+		statusHeader = http.StatusNotFound
+	case ubstatus.AlreadyExists:
+		statusHeader = http.StatusConflict
+	default:
+		statusHeader = http.StatusInternalServerError
+	}
+	return statusHeader
 }

@@ -2,6 +2,7 @@ package ubvalidation
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -153,6 +154,19 @@ func (t *ValidationTracker) ValidateField(fieldName string, value string, requir
 	} else if minLength > 0 && len(value) < minLength {
 		t.AddIssue(fieldName, fmt.Sprintf(ErrFieldMinLengthTemplate, formatFieldName(fieldName), minLength))
 	}
+}
+
+func (t *ValidationTracker) ValidateMaxLength(fieldName string, value string, maxLength int) {
+	if len(value) > maxLength {
+		t.AddIssue(fieldName, fmt.Sprintf("%s must be at most %d characters", formatFieldName(fieldName), maxLength))
+	}
+}
+
+func (t *ValidationTracker) ValidateOneOf(fieldName string, value string, validValues []string) {
+	if slices.Contains(validValues, value) {
+		return
+	}
+	t.AddIssue(fieldName, fmt.Sprintf("%s must be one of %v", formatFieldName(fieldName), validValues))
 }
 
 func (t *ValidationTracker) ValidatePasswordComplexity(fieldName string, password string) {

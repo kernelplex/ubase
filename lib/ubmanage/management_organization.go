@@ -62,8 +62,9 @@ func (m *ManagementImpl) OrganizationAdd(ctx context.Context,
 		})
 
 	if err != nil {
+		status := MapEvercoreErrorToStatus(err)
 		slog.Error("Error creating organization", "error", err)
-		return r.Error[IdValue]("Error creating organization"), err
+		return r.StatusError[IdValue](status, "Error creating organization"), err
 	}
 
 	return r.Success(IdValue{
@@ -148,7 +149,9 @@ func (m *ManagementImpl) OrganizationGetBySystemName(
 		})
 
 	if err != nil {
-		return r.Error[OrganizationAggregate]("Error getting organization"), err
+		status := MapEvercoreErrorToStatus(err)
+		slog.Error("Error getting organization by system name", "error", err)
+		return r.StatusError[OrganizationAggregate](status, "Error getting organization"), err
 	}
 
 	return r.Success(*aggregate), nil

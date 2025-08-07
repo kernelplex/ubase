@@ -74,9 +74,10 @@ func (m *ManagementImpl) RoleAdd(ctx context.Context,
 		})
 
 	if err != nil {
+		status := MapEvercoreErrorToStatus(err)
 		slog.Error("Error creating role", "error", err)
 		return r.Response[IdValue]{
-			Status:  ubstatus.UnexpectedError,
+			Status:  status,
 			Message: "Error creating role",
 		}, err
 	}
@@ -359,9 +360,10 @@ func (m *ManagementImpl) RoleGetBySystemName(ctx context.Context,
 		})
 
 	if err != nil {
+		status := MapEvercoreErrorToStatus(err)
 		slog.Error("Error getting role by system name", "error", err)
 		return r.Response[RoleAggregate]{
-			Status:  ubstatus.UnexpectedError,
+			Status:  status,
 			Message: "Error getting role",
 		}, err
 	}
@@ -388,9 +390,10 @@ func (m *ManagementImpl) RoleGetById(ctx context.Context,
 		})
 
 	if err != nil {
+		status := MapEvercoreErrorToStatus(err)
 		slog.Error("Error getting role by ID", "error", err)
 		return r.Response[RoleAggregate]{
-			Status:  ubstatus.UnexpectedError,
+			Status:  status,
 			Message: "Error getting role",
 		}, err
 	}

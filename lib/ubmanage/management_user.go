@@ -2,6 +2,7 @@ package ubmanage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -11,6 +12,23 @@ import (
 	"github.com/kernelplex/ubase/lib/ubsecurity"
 	"github.com/kernelplex/ubase/lib/ubstatus"
 )
+
+func MapEvercoreErrorToStatus(err error) ubstatus.StatusCode {
+	// Duplicate
+
+	storageError := &evercore.StorageEngineError{}
+	if errors.As(err, &storageError) {
+		if storageError.ErrorType == evercore.ErrorTypeConstraintViolation {
+			return ubstatus.AlreadyExists
+		}
+
+		if storageError.ErrorType == evercore.ErrorNotFound {
+			return ubstatus.NotFound
+		}
+	}
+
+	return ubstatus.UnexpectedError
+}
 
 func (m *ManagementImpl) UserAdd(ctx context.Context,
 	command UserCreateCommand,
@@ -93,8 +111,9 @@ func (m *ManagementImpl) UserAdd(ctx context.Context,
 
 	if err != nil {
 		slog.Error("Error creating user", "error", err)
+		status := MapEvercoreErrorToStatus(err)
 		return r.Response[UserCreatedResponse]{
-			Status:  ubstatus.UnexpectedError,
+			Status:  status,
 			Message: "Error creating user",
 		}, err
 	}
@@ -123,8 +142,9 @@ func (m *ManagementImpl) UserGetById(ctx context.Context,
 			return &aggregate, nil
 		})
 	if err != nil {
+		status := MapEvercoreErrorToStatus(err)
 		return r.Response[UserAggregate]{
-			Status:  ubstatus.UnexpectedError,
+			Status:  status,
 			Message: "Error getting user",
 		}, err
 	}
@@ -146,8 +166,9 @@ func (m *ManagementImpl) UserGetByEmail(ctx context.Context,
 			return &aggregate, nil
 		})
 	if err != nil {
+		status := MapEvercoreErrorToStatus(err)
 		return r.Response[UserAggregate]{
-			Status:  ubstatus.UnexpectedError,
+			Status:  status,
 			Message: "Error getting user",
 		}, err
 	}
@@ -261,8 +282,14 @@ func (m *ManagementImpl) UserAuthenticate(ctx context.Context,
 			aggregate := UserAggregate{}
 			err := etx.LoadStateByKeyInto(&aggregate, command.Email)
 			if err != nil {
+				status := MapEvercoreErrorToStatus(err)
 				slog.Error("Error getting user", "error", err)
-				return r.Error[*UserAuthenticationResponse]("Email or password is incorrect"), err
+				if status == ubstatus.NotFound {
+					return r.StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "Email or password is incorrect"), nil
+				}
+				if status == ubstatus.UnexpectedError {
+					return r.Error[*UserAuthenticationResponse]("Could not verify this account at this time."), err
+				}
 			}
 
 			match, err := m.hashingService.VerifyBase64(command.Password, aggregate.State.PasswordHash)
@@ -337,8 +364,9 @@ func (m *ManagementImpl) UserVerifyTwoFactorCode(ctx context.Context,
 		})
 
 	if err != nil {
+		status := MapEvercoreErrorToStatus(err)
 		slog.Error("Error verifying two factor code", "error", err)
-		return r.Error[any]("Error verifying two factor code"), err
+		return r.StatusError[any](status, "Error verifying two factor code"), nil
 	}
 
 	if !match {
@@ -379,8 +407,12 @@ func (m *ManagementImpl) UserGenerateVerificationToken(ctx context.Context,
 			return token, nil
 		})
 	if err != nil {
+		status := MapEvercoreErrorToStatus(err)
 		slog.Error("Error generating verification token", "error", err)
-		return r.Error[UserGenerateVerificationTokenResponse]("Error generating verification token"), err
+		return r.Response[UserGenerateVerificationTokenResponse]{
+			Status:  status,
+			Message: "Error generating verification token",
+		}, err
 	}
 	return r.Success(UserGenerateVerificationTokenResponse{
 		Token: token,
@@ -450,8 +482,13 @@ func (m *ManagementImpl) GenerateTwoFactorSharedSecret(ctx context.Context,
 		})
 
 	if err != nil {
+		status := MapEvercoreErrorToStatus(err)
 		slog.Error("Error generating verification token", "error", err)
-		return r.Error[GenerateTwoFactorSharedSecretResponse]("Error generating verification token"), err
+
+		return r.Response[GenerateTwoFactorSharedSecretResponse]{
+			Status:  status,
+			Message: "Error generating two factor shared secret",
+		}, err
 	}
 	return r.Success(GenerateTwoFactorSharedSecretResponse{
 		SharedSecret: sharedSecret,

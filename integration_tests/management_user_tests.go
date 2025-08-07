@@ -31,6 +31,7 @@ func (s *ManagmentServiceTestSuite) AddUser(t *testing.T) {
 		FirstName:   aUser.FirstName,
 		LastName:    aUser.LastName,
 		DisplayName: aUser.DisplayName,
+		Verified:    true,
 	}, "test-runner")
 
 	if err != nil {
@@ -349,8 +350,8 @@ func (s *ManagmentServiceTestSuite) LoginWithCorrectPasswordEnsureTwoFactorRequi
 		t.Fatalf("LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet failed to authenticate: %v", err)
 	}
 
-	if response.Status != ubstatus.Success {
-		t.Fatalf("LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet status is not success: %v", response.Status)
+	if response.Status != ubstatus.PartialSuccess {
+		t.Fatalf("LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet status is not partial_success: %v", response.Status)
 	}
 
 	if !response.Data.RequiresTwoFactor {

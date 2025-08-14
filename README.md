@@ -1,6 +1,7 @@
 # UBase - Modern Identity and Access Management Framework
 
-UBase is a comprehensive Go framework for identity management, authentication, and authorization with event sourcing capabilities.
+UBase is a comprehensive Go framework for identity management, authentication,
+and authorization with event sourcing capabilities.
 
 ## Key Components
 
@@ -20,7 +21,6 @@ UBase is a comprehensive Go framework for identity management, authentication, a
 - End-to-end encryption
 - Secure secret generation
 - Two-factor authentication
-- Configurable password policies
 - Automatic database migrations
 
 ## Getting Started

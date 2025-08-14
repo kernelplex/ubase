@@ -109,7 +109,28 @@ func NewUbaseAppEnvConfig() UbaseApp {
 		}
 		databaseType = ubconst.DatabaseTypePostgres
 	case "sqlite3":
-		err := ubase_sqlite.MigrateUp(app.db)
+
+		// Execute sane PRAGMA settings for SQLite
+		_, err := app.db.Exec("PRAGMA journal_mode=WAL;")
+		if err != nil {
+			panic(fmt.Errorf("failed to set journal mode: %w", err))
+		}
+		_, err = app.db.Exec("PRAGMA synchronous=normal;")
+		if err != nil {
+			panic(fmt.Errorf("failed to set synchronous mode: %w", err))
+		}
+
+		_, err = app.db.Exec("PRAGMA temp_store=memory;")
+		if err != nil {
+			panic(fmt.Errorf("failed to set temp store: %w", err))
+		}
+
+		_, err = app.db.Exec("PRAGMA mmap_size = 30000000000;")
+		if err != nil {
+			panic(fmt.Errorf("failed to set mmap size: %w", err))
+		}
+
+		err = ubase_sqlite.MigrateUp(app.db)
 		if err != nil {
 			panic(fmt.Errorf("failed to migrate database: %w", err))
 		}

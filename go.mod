@@ -6,7 +6,7 @@ tool github.com/kernelplex/evercore/cmd/evercoregen
 
 require (
 	github.com/joho/godotenv v1.5.1
-	github.com/kernelplex/evercore v0.0.37
+	github.com/kernelplex/evercore v0.0.38
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/olekukonko/tablewriter v1.0.8
@@ -18,7 +18,8 @@ require (
 	golang.org/x/term v0.31.0
 )
 
-replace github.com/kernelplex/evercore => /mnt/data/seddy/proj/evercore
+// NOTE: Uncomment the following line to use a local version of evercore
+// replace github.com/kernelplex/evercore => /mnt/data/seddy/proj/evercore
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.8.1 // indirect

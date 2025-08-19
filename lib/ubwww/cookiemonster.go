@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/kernelplex/ubase/lib/ubsecurity"
 )
@@ -14,7 +15,7 @@ type CookieContextKey string
 
 type AuthTokenCookie interface {
 	IsExpired() bool
-	Touch()
+	Touch(unixSec int64)
 }
 
 type AuthTokenCookieManager[T AuthTokenCookie] interface {
@@ -132,7 +133,8 @@ func (c *CookieMonster[T]) MiddlewareFunc(handler http.HandlerFunc) http.Handler
 				slog.Debug("Auth token cookie is expired, clearing cookie")
 				c.ClearAuthTokenCookie(w)
 			} else {
-				token.Touch()
+				updateTime := time.Now().Add(time.Duration(c.tokenSoftExpiry) * time.Second).Unix()
+				token.Touch(updateTime)
 				err = c.WriteAuthTokenCookie(w, token)
 				if err != nil {
 					slog.Error("Error updating auth token cookie", "error", err)
@@ -155,7 +157,8 @@ func (c *CookieMonster[T]) Middleware(handler http.Handler) http.Handler {
 				slog.Debug("Auth token cookie is expired, clearing cookie")
 				c.ClearAuthTokenCookie(w)
 			} else {
-				token.Touch()
+				updateTime := time.Now().Add(time.Duration(c.tokenSoftExpiry) * time.Second).Unix()
+				token.Touch(updateTime)
 				err = c.WriteAuthTokenCookie(w, token)
 				if err != nil {
 					slog.Error("Error updating auth token cookie", "error", err)

@@ -18,8 +18,8 @@ import (
 	ubase_postgres "github.com/kernelplex/ubase/sql/postgres"
 	ubase_sqlite "github.com/kernelplex/ubase/sql/sqlite"
 	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/xo/dburl"
+	_ "modernc.org/sqlite"
 )
 
 type UbaseConfig struct {

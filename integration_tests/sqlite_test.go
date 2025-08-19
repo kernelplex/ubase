@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/joho/godotenv"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 
 	// "github.com/kernelplex/ubase/lib/ubconst"
 	evercore "github.com/kernelplex/evercore/base"
@@ -21,7 +21,7 @@ var ENV_TEST_SQLITE_EVENTSTORE_DB = "SQLITE_TEST_EVENTSTORE_DB"
 
 func openDatabase(connectionString string) (*sql.DB, error) {
 
-	db, err := sql.Open("sqlite3", connectionString)
+	db, err := sql.Open("sqlite", connectionString)
 	if err != nil {
 		return nil, err
 	}

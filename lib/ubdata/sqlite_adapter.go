@@ -255,3 +255,23 @@ func (a *SQLiteAdapter) ListUserOrganizationRoles(ctx context.Context, userID in
 	}
 	return result, nil
 }
+
+func (a *SQLiteAdapter) GetAllUserOrganizationRoles(ctx context.Context, userID int64) ([]ListUserOrganizationRolesRow, error) {
+	roles, err := a.queries.GetAllUserOrganizationRoles(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all user organization roles: %w", err)
+	}
+	result := make([]ListUserOrganizationRolesRow, len(roles))
+	for i, r := range roles {
+		res := ListUserOrganizationRolesRow{
+			OrganizationID:         r.OrganizationID,
+			Organization:           r.OrganizationName,
+			OrganizationSystemName: r.OrganizationSystemName,
+			RoleID:                 r.ID,
+			RoleName:               r.Name,
+			RoleSystemName:         r.SystemName,
+		}
+		result[i] = res
+	}
+	return result, nil
+}

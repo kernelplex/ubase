@@ -66,6 +66,13 @@ SELECT r.id, r.name, r.system_name FROM user_roles ur
 JOIN roles r ON r.id = ur.role_id
 WHERE ur.user_id = sqlc.arg(user_id) AND r.organization_id = sqlc.arg(organization_id);
 
+-- name: GetAllUserOrganizationRoles :many
+SELECT r.id, r.name, r.system_name, o.id as organization_id, o.name as organization_name, o.system_name as organization_system_name
+FROM user_roles ur
+JOIN roles r ON r.id = ur.role_id
+JOIN organizations o ON o.id = r.organization_id
+WHERE ur.user_id = sqlc.arg(user_id);
+
 -- name: AddPermissionToRole :exec
 INSERT INTO role_permissions (role_id, permission) 
 VALUES (sqlc.arg(role_id), sqlc.arg(permission));

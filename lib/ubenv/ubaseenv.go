@@ -69,6 +69,7 @@ func ConfigFromEnv(cfg any) error {
 			}
 			fieldValue.SetBool(boolValue)
 		case reflect.Int:
+			fallthrough
 		case reflect.Int64:
 			{
 				intValue, err := strconv.Atoi(envValue)

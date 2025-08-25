@@ -1,12 +1,18 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
 	"github.com/kernelplex/ubase/internal/commands"
+	"modernc.org/sqlite"
 )
+
+func init() {
+	sql.Register("sqlite3", &sqlite.Driver{})
+}
 
 func main() {
 	// Read dot env

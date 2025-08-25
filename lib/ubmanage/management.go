@@ -176,6 +176,8 @@ type ManagementService interface {
 	// Returns the list of roles or an error
 	UserGetOrganizationRoles(ctx context.Context, userId int64, organizationId int64) (r.Response[[]ubdata.RoleRow], error)
 
+	UserGetAllOrganizationRoles(ctx context.Context, userId int64) (r.Response[[]ubdata.ListUserOrganizationRolesRow], error)
+
 	// UserRemoveFromRole revokes a role from a user
 	// Returns success/failure status or an error
 	UserRemoveFromRole(ctx context.Context,

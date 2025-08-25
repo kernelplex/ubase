@@ -126,6 +126,7 @@ func (c *CookieMonster[T]) FromContext(ctx context.Context) (T, bool) {
 
 func (c *CookieMonster[T]) MiddlewareFunc(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		found, token, err := c.ReadAuthTokenCookie(r)
 
 		if err == nil && found {

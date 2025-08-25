@@ -1,9 +1,11 @@
 package commands
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/user"
+	"strings"
 
 	"golang.org/x/term"
 )
@@ -19,6 +21,18 @@ func GetAgent() string {
 	return GetSystemUsername() + "@" + os.Getenv("HOSTNAME")
 }
 
+func readLine() (string, error) {
+	// Use buffered reader to read a line from standard input
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString('\n') // Reads until a newline
+	if err != nil {
+		return "", fmt.Errorf("failed to read input: %w", err)
+	}
+	// Trim the spaces and newline characters
+	input = strings.TrimSpace(input)
+	return input, nil
+}
+
 func maybeReadInput(prompt string, existing string) string {
 	if existing != "" {
 		return existing
@@ -27,8 +41,7 @@ func maybeReadInput(prompt string, existing string) string {
 	for true {
 
 		fmt.Print(prompt)
-		var input string
-		_, err := fmt.Scanln(&input)
+		input, err := readLine()
 		if err == nil {
 			return input
 		}
@@ -46,7 +59,7 @@ func maybeReadOptionalInput(prompt string, existing string) *string {
 
 		fmt.Print(prompt)
 		var input string
-		_, err := fmt.Scanln(&input)
+		input, err := readLine()
 		if input == "" && err == nil {
 			return nil
 		}

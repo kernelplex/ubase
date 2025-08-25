@@ -62,6 +62,7 @@ type UbaseApp struct {
 	managementService ubmanage.ManagementService
 	mailer            ubmailer.Mailer
 	backgroundMailer  *ubmailer.BackgroundMailer
+	prefectService    ubmanage.PrefectService
 }
 
 func NewUbaseAppEnvConfig() UbaseApp {
@@ -173,6 +174,8 @@ func NewUbaseAppEnvConfig() UbaseApp {
 
 	app.managementService = ubmanage.NewManagement(app.store, dbadapter, app.hashService, app.encryptionService, app.totpService)
 
+	app.prefectService = ubmanage.NewPrefectService(app.managementService, 100, 100)
+
 	app.dbadapter = dbadapter
 
 	return app
@@ -243,4 +246,8 @@ func (app *UbaseApp) MigrateUp() error {
 	default:
 		return fmt.Errorf("unsupported database driver: %s", app.dburl.Driver)
 	}
+}
+
+func (app *UbaseApp) GetPrefectService() ubmanage.PrefectService {
+	return app.prefectService
 }

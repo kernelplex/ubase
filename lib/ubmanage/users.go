@@ -22,7 +22,6 @@ type UserState struct {
 	LastLoginAttempt      int64   `json:"lastLoginAttempt,omitempty"`
 	FailedLoginAttempts   int64   `json:"failedLoginAttempts,omitempty"`
 	TwoFactorSharedSecret *string `json:"twoFactorSharedSecret,omitempty"`
-	Roles                 []int64 `json:"roles,omitempty"`
 }
 
 // evercore:aggregate

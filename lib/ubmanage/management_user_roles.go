@@ -27,6 +27,21 @@ func (m *ManagementImpl) UserGetOrganizationRoles(ctx context.Context, userId in
 	}, nil
 }
 
+func (m *ManagementImpl) UserGetAllOrganizationRoles(ctx context.Context, userId int64) (r.Response[[]ubdata.ListUserOrganizationRolesRow], error) {
+	roles, err := m.dbadapter.GetAllUserOrganizationRoles(ctx, userId)
+	if err != nil {
+		return r.Response[[]ubdata.ListUserOrganizationRolesRow]{
+			Status:  ubstatus.UnexpectedError,
+			Message: "Error getting all user organization roles",
+		}, err
+	}
+
+	return r.Response[[]ubdata.ListUserOrganizationRolesRow]{
+		Status: ubstatus.Success,
+		Data:   roles,
+	}, nil
+}
+
 func (m *ManagementImpl) UserAddToRole(ctx context.Context,
 	command UserAddToRoleCommand,
 	agent string) (r.Response[any], error) {

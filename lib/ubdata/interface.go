@@ -49,6 +49,7 @@ type DataAdapter interface {
 	RemoveUserFromRole(ctx context.Context, userID int64, roleID int64) error
 	RemoveAllRolesFromUser(ctx context.Context, userID int64) error
 	GetUserOrganizationRoles(ctx context.Context, userID int64, organizationId int64) ([]RoleRow, error)
+	GetAllUserOrganizationRoles(ctx context.Context, userID int64) ([]ListUserOrganizationRolesRow, error)
 	ListUserOrganizationRoles(ctx context.Context, userID int64) ([]ListUserOrganizationRolesRow, error)
 }
 

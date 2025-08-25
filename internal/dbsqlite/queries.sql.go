@@ -150,6 +150,53 @@ func (q *Queries) DeleteRole(ctx context.Context, id int64) error {
 	return err
 }
 
+const getAllUserOrganizationRoles = `-- name: GetAllUserOrganizationRoles :many
+SELECT r.id, r.name, r.system_name, o.id as organization_id, o.name as organization_name, o.system_name as organization_system_name
+FROM user_roles ur
+JOIN roles r ON r.id = ur.role_id
+JOIN organizations o ON o.id = r.organization_id
+WHERE ur.user_id = ?1
+`
+
+type GetAllUserOrganizationRolesRow struct {
+	ID                     int64
+	Name                   string
+	SystemName             string
+	OrganizationID         int64
+	OrganizationName       string
+	OrganizationSystemName string
+}
+
+func (q *Queries) GetAllUserOrganizationRoles(ctx context.Context, userID int64) ([]GetAllUserOrganizationRolesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllUserOrganizationRoles, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllUserOrganizationRolesRow
+	for rows.Next() {
+		var i GetAllUserOrganizationRolesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.SystemName,
+			&i.OrganizationID,
+			&i.OrganizationName,
+			&i.OrganizationSystemName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getOrganization = `-- name: GetOrganization :one
 SELECT id, name, system_name, status FROM organizations WHERE id = ?1
 `

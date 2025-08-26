@@ -35,6 +35,10 @@ func (t *UserAggregate) ApplyEventState(eventState evercore.EventState, eventTim
 		t.State.LastLogin = eventTime.Unix()
 		t.State.FailedLoginAttempts = 0
 		return nil
+	case UserLoginPartiallySucceededEvent:
+		t.State.LastLoginAttempt = eventTime.Unix()
+		t.State.FailedLoginAttempts = 0
+		return nil
 	case UserLoginFailedEvent:
 		t.State.LastLoginAttempt = eventTime.Unix()
 		t.State.FailedLoginAttempts++
@@ -208,7 +212,22 @@ func (a UserLoginSucceededEvent) Serialize() string {
 }
 
 // evercore:event
+type UserLoginPartiallySucceededEvent struct {
+	RequiresTwoFactor    bool `json:"requiresTwoFactor,omitempty"`
+	RequiresVerification bool `json:"requiresVerify,omitempty"`
+}
+
+func (a UserLoginPartiallySucceededEvent) GetEventType() string {
+	return events.UserLoginPartiallySucceededEventType
+}
+
+func (a UserLoginPartiallySucceededEvent) Serialize() string {
+	return evercore.SerializeToJson(a)
+}
+
+// evercore:event
 type UserLoginFailedEvent struct {
+	Reason string `json:"reason,omitempty"`
 }
 
 func (a UserLoginFailedEvent) GetEventType() string {

@@ -275,10 +275,10 @@ func (m *ManagementImpl) UserAuthenticate(ctx context.Context,
 	command UserLoginCommand,
 	agent string) (r.Response[*UserAuthenticationResponse], error) {
 
-	return evercore.InReadonlyContext(
+	return evercore.InContext(
 		ctx,
 		m.store,
-		func(etx evercore.EventStoreReadonlyContext) (r.Response[*UserAuthenticationResponse], error) {
+		func(etx evercore.EventStoreContext) (r.Response[*UserAuthenticationResponse], error) {
 			aggregate := UserAggregate{}
 			err := etx.LoadStateByKeyInto(&aggregate, command.Email)
 			if err != nil {
@@ -290,49 +290,70 @@ func (m *ManagementImpl) UserAuthenticate(ctx context.Context,
 				if status == ubstatus.UnexpectedError {
 					return r.Error[*UserAuthenticationResponse]("Could not verify this account at this time."), err
 				}
+				return r.StatusError[*UserAuthenticationResponse](status, "Could not verify this account at this time."), err
 			}
+
+			var eventState evercore.EventState
+			var response r.Response[*UserAuthenticationResponse]
 
 			match, err := m.hashingService.VerifyBase64(command.Password, aggregate.State.PasswordHash)
 			if err != nil {
+				eventState = UserLoginFailedEvent{
+					Reason: "Error verifying password",
+				}
 				slog.Error("Error verifying password", "error", err)
-				return r.Error[*UserAuthenticationResponse]("Could not verify this account at this time."), err
-			}
-
-			if !match {
+				response = r.Error[*UserAuthenticationResponse]("Could not verify this account at this time.")
+			} else if !match {
 				slog.Error("Password does not match", "email", command.Email)
-				return r.StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "Email or password is incorrect"), nil
-			}
-
-			if aggregate.State.Disabled {
+				eventState = UserLoginFailedEvent{
+					Reason: "Password does not match",
+				}
+				response = r.StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "Email or password is incorrect")
+			} else if aggregate.State.Disabled {
 				slog.Error("User is disabled", "email", command.Email)
-				return r.StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "This account is not currently active. Please contact support."), nil
-			}
+				eventState = UserLoginFailedEvent{
+					Reason: "User account is disabled",
+				}
+				response = r.StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "This account is not currently active. Please contact support.")
+			} else if aggregate.State.TwoFactorSharedSecret != nil && len(*aggregate.State.TwoFactorSharedSecret) > 0 {
+				eventState = UserLoginPartiallySucceededEvent{
+					RequiresTwoFactor: true,
+				}
 
-			if aggregate.State.TwoFactorSharedSecret != nil && len(*aggregate.State.TwoFactorSharedSecret) > 0 {
-				return r.PartialSuccess(&UserAuthenticationResponse{
+				response = r.PartialSuccess(&UserAuthenticationResponse{
 					UserId:               aggregate.Id,
 					Email:                aggregate.State.Email,
 					RequiresTwoFactor:    true,
 					RequiresVerification: aggregate.State.Verified == false,
-				}), nil
-			}
-
-			if !aggregate.State.Verified {
-				return r.PartialSuccess(&UserAuthenticationResponse{
+				})
+			} else if !aggregate.State.Verified {
+				eventState = UserLoginPartiallySucceededEvent{
+					RequiresVerification: true,
+				}
+				response = r.PartialSuccess(&UserAuthenticationResponse{
 					UserId:               aggregate.Id,
 					Email:                aggregate.State.Email,
 					RequiresTwoFactor:    aggregate.State.TwoFactorSharedSecret != nil && len(*aggregate.State.TwoFactorSharedSecret) > 0,
 					RequiresVerification: true,
-				}), nil
+				})
+			} else {
+				eventState = UserLoginSucceededEvent{}
+				response = r.Success(&UserAuthenticationResponse{
+					UserId: aggregate.Id,
+					Email:  aggregate.State.Email,
+					RequiresTwoFactor: aggregate.State.TwoFactorSharedSecret != nil &&
+						len(*aggregate.State.TwoFactorSharedSecret) > 0,
+					RequiresVerification: aggregate.State.Verified == false,
+				})
 			}
 
-			return r.Success(&UserAuthenticationResponse{
-				UserId: aggregate.Id,
-				Email:  aggregate.State.Email,
-				RequiresTwoFactor: aggregate.State.TwoFactorSharedSecret != nil &&
-					len(*aggregate.State.TwoFactorSharedSecret) > 0,
-				RequiresVerification: aggregate.State.Verified == false,
-			}), nil
+			applyError := etx.ApplyEventTo(&aggregate, eventState, time.Now(), agent)
+			if applyError != nil {
+				slog.Error("Error applying login event", "error", applyError)
+				return r.Error[*UserAuthenticationResponse]("Could not verify this account at this time."), applyError
+			}
+			return response, err
+
 		})
 }
 

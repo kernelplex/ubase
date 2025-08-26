@@ -124,6 +124,13 @@ func EventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error) {
 			return nil, err
 		}
 		return eventState, nil
+	case events.UserLoginPartiallySucceededEventType:
+		eventState := ubmanage.UserLoginPartiallySucceededEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
 	case events.UserLoginSucceededEventType:
 		eventState := ubmanage.UserLoginSucceededEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)

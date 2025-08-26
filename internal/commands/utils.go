@@ -18,7 +18,7 @@ func GetSystemUsername() string {
 }
 
 func GetAgent() string {
-	return GetSystemUsername() + "@" + os.Getenv("HOSTNAME")
+	return "cli:" + GetSystemUsername() + "@" + os.Getenv("HOSTNAME")
 }
 
 func readLine() (string, error) {

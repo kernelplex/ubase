@@ -22,6 +22,7 @@ type UserState struct {
 	LastLoginAttempt      int64   `json:"lastLoginAttempt,omitempty"`
 	FailedLoginAttempts   int64   `json:"failedLoginAttempts,omitempty"`
 	TwoFactorSharedSecret *string `json:"twoFactorSharedSecret,omitempty"`
+	LoginCount            int64   `json:"loginCount,omitempty"`
 }
 
 // evercore:aggregate
@@ -34,6 +35,7 @@ func (t *UserAggregate) ApplyEventState(eventState evercore.EventState, eventTim
 	case UserLoginSucceededEvent:
 		t.State.LastLogin = eventTime.Unix()
 		t.State.FailedLoginAttempts = 0
+		t.State.LoginCount++
 		return nil
 	case UserLoginPartiallySucceededEvent:
 		t.State.LastLoginAttempt = eventTime.Unix()

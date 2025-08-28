@@ -8,6 +8,7 @@ package integration_tests
 import (
 	"database/sql"
 	"testing"
+	"time"
 
 	"github.com/kernelplex/ubase/lib/ubdata"
 )
@@ -81,7 +82,7 @@ func (s *AdapterExercises) TestAddUser(t *testing.T) {
 	ctx := t.Context()
 
 	// Create test user
-	err := s.adapter.AddUser(ctx, sampleUser.UserID, sampleUser.FirstName, sampleUser.LastName, sampleUser.DisplayName, sampleUser.Email)
+	err := s.adapter.AddUser(ctx, sampleUser.UserID, sampleUser.FirstName, sampleUser.LastName, sampleUser.DisplayName, sampleUser.Email, time.Now().Unix(), time.Now().Unix())
 	if err != nil {
 		t.Fatalf("CreateUser failed: %v", err)
 	}
@@ -131,7 +132,7 @@ func (s *AdapterExercises) TestUpdateUser(t *testing.T) {
 	ctx := t.Context()
 
 	// Update the user
-	err := s.adapter.UpdateUser(ctx, sampleUpdatedUser.UserID, sampleUpdatedUser.FirstName, sampleUpdatedUser.LastName, sampleUpdatedUser.DisplayName, sampleUpdatedUser.Email)
+	err := s.adapter.UpdateUser(ctx, sampleUpdatedUser.UserID, sampleUpdatedUser.FirstName, sampleUpdatedUser.LastName, sampleUpdatedUser.DisplayName, sampleUpdatedUser.Email, time.Now().Unix())
 	if err != nil {
 		t.Fatalf("UpdateUser failed: %v", err)
 	}
@@ -263,7 +264,8 @@ func (s *AdapterExercises) TestAddUserToRole(t *testing.T) {
 	roleID := int64(1)
 
 	// Setup - create user and role
-	err := s.adapter.AddUser(ctx, userID, "Test", "User", "Test User", "test@example.com")
+	err := s.adapter.AddUser(ctx, userID, "Test", "User", "Test User", "test@example.com", time.Now().Unix(), time.Now().Unix())
+
 	if err != nil {
 		t.Fatalf("Setup: AddUser failed: %v", err)
 	}

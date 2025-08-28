@@ -102,7 +102,9 @@ func (m *ManagementImpl) UserAdd(ctx context.Context,
 				aggregate.State.FirstName,
 				aggregate.State.LastName,
 				aggregate.State.DisplayName,
-				aggregate.State.Email)
+				aggregate.State.Email,
+				aggregate.State.CreatedAt,
+				aggregate.State.UpdatedAt)
 			if err != nil {
 				return IdCode{}, fmt.Errorf("failed to add user in database: %w", err)
 			}
@@ -243,7 +245,8 @@ func (m *ManagementImpl) UserUpdate(ctx context.Context,
 				aggregate.State.FirstName,
 				aggregate.State.LastName,
 				aggregate.State.DisplayName,
-				aggregate.State.Email)
+				aggregate.State.Email,
+				aggregate.State.UpdatedAt)
 			if err != nil {
 				return fmt.Errorf("failed to update user in database: %w", err)
 			}

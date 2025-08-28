@@ -4,6 +4,10 @@
 
 package dbpostgres
 
+import (
+	"database/sql"
+)
+
 type Organization struct {
 	ID         int64
 	Name       string
@@ -29,6 +33,10 @@ type User struct {
 	LastName    string
 	DisplayName string
 	Email       string
+	CreatedAt   sql.NullTime
+	UpdatedAt   sql.NullTime
+	LastLogin   sql.NullTime
+	LoginCount  int32
 }
 
 type UserRole struct {

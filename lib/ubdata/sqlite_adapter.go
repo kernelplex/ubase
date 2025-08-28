@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/kernelplex/ubase/internal/dbsqlite"
 )
@@ -28,13 +29,24 @@ func (a *SQLiteAdapter) DeleteRole(ctx context.Context, roleID int64) error {
 	return nil
 }
 
-func (a *SQLiteAdapter) AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error {
+func (a *SQLiteAdapter) AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string, createdAt int64, updatedAt int64) error {
+	createdTime := sql.NullTime{
+		Time:  time.Unix(createdAt, 0),
+		Valid: true,
+	}
+	updatedTime := sql.NullTime{
+		Time:  time.Unix(updatedAt, 0),
+		Valid: true,
+	}
+
 	return a.queries.AddUser(ctx, dbsqlite.AddUserParams{
 		ID:          userID,
 		FirstName:   firstName,
 		LastName:    lastName,
 		DisplayName: displayName,
 		Email:       email,
+		CreatedAt:   createdTime,
+		UpdatedAt:   updatedTime,
 	})
 }
 
@@ -66,13 +78,19 @@ func (a *SQLiteAdapter) GetUserByEmail(ctx context.Context, email string) (User,
 	}, nil
 }
 
-func (a *SQLiteAdapter) UpdateUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string) error {
+func (a *SQLiteAdapter) UpdateUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string, updatedAt int64) error {
+	updatedTime := sql.NullTime{
+		Time:  time.Unix(updatedAt, 0),
+		Valid: true,
+	}
+
 	return a.queries.UpdateUser(ctx, dbsqlite.UpdateUserParams{
 		ID:          userID,
 		FirstName:   firstName,
 		LastName:    lastName,
 		DisplayName: displayName,
 		Email:       email,
+		UpdatedAt:   updatedTime,
 	})
 }
 

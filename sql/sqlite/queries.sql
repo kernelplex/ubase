@@ -104,8 +104,8 @@ WHERE ur.user_id = sqlc.arg(user_id) AND r.organization_id = sqlc.arg(organizati
 -- ---------------------------------------------------------------------------
 
 -- name: AddUser :exec
-INSERT INTO users (id, first_name, last_name, display_name, email) 
-VALUES (sqlc.arg(id), sqlc.arg(first_name), sqlc.arg(last_name), sqlc.arg(display_name), sqlc.arg(email));
+INSERT INTO users (id, first_name, last_name, display_name, email, created_at, updated_at) 
+VALUES (sqlc.arg(id), sqlc.arg(first_name), sqlc.arg(last_name), sqlc.arg(display_name), sqlc.arg(email), sqlc.arg(created_at), sqlc.arg(updated_at));
 
 -- name: GetUser :one
 SELECT id, first_name, last_name, display_name, email FROM users WHERE id = sqlc.arg(id);
@@ -114,7 +114,7 @@ SELECT id, first_name, last_name, display_name, email FROM users WHERE id = sqlc
 SELECT id, first_name, last_name, display_name, email FROM users WHERE email = sqlc.arg(email);
 
 -- name: UpdateUser :exec
-UPDATE users SET first_name = sqlc.arg(first_name), last_name = sqlc.arg(last_name), display_name = sqlc.arg(display_name), email = sqlc.arg(email) WHERE id = sqlc.arg(id);
+UPDATE users SET first_name = sqlc.arg(first_name), last_name = sqlc.arg(last_name), display_name = sqlc.arg(display_name), email = sqlc.arg(email), updated_at = sqlc.arg(updated_at) WHERE id = sqlc.arg(id);
 
 -- name: ListUserOrganizationRoles :many
 SELECT o.id as organization_id, o.name as organization, 

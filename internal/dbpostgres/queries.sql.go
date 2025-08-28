@@ -97,8 +97,8 @@ func (q *Queries) AddRoleToUser(ctx context.Context, arg AddRoleToUserParams) er
 
 const addUser = `-- name: AddUser :exec
 
-INSERT INTO users (id, first_name, last_name, display_name, email) 
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO users (id, first_name, last_name, display_name, email, created_at, updated_at) 
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 `
 
 type AddUserParams struct {
@@ -107,6 +107,8 @@ type AddUserParams struct {
 	LastName    string
 	DisplayName string
 	Email       string
+	CreatedAt   sql.NullTime
+	UpdatedAt   sql.NullTime
 }
 
 // ---------------------------------------------------------------------------
@@ -121,6 +123,8 @@ func (q *Queries) AddUser(ctx context.Context, arg AddUserParams) error {
 		arg.LastName,
 		arg.DisplayName,
 		arg.Email,
+		arg.CreatedAt,
+		arg.UpdatedAt,
 	)
 	return err
 }
@@ -327,9 +331,17 @@ const getUser = `-- name: GetUser :one
 SELECT id, first_name, last_name, display_name, email FROM users WHERE id = $1
 `
 
-func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
+type GetUserRow struct {
+	ID          int64
+	FirstName   string
+	LastName    string
+	DisplayName string
+	Email       string
+}
+
+func (q *Queries) GetUser(ctx context.Context, id int64) (GetUserRow, error) {
 	row := q.db.QueryRowContext(ctx, getUser, id)
-	var i User
+	var i GetUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.FirstName,
@@ -344,9 +356,17 @@ const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, first_name, last_name, display_name, email FROM users WHERE email = $1
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+type GetUserByEmailRow struct {
+	ID          int64
+	FirstName   string
+	LastName    string
+	DisplayName string
+	Email       string
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
 	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
-	var i User
+	var i GetUserByEmailRow
 	err := row.Scan(
 		&i.ID,
 		&i.FirstName,
@@ -630,7 +650,7 @@ func (q *Queries) UpdateRole(ctx context.Context, arg UpdateRoleParams) error {
 }
 
 const updateUser = `-- name: UpdateUser :exec
-UPDATE users SET first_name = $1, last_name = $2, display_name = $3, email = $4 WHERE id = $5
+UPDATE users SET first_name = $1, last_name = $2, display_name = $3, email = $4, updated_at = $5 WHERE id = $6
 `
 
 type UpdateUserParams struct {
@@ -638,6 +658,7 @@ type UpdateUserParams struct {
 	LastName    string
 	DisplayName string
 	Email       string
+	UpdatedAt   sql.NullTime
 	ID          int64
 }
 
@@ -647,6 +668,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 		arg.LastName,
 		arg.DisplayName,
 		arg.Email,
+		arg.UpdatedAt,
 		arg.ID,
 	)
 	return err

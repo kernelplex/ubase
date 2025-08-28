@@ -23,6 +23,8 @@ type UserState struct {
 	FailedLoginAttempts   int64   `json:"failedLoginAttempts,omitempty"`
 	TwoFactorSharedSecret *string `json:"twoFactorSharedSecret,omitempty"`
 	LoginCount            int64   `json:"loginCount,omitempty"`
+	CreatedAt             int64   `json:"createdAt,omitempty"`
+	UpdatedAt             int64   `json:"updatedAt,omitempty"`
 }
 
 // evercore:aggregate
@@ -31,6 +33,8 @@ type UserAggregate struct {
 }
 
 func (t *UserAggregate) ApplyEventState(eventState evercore.EventState, eventTime time.Time, reference string) error {
+	var err error = nil
+
 	switch ev := eventState.(type) {
 	case UserLoginSucceededEvent:
 		t.State.LastLogin = eventTime.Unix()
@@ -68,8 +72,21 @@ func (t *UserAggregate) ApplyEventState(eventState evercore.EventState, eventTim
 		t.State.Disabled = false
 		return nil
 	default:
-		return t.StateAggregate.ApplyEventState(eventState, eventTime, reference)
+		err = t.StateAggregate.ApplyEventState(eventState, eventTime, reference)
 	}
+
+	if err != nil {
+		return err
+	}
+
+	if eventState.GetEventType() != events.UserAddedEventType {
+		t.State.CreatedAt = eventTime.Unix()
+		t.State.UpdatedAt = eventTime.Unix()
+	}
+	if eventState.GetEventType() == events.UserUpdatedEventType {
+		t.State.UpdatedAt = eventTime.Unix()
+	}
+	return err
 }
 
 // ============================================================================

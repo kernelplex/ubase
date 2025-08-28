@@ -11,12 +11,6 @@ type Organization struct {
 	Status     string
 }
 
-type ResourceType struct {
-	ID         int64
-	Name       string
-	SystemName string
-}
-
 type Role struct {
 	ID             int64
 	OrganizationID int64

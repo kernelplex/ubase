@@ -29,12 +29,6 @@ CREATE TABLE users (
 	UNIQUE (email)
 );
 
-CREATE TABLE resource_types (
-	id INTEGER PRIMARY KEY,
-	name VARCHAR(255) NOT NULL,
-	system_name VARCHAR(255) NOT NULL
-);
-
 CREATE TABLE user_roles (
 	user_id INTEGER NOT NULL,
 	role_id INTEGER NOT NULL,
@@ -60,7 +54,6 @@ DROP TABLE role_permissions;
 DROP TABLE user_roles;
 DROP TABLE users;
 DROP TABLE roles;
-DROP TABLE resource_types;
 DROP TABLE organizations;
 
 -- +goose StatementEnd

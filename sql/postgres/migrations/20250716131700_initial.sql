@@ -30,11 +30,6 @@ CREATE TABLE users (
 	CONSTRAINT users_email_key UNIQUE (email)
 );
 
-CREATE TABLE resource_types (
-	id BIGINT PRIMARY KEY,
-	name VARCHAR(255) NOT NULL,
-	system_name VARCHAR(255) NOT NULL
-);
 
 CREATE TABLE user_roles (
 	user_id BIGINT NOT NULL,
@@ -66,7 +61,6 @@ CREATE INDEX idx_user_roles_role_id ON user_roles(role_id);
 DROP TABLE user_roles;
 DROP TABLE roles;
 DROP TABLE users;
-DROP TABLE resource_types;
 DROP TABLE organizations;
 
 -- +goose StatementEnd

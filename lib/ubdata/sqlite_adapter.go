@@ -293,3 +293,19 @@ func (a *SQLiteAdapter) GetAllUserOrganizationRoles(ctx context.Context, userID 
 	}
 	return result, nil
 }
+
+func (a *SQLiteAdapter) OrganizationsCount(ctx context.Context) (int64, error) {
+	count, err := a.queries.OrganizationsCount(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get organization count: %w", err)
+	}
+	return count, nil
+}
+
+func (a *SQLiteAdapter) UsersCount(ctx context.Context) (int64, error) {
+	count, err := a.queries.UsersCount(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get user count: %w", err)
+	}
+	return count, nil
+}

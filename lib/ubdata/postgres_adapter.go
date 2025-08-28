@@ -297,3 +297,19 @@ func (a *PostgresAdapter) GetAllUserOrganizationRoles(ctx context.Context, userI
 	}
 	return result, nil
 }
+
+func (a *PostgresAdapter) OrganizationsCount(ctx context.Context) (int64, error) {
+	count, err := a.queries.OrganizationsCount(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get organization count: %w", err)
+	}
+	return count, nil
+}
+
+func (a *PostgresAdapter) UsersCount(ctx context.Context) (int64, error) {
+	count, err := a.queries.UsersCount(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get user count: %w", err)
+	}
+	return count, nil
+}

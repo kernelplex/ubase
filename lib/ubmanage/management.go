@@ -183,6 +183,11 @@ type ManagementService interface {
 	UserRemoveFromRole(ctx context.Context,
 		command UserRemoveFromRoleCommand,
 		agent string) (r.Response[any], error)
+
+	// UsersCount returns the total number of users in the system
+	UsersCount(ctx context.Context) (r.Response[int64], error)
+	// OrganizationsCount returns the total number of organizations in the system
+	OrganizationsCount(ctx context.Context) (r.Response[int64], error)
 }
 
 type ManagementImpl struct {

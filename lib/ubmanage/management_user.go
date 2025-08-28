@@ -604,3 +604,12 @@ func (m *ManagementImpl) UserEnable(ctx context.Context,
 	}
 	return r.SuccessAny(), nil
 }
+
+func (m *ManagementImpl) UsersCount(ctx context.Context) (r.Response[int64], error) {
+	count, err := m.dbadapter.UsersCount(ctx)
+	if err != nil {
+		slog.Error("Error counting users", "error", err)
+		return r.Error[int64]("Error counting users"), err
+	}
+	return r.Success(count), nil
+}

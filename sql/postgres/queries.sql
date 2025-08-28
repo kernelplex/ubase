@@ -126,3 +126,9 @@ JOIN roles r ON r.id = ur.role_id
 JOIN organizations o ON o.id = r.organization_id
 WHERE ur.user_id = sqlc.arg(user_id);
 
+-- name: UsersCount :one
+SELECT COUNT(*) AS count FROM users;
+
+-- name: OrganizationsCount :one
+SELECT COUNT(*) AS count FROM organizations;
+

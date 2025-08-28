@@ -156,3 +156,11 @@ func (m *ManagementImpl) OrganizationGetBySystemName(
 
 	return r.Success(*aggregate), nil
 }
+
+func (m *ManagementImpl) OrganizationsCount(ctx context.Context) (r.Response[int64], error) {
+	count, err := m.dbadapter.OrganizationsCount(ctx)
+	if err != nil {
+		return r.Error[int64]("Error counting organizations"), err
+	}
+	return r.Success(count), nil
+}

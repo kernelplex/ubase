@@ -51,6 +51,9 @@ type DataAdapter interface {
 	GetUserOrganizationRoles(ctx context.Context, userID int64, organizationId int64) ([]RoleRow, error)
 	GetAllUserOrganizationRoles(ctx context.Context, userID int64) ([]ListUserOrganizationRolesRow, error)
 	ListUserOrganizationRoles(ctx context.Context, userID int64) ([]ListUserOrganizationRolesRow, error)
+
+	OrganizationsCount(ctx context.Context) (int64, error)
+	UsersCount(ctx context.Context) (int64, error)
 }
 
 // User represents a user in the system

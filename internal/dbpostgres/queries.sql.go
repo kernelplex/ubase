@@ -570,6 +570,17 @@ func (q *Queries) ListUserOrganizationRoles(ctx context.Context, userID int64) (
 	return items, nil
 }
 
+const organizationsCount = `-- name: OrganizationsCount :one
+SELECT COUNT(*) AS count FROM organizations
+`
+
+func (q *Queries) OrganizationsCount(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, organizationsCount)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const removeAllRolesFromUser = `-- name: RemoveAllRolesFromUser :exec
 DELETE FROM user_roles WHERE user_id = $1
 `
@@ -672,4 +683,15 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 		arg.ID,
 	)
 	return err
+}
+
+const usersCount = `-- name: UsersCount :one
+SELECT COUNT(*) AS count FROM users
+`
+
+func (q *Queries) UsersCount(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, usersCount)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }

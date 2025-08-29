@@ -403,3 +403,19 @@ func (m *ManagementImpl) RoleGetById(ctx context.Context,
 		Data:   *aggregate,
 	}, nil
 }
+
+func (m *ManagementImpl) OrganizationRolesWithUserCount(ctx context.Context, organizationId int64) (r.Response[[]ubdata.ListRolesWithUserCountsRow], error) {
+	roles, err := m.dbadapter.ListOrganizationsRolesWithUserCounts(ctx, organizationId)
+	if err != nil {
+		return r.Response[[]ubdata.ListRolesWithUserCountsRow]{
+			Status:  ubstatus.UnexpectedError,
+			Message: "Error listing roles with user counts",
+		}, err
+	}
+
+	return r.Response[[]ubdata.ListRolesWithUserCountsRow]{
+		Status: ubstatus.Success,
+		Data:   roles,
+	}, nil
+
+}

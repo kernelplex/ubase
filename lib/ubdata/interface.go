@@ -20,6 +20,13 @@ type ListUserOrganizationRolesRow struct {
 	RoleSystemName         string
 }
 
+type ListRolesWithUserCountsRow struct {
+	ID         int64
+	Name       string
+	SystemName string
+	UserCount  int64
+}
+
 // DataAdapter defines the common interface for user/role/permission operations
 type DataAdapter interface {
 
@@ -54,6 +61,9 @@ type DataAdapter interface {
 
 	OrganizationsCount(ctx context.Context) (int64, error)
 	UsersCount(ctx context.Context) (int64, error)
+	UpdateUserLoginStats(ctx context.Context, userID int64, lastLogin int64, loginCount int64) error
+
+	ListOrganizationsRolesWithUserCounts(ctx context.Context, organizationId int64) ([]ListRolesWithUserCountsRow, error)
 }
 
 // User represents a user in the system

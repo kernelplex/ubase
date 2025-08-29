@@ -131,3 +131,17 @@ SELECT COUNT(*) AS count FROM users;
 -- name: OrganizationsCount :one
 SELECT COUNT(*) AS count FROM organizations;
 
+
+-- name: UpdateUserLoginStats :exec
+UPDATE users 
+SET last_login = sqlc.arg(last_login), login_count = sqlc.arg(login_count) 
+WHERE id = sqlc.arg(id);
+
+-- name: ListRolesWithUserCounts :many
+SELECT r.id, r.name, r.system_name, count(ur.user_id) AS user_count
+FROM roles r
+LEFT JOIN user_roles ur ON ur.role_id=r.id
+WHERE organization_id=sqlc.arg(organization_id)
+GROUP BY r.id;
+
+

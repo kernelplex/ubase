@@ -522,6 +522,49 @@ func (q *Queries) ListOrganizations(ctx context.Context) ([]Organization, error)
 	return items, nil
 }
 
+const listRolesWithUserCounts = `-- name: ListRolesWithUserCounts :many
+SELECT r.id, r.name, r.system_name, count(ur.user_id) AS user_count
+FROM roles r
+LEFT JOIN user_roles ur ON ur.role_id=r.id
+WHERE organization_id=?1
+GROUP BY r.id
+`
+
+type ListRolesWithUserCountsRow struct {
+	ID         int64
+	Name       string
+	SystemName string
+	UserCount  int64
+}
+
+func (q *Queries) ListRolesWithUserCounts(ctx context.Context, organizationID int64) ([]ListRolesWithUserCountsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listRolesWithUserCounts, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListRolesWithUserCountsRow
+	for rows.Next() {
+		var i ListRolesWithUserCountsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.SystemName,
+			&i.UserCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUserOrganizationRoles = `-- name: ListUserOrganizationRoles :many
 SELECT o.id as organization_id, o.name as organization, 
 	o.system_name as organization_system_name,
@@ -681,6 +724,23 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 		arg.UpdatedAt,
 		arg.ID,
 	)
+	return err
+}
+
+const updateUserLoginStats = `-- name: UpdateUserLoginStats :exec
+UPDATE users 
+SET last_login = ?1, login_count = ?2 
+WHERE id = ?3
+`
+
+type UpdateUserLoginStatsParams struct {
+	LastLogin  sql.NullTime
+	LoginCount int64
+	ID         int64
+}
+
+func (q *Queries) UpdateUserLoginStats(ctx context.Context, arg UpdateUserLoginStatsParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserLoginStats, arg.LastLogin, arg.LoginCount, arg.ID)
 	return err
 }
 

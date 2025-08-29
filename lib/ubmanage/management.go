@@ -34,6 +34,8 @@ type ManagementService interface {
 		command OrganizationCreateCommand,
 		agent string) (r.Response[IdValue], error)
 
+	OrganizationGet(ctx context.Context, organizationID int64) (r.Response[OrganizationAggregate], error)
+
 	// OrganizationGetBySystemName retrieves an organization by its system name
 	// Returns the organization details or an error if not found
 	OrganizationGetBySystemName(
@@ -188,6 +190,9 @@ type ManagementService interface {
 	UsersCount(ctx context.Context) (r.Response[int64], error)
 	// OrganizationsCount returns the total number of organizations in the system
 	OrganizationsCount(ctx context.Context) (r.Response[int64], error)
+
+	// ListOrganizationsWithUserCounts lists all organizations along with the count of users in each
+	OrganizationRolesWithUserCount(ctx context.Context, organizationId int64) (r.Response[[]ubdata.ListRolesWithUserCountsRow], error)
 }
 
 type ManagementImpl struct {

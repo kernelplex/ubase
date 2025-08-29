@@ -42,6 +42,7 @@ func (t *UserAggregate) ApplyEventState(eventState evercore.EventState, eventTim
 		t.State.LoginCount++
 		return nil
 	case UserLoginPartiallySucceededEvent:
+		t.State.LastLogin = eventTime.Unix()
 		t.State.LastLoginAttempt = eventTime.Unix()
 		t.State.FailedLoginAttempts = 0
 		return nil

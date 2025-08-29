@@ -131,6 +131,31 @@ func (m *ManagementImpl) OrganizationUpdate(ctx context.Context,
 	return r.SuccessAny(), nil
 }
 
+func (m *ManagementImpl) OrganizationGet(ctx context.Context,
+	organizationID int64) (r.Response[OrganizationAggregate], error) {
+
+	aggregate, err := evercore.InContext(
+		ctx,
+		m.store,
+		func(etx evercore.EventStoreContext) (*OrganizationAggregate, error) {
+			aggregate := OrganizationAggregate{}
+			err := etx.LoadStateInto(&aggregate, organizationID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load organization: %w", err)
+			}
+
+			return &aggregate, nil
+		})
+
+	if err != nil {
+		status := MapEvercoreErrorToStatus(err)
+		slog.Error("Error getting organization", "error", err)
+		return r.StatusError[OrganizationAggregate](status, "Error getting organization"), err
+	}
+
+	return r.Success(*aggregate), nil
+}
+
 func (m *ManagementImpl) OrganizationGetBySystemName(
 	ctx context.Context,
 	systemName string) (r.Response[OrganizationAggregate], error) {

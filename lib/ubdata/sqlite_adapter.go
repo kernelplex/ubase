@@ -309,3 +309,38 @@ func (a *SQLiteAdapter) UsersCount(ctx context.Context) (int64, error) {
 	}
 	return count, nil
 }
+
+func (a *SQLiteAdapter) UpdateUserLoginStats(ctx context.Context, userID int64, lastLogin int64, loginCount int64) error {
+	lastLoginTime := sql.NullTime{
+		Time:  time.Unix(lastLogin, 0),
+		Valid: true,
+	}
+
+	err := a.queries.UpdateUserLoginStats(ctx, dbsqlite.UpdateUserLoginStatsParams{
+		ID:         userID,
+		LastLogin:  lastLoginTime,
+		LoginCount: loginCount,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update user last login: %w", err)
+	}
+	return nil
+
+}
+
+func (a *SQLiteAdapter) ListOrganizationsRolesWithUserCounts(ctx context.Context, organizationId int64) ([]ListRolesWithUserCountsRow, error) {
+	orgs, err := a.queries.ListRolesWithUserCounts(ctx, organizationId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list organizations with user counts: %w", err)
+	}
+	result := make([]ListRolesWithUserCountsRow, len(orgs))
+	for i, o := range orgs {
+		result[i] = ListRolesWithUserCountsRow{
+			ID:         o.ID,
+			Name:       o.Name,
+			SystemName: o.SystemName,
+			UserCount:  o.UserCount,
+		}
+	}
+	return result, nil
+}

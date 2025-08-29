@@ -355,6 +355,18 @@ func (m *ManagementImpl) UserAuthenticate(ctx context.Context,
 				slog.Error("Error applying login event", "error", applyError)
 				return r.Error[*UserAuthenticationResponse]("Could not verify this account at this time."), applyError
 			}
+
+			// Update the login info.
+			err = m.dbadapter.UpdateUserLoginStats(
+				ctx,
+				aggregate.Id,
+				aggregate.State.LastLogin,
+				aggregate.State.LoginCount)
+			if err != nil {
+				slog.Error("Error updating user login stats", "error", err)
+				// Not a critical error, so we don't return it.
+			}
+
 			return response, err
 
 		})

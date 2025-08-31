@@ -328,6 +328,42 @@ func (q *Queries) GetRolePermissions(ctx context.Context, roleID int64) ([]strin
 	return items, nil
 }
 
+const getRolesForUser = `-- name: GetRolesForUser :many
+SELECT r.id, r.name, r.system_name
+FROM user_roles ur
+JOIN roles r ON r.id = ur.role_id
+WHERE ur.user_id = ?1
+`
+
+type GetRolesForUserRow struct {
+	ID         int64
+	Name       string
+	SystemName string
+}
+
+func (q *Queries) GetRolesForUser(ctx context.Context, userID int64) ([]GetRolesForUserRow, error) {
+	rows, err := q.db.QueryContext(ctx, getRolesForUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetRolesForUserRow
+	for rows.Next() {
+		var i GetRolesForUserRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.SystemName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUser = `-- name: GetUser :one
 SELECT id, first_name, last_name, display_name, email FROM users WHERE id = ?1
 `
@@ -477,6 +513,50 @@ func (q *Queries) GetUserOrganizations(ctx context.Context, userID int64) ([]Get
 	for rows.Next() {
 		var i GetUserOrganizationsRow
 		if err := rows.Scan(&i.ID, &i.Name, &i.SystemName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUsersInRole = `-- name: GetUsersInRole :many
+SELECT u.id, u.first_name, u.last_name, u.display_name, u.email
+FROM user_roles ur
+JOIN users u ON u.id = ur.user_id
+WHERE ur.role_id = ?1
+`
+
+type GetUsersInRoleRow struct {
+	ID          int64
+	FirstName   string
+	LastName    string
+	DisplayName string
+	Email       string
+}
+
+func (q *Queries) GetUsersInRole(ctx context.Context, roleID int64) ([]GetUsersInRoleRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUsersInRole, roleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUsersInRoleRow
+	for rows.Next() {
+		var i GetUsersInRoleRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.LastName,
+			&i.DisplayName,
+			&i.Email,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -742,6 +822,56 @@ type UpdateUserLoginStatsParams struct {
 func (q *Queries) UpdateUserLoginStats(ctx context.Context, arg UpdateUserLoginStatsParams) error {
 	_, err := q.db.ExecContext(ctx, updateUserLoginStats, arg.LastLogin, arg.LoginCount, arg.ID)
 	return err
+}
+
+const userSearch = `-- name: UserSearch :many
+SELECT id, first_name, last_name, display_name, email
+FROM users
+WHERE email LIKE ?1 OR display_name LIKE ?1
+LIMIT ?3 OFFSET ?2
+`
+
+type UserSearchParams struct {
+	Query string
+	Start int64
+	Count int64
+}
+
+type UserSearchRow struct {
+	ID          int64
+	FirstName   string
+	LastName    string
+	DisplayName string
+	Email       string
+}
+
+func (q *Queries) UserSearch(ctx context.Context, arg UserSearchParams) ([]UserSearchRow, error) {
+	rows, err := q.db.QueryContext(ctx, userSearch, arg.Query, arg.Start, arg.Count)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UserSearchRow
+	for rows.Next() {
+		var i UserSearchRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.LastName,
+			&i.DisplayName,
+			&i.Email,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const usersCount = `-- name: UsersCount :one

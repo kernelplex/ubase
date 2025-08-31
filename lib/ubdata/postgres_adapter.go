@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/kernelplex/ubase/internal/dbpostgres"
@@ -343,6 +344,81 @@ func (a *PostgresAdapter) ListOrganizationsRolesWithUserCounts(ctx context.Conte
 			Name:       o.Name,
 			SystemName: o.SystemName,
 			UserCount:  o.UserCount,
+		}
+	}
+	return result, nil
+}
+
+func sqlEscapeLike(input string) string {
+	var result strings.Builder
+	result.Grow(len(input) * 2) // Pre-allocate to avoid reallocations
+
+	for _, char := range input {
+		if char == '%' || char == '_' || char == '\\' {
+			result.WriteRune('\\')
+		}
+		result.WriteRune(char)
+	}
+	return result.String()
+}
+
+func (a *PostgresAdapter) SearchUsers(ctx context.Context, searchTerm string, limit, offset int) ([]User, error) {
+
+	searchTerm = sqlEscapeLike(searchTerm)
+
+	users, err := a.queries.UserSearch(ctx, dbpostgres.UserSearchParams{
+		Query: "%" + searchTerm + "%",
+		Count: int32(limit),
+		Start: int32(offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to search users: %w", err)
+	}
+
+	result := make([]User, len(users))
+	for i, u := range users {
+		result[i] = User{
+			UserID:      u.ID,
+			FirstName:   u.FirstName,
+			LastName:    u.LastName,
+			DisplayName: u.DisplayName,
+			Email:       u.Email,
+		}
+	}
+	return result, nil
+}
+
+func (a *PostgresAdapter) GetUsersInRole(ctx context.Context, roleID int64) ([]User, error) {
+	users, err := a.queries.GetUsersInRole(ctx, roleID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get users in role: %w", err)
+	}
+
+	result := make([]User, len(users))
+	for i, u := range users {
+		result[i] = User{
+			UserID:      u.ID,
+			FirstName:   u.FirstName,
+			LastName:    u.LastName,
+			DisplayName: u.DisplayName,
+			Email:       u.Email,
+		}
+	}
+	return result, nil
+}
+
+func (a *PostgresAdapter) GetRolesForUser(ctx context.Context, userID int64) ([]Role, error) {
+	roles, err := a.queries.GetRolesForUser(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get roles for user: %w", err)
+	}
+
+	result := make([]Role, len(roles))
+	for i, r := range roles {
+		result[i] = Role{
+			RoleID:     r.ID,
+			Name:       r.Name,
+			SystemName: r.SystemName,
 		}
 	}
 	return result, nil

@@ -92,6 +92,18 @@ LEFT JOIN roles r ON r.id = ur.role_id
 LEFT JOIN organizations o ON o.id = r.organization_id
 WHERE ur.user_id = sqlc.arg(user_id);
 
+-- name: GetUsersInRole :many
+SELECT u.id, u.first_name, u.last_name, u.display_name, u.email
+FROM user_roles ur
+JOIN users u ON u.id = ur.user_id
+WHERE ur.role_id = sqlc.arg(role_id);
+
+-- name: GetRolesForUser :many
+SELECT r.id, r.name, r.system_name
+FROM user_roles ur
+JOIN roles r ON r.id = ur.role_id
+WHERE ur.user_id = sqlc.arg(user_id);
+
 -- name: GetUserOrganizationPermissions :many
 SELECT rp.permission FROM user_roles ur
 JOIN roles r ON r.id = ur.role_id
@@ -142,3 +154,9 @@ SELECT r.id, r.name, r.system_name, count(ur.user_id) AS user_count
 FROM roles r
 LEFT JOIN user_roles ur ON ur.role_id=r.id
 WHERE organization_id=sqlc.arg(organization_id);
+
+
+-- name: UserSearch :many
+SELECT id, first_name, last_name, display_name, email
+FROM users
+WHERE email ILIKE sqlc.arg(query) OR disoplay_name ILIKE sqlc.arg(query) LIMIT sqlc.arg(count)::int OFFSET sqlc.arg(start)::int; 

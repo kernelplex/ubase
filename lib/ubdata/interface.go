@@ -34,6 +34,7 @@ type DataAdapter interface {
 	AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string, createdAt int64, updatedAt int64) error
 	GetUser(ctx context.Context, userID int64) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
+	SearchUsers(ctx context.Context, searchTerm string, limit, offset int) ([]User, error)
 	UpdateUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string, updatedAt int64) error
 	AddOrganization(ctx context.Context, id int64, name string, systemName string, status string) error
 	GetOrganization(ctx context.Context, organizationID int64) (Organization, error)
@@ -64,6 +65,8 @@ type DataAdapter interface {
 	UpdateUserLoginStats(ctx context.Context, userID int64, lastLogin int64, loginCount int64) error
 
 	ListOrganizationsRolesWithUserCounts(ctx context.Context, organizationId int64) ([]ListRolesWithUserCountsRow, error)
+	GetUsersInRole(ctx context.Context, roleID int64) ([]User, error)
+	GetRolesForUser(ctx context.Context, userID int64) ([]Role, error)
 }
 
 // User represents a user in the system

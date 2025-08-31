@@ -25,6 +25,19 @@ SELECT id, name, system_name, status FROM organizations WHERE system_name = sqlc
 -- name: GetOrganizations :many
 SELECT id, name, system_name FROM organizations;
 
+-- name: GetUsersInRole :many
+SELECT u.id, u.first_name, u.last_name, u.display_name, u.email
+FROM user_roles ur
+JOIN users u ON u.id = ur.user_id
+WHERE ur.role_id = sqlc.arg(role_id);
+
+-- name: GetRolesForUser :many
+SELECT r.id, r.name, r.system_name
+FROM user_roles ur
+JOIN roles r ON r.id = ur.role_id
+WHERE ur.user_id = sqlc.arg(user_id);
+
+
 -- ---------------------------------------------------------------------------
 --
 -- Role Management
@@ -144,4 +157,8 @@ LEFT JOIN user_roles ur ON ur.role_id=r.id
 WHERE organization_id=sqlc.arg(organization_id)
 GROUP BY r.id;
 
-
+-- name: UserSearch :many
+SELECT id, first_name, last_name, display_name, email
+FROM users
+WHERE email LIKE sqlc.arg(query) OR display_name LIKE sqlc.arg(query)
+LIMIT sqlc.arg(count) OFFSET sqlc.arg(start);

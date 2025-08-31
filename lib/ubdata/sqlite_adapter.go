@@ -344,3 +344,65 @@ func (a *SQLiteAdapter) ListOrganizationsRolesWithUserCounts(ctx context.Context
 	}
 	return result, nil
 }
+
+func (a *SQLiteAdapter) SearchUsers(ctx context.Context, searchTerm string, limit, offset int) ([]User, error) {
+
+	searchTerm = sqlEscapeLike(searchTerm)
+
+	users, err := a.queries.UserSearch(ctx, dbsqlite.UserSearchParams{
+		Query: "%" + searchTerm + "%",
+		Count: int64(limit),
+		Start: int64(offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to search users: %w", err)
+	}
+
+	result := make([]User, len(users))
+	for i, u := range users {
+		result[i] = User{
+			UserID:      u.ID,
+			FirstName:   u.FirstName,
+			LastName:    u.LastName,
+			DisplayName: u.DisplayName,
+			Email:       u.Email,
+		}
+	}
+	return result, nil
+}
+
+func (a *SQLiteAdapter) GetUsersInRole(ctx context.Context, roleID int64) ([]User, error) {
+	users, err := a.queries.GetUsersInRole(ctx, roleID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get users in role: %w", err)
+	}
+
+	result := make([]User, len(users))
+	for i, u := range users {
+		result[i] = User{
+			UserID:      u.ID,
+			FirstName:   u.FirstName,
+			LastName:    u.LastName,
+			DisplayName: u.DisplayName,
+			Email:       u.Email,
+		}
+	}
+	return result, nil
+}
+
+func (a *SQLiteAdapter) GetRolesForUser(ctx context.Context, userID int64) ([]Role, error) {
+	roles, err := a.queries.GetRolesForUser(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get roles for user: %w", err)
+	}
+
+	result := make([]Role, len(roles))
+	for i, r := range roles {
+		result[i] = Role{
+			RoleID:     r.ID,
+			Name:       r.Name,
+			SystemName: r.SystemName,
+		}
+	}
+	return result, nil
+}

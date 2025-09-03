@@ -31,11 +31,11 @@ type ListRolesWithUserCountsRow struct {
 type DataAdapter interface {
 
 	// User operations
-	AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string, createdAt int64, updatedAt int64) error
+	AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string, verified bool, createdAt int64, updatedAt int64) error
 	GetUser(ctx context.Context, userID int64) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	SearchUsers(ctx context.Context, searchTerm string, limit, offset int) ([]User, error)
-	UpdateUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string, updatedAt int64) error
+	UpdateUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string, verified bool, updatedAt int64) error
 	AddOrganization(ctx context.Context, id int64, name string, systemName string, status string) error
 	GetOrganization(ctx context.Context, organizationID int64) (Organization, error)
 	ListOrganizations(ctx context.Context) ([]Organization, error)
@@ -76,6 +76,7 @@ type User struct {
 	LastName    string
 	DisplayName string
 	Email       string
+	Verified    bool
 }
 
 type Organization struct {

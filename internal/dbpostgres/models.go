@@ -37,6 +37,7 @@ type User struct {
 	UpdatedAt   sql.NullTime
 	LastLogin   sql.NullTime
 	LoginCount  int32
+	Verified    bool
 }
 
 type UserRole struct {

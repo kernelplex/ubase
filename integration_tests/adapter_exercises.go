@@ -26,6 +26,7 @@ var sampleUser = ubdata.User{
 	LastName:    "User",
 	DisplayName: "Test User",
 	Email:       "testuser@example.com",
+	Verified:    true,
 }
 
 var sampleUpdatedUser = ubdata.User{
@@ -34,6 +35,7 @@ var sampleUpdatedUser = ubdata.User{
 	LastName:    "UpdatedLast",
 	DisplayName: "Updated Display",
 	Email:       "updated@example.com",
+	Verified:    true,
 }
 
 type Organization struct {
@@ -82,7 +84,7 @@ func (s *AdapterExercises) TestAddUser(t *testing.T) {
 	ctx := t.Context()
 
 	// Create test user
-	err := s.adapter.AddUser(ctx, sampleUser.UserID, sampleUser.FirstName, sampleUser.LastName, sampleUser.DisplayName, sampleUser.Email, time.Now().Unix(), time.Now().Unix())
+	err := s.adapter.AddUser(ctx, sampleUser.UserID, sampleUser.FirstName, sampleUser.LastName, sampleUser.DisplayName, sampleUser.Email, sampleUser.Verified, time.Now().Unix(), time.Now().Unix())
 	if err != nil {
 		t.Fatalf("CreateUser failed: %v", err)
 	}
@@ -106,6 +108,14 @@ func (s *AdapterExercises) TestGetUser(t *testing.T) {
 	if user.LastName != sampleUser.LastName {
 		t.Errorf("Expected last name %s, got %s", sampleUser.LastName, user.LastName)
 	}
+	if user.Email != sampleUser.Email {
+		t.Errorf("Expected email %s, got %s", sampleUser.Email, user.Email)
+	}
+
+	if user.Verified != sampleUser.Verified {
+		t.Errorf("Expected verified %v, got %v", sampleUser.Verified, user.Verified)
+	}
+
 }
 
 func (s *AdapterExercises) TestGetUserByEmail(t *testing.T) {
@@ -132,7 +142,7 @@ func (s *AdapterExercises) TestUpdateUser(t *testing.T) {
 	ctx := t.Context()
 
 	// Update the user
-	err := s.adapter.UpdateUser(ctx, sampleUpdatedUser.UserID, sampleUpdatedUser.FirstName, sampleUpdatedUser.LastName, sampleUpdatedUser.DisplayName, sampleUpdatedUser.Email, time.Now().Unix())
+	err := s.adapter.UpdateUser(ctx, sampleUpdatedUser.UserID, sampleUpdatedUser.FirstName, sampleUpdatedUser.LastName, sampleUpdatedUser.DisplayName, sampleUpdatedUser.Email, sampleUpdatedUser.Verified, time.Now().Unix())
 	if err != nil {
 		t.Fatalf("UpdateUser failed: %v", err)
 	}
@@ -264,7 +274,7 @@ func (s *AdapterExercises) TestAddUserToRole(t *testing.T) {
 	roleID := int64(1)
 
 	// Setup - create user and role
-	err := s.adapter.AddUser(ctx, userID, "Test", "User", "Test User", "test@example.com", time.Now().Unix(), time.Now().Unix())
+	err := s.adapter.AddUser(ctx, userID, "Test", "User", "Test User", "test@example.com", true, time.Now().Unix(), time.Now().Unix())
 
 	if err != nil {
 		t.Fatalf("Setup: AddUser failed: %v", err)

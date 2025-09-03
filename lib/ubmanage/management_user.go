@@ -103,6 +103,7 @@ func (m *ManagementImpl) UserAdd(ctx context.Context,
 				aggregate.State.LastName,
 				aggregate.State.DisplayName,
 				aggregate.State.Email,
+				aggregate.State.Verified,
 				aggregate.State.CreatedAt,
 				aggregate.State.UpdatedAt)
 			if err != nil {
@@ -246,6 +247,7 @@ func (m *ManagementImpl) UserUpdate(ctx context.Context,
 				aggregate.State.LastName,
 				aggregate.State.DisplayName,
 				aggregate.State.Email,
+				aggregate.State.Verified,
 				aggregate.State.UpdatedAt)
 			if err != nil {
 				return fmt.Errorf("failed to update user in database: %w", err)
@@ -486,6 +488,19 @@ func (m *ManagementImpl) UserVerify(ctx context.Context,
 			err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)
 			if err != nil {
 				return fmt.Errorf("failed to apply user verification token verified event: %w", err)
+			}
+
+			err = m.dbadapter.UpdateUser(
+				ctx,
+				aggregate.Id,
+				aggregate.State.FirstName,
+				aggregate.State.LastName,
+				aggregate.State.DisplayName,
+				aggregate.State.Email,
+				aggregate.State.Verified,
+				aggregate.State.UpdatedAt)
+			if err != nil {
+				return fmt.Errorf("failed to set user verified in database: %w", err)
 			}
 
 			return nil

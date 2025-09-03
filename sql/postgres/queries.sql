@@ -93,7 +93,7 @@ LEFT JOIN organizations o ON o.id = r.organization_id
 WHERE ur.user_id = sqlc.arg(user_id);
 
 -- name: GetUsersInRole :many
-SELECT u.id, u.first_name, u.last_name, u.display_name, u.email
+SELECT u.id, u.first_name, u.last_name, u.display_name, u.email, u.verified
 FROM user_roles ur
 JOIN users u ON u.id = ur.user_id
 WHERE ur.role_id = sqlc.arg(role_id);
@@ -117,17 +117,17 @@ WHERE ur.user_id = sqlc.arg(user_id) AND r.organization_id = sqlc.arg(organizati
 -- ---------------------------------------------------------------------------
 
 -- name: AddUser :exec
-INSERT INTO users (id, first_name, last_name, display_name, email, created_at, updated_at) 
-VALUES (sqlc.arg(id), sqlc.arg(first_name), sqlc.arg(last_name), sqlc.arg(display_name), sqlc.arg(email), sqlc.arg(created_at), sqlc.arg(updated_at));
+INSERT INTO users (id, first_name, last_name, display_name, email, verified, created_at, updated_at) 
+VALUES (sqlc.arg(id), sqlc.arg(first_name), sqlc.arg(last_name), sqlc.arg(display_name), sqlc.arg(email), sqlc.arg(verified), sqlc.arg(created_at), sqlc.arg(updated_at));
 
 -- name: GetUser :one
-SELECT id, first_name, last_name, display_name, email FROM users WHERE id = sqlc.arg(id);
+SELECT id, first_name, last_name, display_name, email, verified FROM users WHERE id = sqlc.arg(id);
 
 -- name: GetUserByEmail :one
-SELECT id, first_name, last_name, display_name, email FROM users WHERE email = sqlc.arg(email);
+SELECT id, first_name, last_name, display_name, email, verified FROM users WHERE email = sqlc.arg(email);
 
 -- name: UpdateUser :exec
-UPDATE users SET first_name = sqlc.arg(first_name), last_name = sqlc.arg(last_name), display_name = sqlc.arg(display_name), email = sqlc.arg(email), updated_at = sqlc.arg(updated_at) WHERE id = sqlc.arg(id);
+UPDATE users SET first_name = sqlc.arg(first_name), last_name = sqlc.arg(last_name), display_name = sqlc.arg(display_name), email = sqlc.arg(email), verified = sqlc.arg(verified), updated_at = sqlc.arg(updated_at) WHERE id = sqlc.arg(id);
 
 -- name: ListUserOrganizationRoles :many
 SELECT o.id as organization_id, o.name as organization, 
@@ -157,6 +157,6 @@ WHERE organization_id=sqlc.arg(organization_id);
 
 
 -- name: UserSearch :many
-SELECT id, first_name, last_name, display_name, email
+SELECT id, first_name, last_name, display_name, email, verified
 FROM users
 WHERE email ILIKE sqlc.arg(query) OR disoplay_name ILIKE sqlc.arg(query) LIMIT sqlc.arg(count)::int OFFSET sqlc.arg(start)::int; 

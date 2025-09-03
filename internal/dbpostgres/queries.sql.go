@@ -97,8 +97,8 @@ func (q *Queries) AddRoleToUser(ctx context.Context, arg AddRoleToUserParams) er
 
 const addUser = `-- name: AddUser :exec
 
-INSERT INTO users (id, first_name, last_name, display_name, email, created_at, updated_at) 
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO users (id, first_name, last_name, display_name, email, verified, created_at, updated_at) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type AddUserParams struct {
@@ -107,6 +107,7 @@ type AddUserParams struct {
 	LastName    string
 	DisplayName string
 	Email       string
+	Verified    bool
 	CreatedAt   sql.NullTime
 	UpdatedAt   sql.NullTime
 }
@@ -123,6 +124,7 @@ func (q *Queries) AddUser(ctx context.Context, arg AddUserParams) error {
 		arg.LastName,
 		arg.DisplayName,
 		arg.Email,
+		arg.Verified,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
@@ -364,7 +366,7 @@ func (q *Queries) GetRolesForUser(ctx context.Context, userID int64) ([]GetRoles
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, first_name, last_name, display_name, email FROM users WHERE id = $1
+SELECT id, first_name, last_name, display_name, email, verified FROM users WHERE id = $1
 `
 
 type GetUserRow struct {
@@ -373,6 +375,7 @@ type GetUserRow struct {
 	LastName    string
 	DisplayName string
 	Email       string
+	Verified    bool
 }
 
 func (q *Queries) GetUser(ctx context.Context, id int64) (GetUserRow, error) {
@@ -384,12 +387,13 @@ func (q *Queries) GetUser(ctx context.Context, id int64) (GetUserRow, error) {
 		&i.LastName,
 		&i.DisplayName,
 		&i.Email,
+		&i.Verified,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, first_name, last_name, display_name, email FROM users WHERE email = $1
+SELECT id, first_name, last_name, display_name, email, verified FROM users WHERE email = $1
 `
 
 type GetUserByEmailRow struct {
@@ -398,6 +402,7 @@ type GetUserByEmailRow struct {
 	LastName    string
 	DisplayName string
 	Email       string
+	Verified    bool
 }
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
@@ -409,6 +414,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 		&i.LastName,
 		&i.DisplayName,
 		&i.Email,
+		&i.Verified,
 	)
 	return i, err
 }
@@ -526,7 +532,7 @@ func (q *Queries) GetUserOrganizations(ctx context.Context, userID int64) ([]Get
 }
 
 const getUsersInRole = `-- name: GetUsersInRole :many
-SELECT u.id, u.first_name, u.last_name, u.display_name, u.email
+SELECT u.id, u.first_name, u.last_name, u.display_name, u.email, u.verified
 FROM user_roles ur
 JOIN users u ON u.id = ur.user_id
 WHERE ur.role_id = $1
@@ -538,6 +544,7 @@ type GetUsersInRoleRow struct {
 	LastName    string
 	DisplayName string
 	Email       string
+	Verified    bool
 }
 
 func (q *Queries) GetUsersInRole(ctx context.Context, roleID int64) ([]GetUsersInRoleRow, error) {
@@ -555,6 +562,7 @@ func (q *Queries) GetUsersInRole(ctx context.Context, roleID int64) ([]GetUsersI
 			&i.LastName,
 			&i.DisplayName,
 			&i.Email,
+			&i.Verified,
 		); err != nil {
 			return nil, err
 		}
@@ -783,7 +791,7 @@ func (q *Queries) UpdateRole(ctx context.Context, arg UpdateRoleParams) error {
 }
 
 const updateUser = `-- name: UpdateUser :exec
-UPDATE users SET first_name = $1, last_name = $2, display_name = $3, email = $4, updated_at = $5 WHERE id = $6
+UPDATE users SET first_name = $1, last_name = $2, display_name = $3, email = $4, verified = $5, updated_at = $6 WHERE id = $7
 `
 
 type UpdateUserParams struct {
@@ -791,6 +799,7 @@ type UpdateUserParams struct {
 	LastName    string
 	DisplayName string
 	Email       string
+	Verified    bool
 	UpdatedAt   sql.NullTime
 	ID          int64
 }
@@ -801,6 +810,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 		arg.LastName,
 		arg.DisplayName,
 		arg.Email,
+		arg.Verified,
 		arg.UpdatedAt,
 		arg.ID,
 	)
@@ -825,7 +835,7 @@ func (q *Queries) UpdateUserLoginStats(ctx context.Context, arg UpdateUserLoginS
 }
 
 const userSearch = `-- name: UserSearch :many
-SELECT id, first_name, last_name, display_name, email
+SELECT id, first_name, last_name, display_name, email, verified
 FROM users
 WHERE email ILIKE $1 OR disoplay_name ILIKE $1 LIMIT $3::int OFFSET $2::int
 `
@@ -842,6 +852,7 @@ type UserSearchRow struct {
 	LastName    string
 	DisplayName string
 	Email       string
+	Verified    bool
 }
 
 func (q *Queries) UserSearch(ctx context.Context, arg UserSearchParams) ([]UserSearchRow, error) {
@@ -859,6 +870,7 @@ func (q *Queries) UserSearch(ctx context.Context, arg UserSearchParams) ([]UserS
 			&i.LastName,
 			&i.DisplayName,
 			&i.Email,
+			&i.Verified,
 		); err != nil {
 			return nil, err
 		}

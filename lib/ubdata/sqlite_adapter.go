@@ -29,7 +29,7 @@ func (a *SQLiteAdapter) DeleteRole(ctx context.Context, roleID int64) error {
 	return nil
 }
 
-func (a *SQLiteAdapter) AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string, createdAt int64, updatedAt int64) error {
+func (a *SQLiteAdapter) AddUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string, verified bool, createdAt int64, updatedAt int64) error {
 	createdTime := sql.NullTime{
 		Time:  time.Unix(createdAt, 0),
 		Valid: true,
@@ -45,6 +45,7 @@ func (a *SQLiteAdapter) AddUser(ctx context.Context, userID int64, firstName, la
 		LastName:    lastName,
 		DisplayName: displayName,
 		Email:       email,
+		Verified:    verified,
 		CreatedAt:   createdTime,
 		UpdatedAt:   updatedTime,
 	})
@@ -61,6 +62,7 @@ func (a *SQLiteAdapter) GetUser(ctx context.Context, userID int64) (User, error)
 		LastName:    user.LastName,
 		DisplayName: user.DisplayName,
 		Email:       user.Email,
+		Verified:    user.Verified,
 	}, nil
 }
 
@@ -75,10 +77,11 @@ func (a *SQLiteAdapter) GetUserByEmail(ctx context.Context, email string) (User,
 		LastName:    user.LastName,
 		DisplayName: user.DisplayName,
 		Email:       user.Email,
+		Verified:    user.Verified,
 	}, nil
 }
 
-func (a *SQLiteAdapter) UpdateUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string, updatedAt int64) error {
+func (a *SQLiteAdapter) UpdateUser(ctx context.Context, userID int64, firstName, lastName, displayName, email string, verified bool, updatedAt int64) error {
 	updatedTime := sql.NullTime{
 		Time:  time.Unix(updatedAt, 0),
 		Valid: true,
@@ -90,6 +93,7 @@ func (a *SQLiteAdapter) UpdateUser(ctx context.Context, userID int64, firstName,
 		LastName:    lastName,
 		DisplayName: displayName,
 		Email:       email,
+		Verified:    verified,
 		UpdatedAt:   updatedTime,
 	})
 }
@@ -366,6 +370,7 @@ func (a *SQLiteAdapter) SearchUsers(ctx context.Context, searchTerm string, limi
 			LastName:    u.LastName,
 			DisplayName: u.DisplayName,
 			Email:       u.Email,
+			Verified:    u.Verified,
 		}
 	}
 	return result, nil
@@ -385,6 +390,7 @@ func (a *SQLiteAdapter) GetUsersInRole(ctx context.Context, roleID int64) ([]Use
 			LastName:    u.LastName,
 			DisplayName: u.DisplayName,
 			Email:       u.Email,
+			Verified:    u.Verified,
 		}
 	}
 	return result, nil

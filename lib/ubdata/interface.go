@@ -66,7 +66,7 @@ type DataAdapter interface {
 
 	ListOrganizationsRolesWithUserCounts(ctx context.Context, organizationId int64) ([]ListRolesWithUserCountsRow, error)
 	GetUsersInRole(ctx context.Context, roleID int64) ([]User, error)
-	GetRolesForUser(ctx context.Context, userID int64) ([]Role, error)
+	GetRolesForUser(ctx context.Context, userID int64) ([]RoleRow, error)
 }
 
 // User represents a user in the system
@@ -83,13 +83,6 @@ type Organization struct {
 	Name       string
 	SystemName string
 	Status     string
-}
-
-// Role represents a role in the system
-type Role struct {
-	RoleID     int64
-	Name       string
-	SystemName string
 }
 
 // Permission represents a permission in the system

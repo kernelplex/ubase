@@ -390,16 +390,16 @@ func (a *SQLiteAdapter) GetUsersInRole(ctx context.Context, roleID int64) ([]Use
 	return result, nil
 }
 
-func (a *SQLiteAdapter) GetRolesForUser(ctx context.Context, userID int64) ([]Role, error) {
+func (a *SQLiteAdapter) GetRolesForUser(ctx context.Context, userID int64) ([]RoleRow, error) {
 	roles, err := a.queries.GetRolesForUser(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get roles for user: %w", err)
 	}
 
-	result := make([]Role, len(roles))
+	result := make([]RoleRow, len(roles))
 	for i, r := range roles {
-		result[i] = Role{
-			RoleID:     r.ID,
+		result[i] = RoleRow{
+			ID:         r.ID,
 			Name:       r.Name,
 			SystemName: r.SystemName,
 		}

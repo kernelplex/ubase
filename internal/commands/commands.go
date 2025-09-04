@@ -27,6 +27,7 @@ func GetCommands(name string) *ubcli.CommandLine {
 	commandLine.Add(UserAddCommand())
 	commandLine.Add(UserUpdateCommand())
 	commandLine.Add(UserViewCommand())
+	commandLine.Add(UserVerifyCommand())
 	commandLine.Add(UserAddRoleCommand())
 	commandLine.Add(UserRemoveRoleCommand())
 	commandLine.Add(UserDisableCommand())

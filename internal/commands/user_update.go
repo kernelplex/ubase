@@ -11,6 +11,52 @@ import (
 	"github.com/kernelplex/ubase/lib/ubstatus"
 )
 
+func UserVerifyCommand() ubcli.Command {
+	const commandName = "user-verify"
+
+	var (
+		id int64
+	)
+
+	flagset := flag.NewFlagSet(commandName, flag.ExitOnError)
+	flagset.Int64Var(&id, "id", 0, "User ID to verify")
+
+	userVerify := func(args []string) error {
+		agent := GetAgent()
+
+		id = maybeReadInt64Input("User ID: ", id)
+
+		app := ubapp.NewUbaseAppEnvConfig()
+		defer app.Shutdown()
+
+		verified := true
+		command := ubmanage.UserUpdateCommand{
+			Id:       id,
+			Verified: &verified,
+		}
+
+		service := app.GetManagementService()
+		response, err := service.UserUpdate(context.Background(), command, agent)
+		if err != nil {
+			return err
+		}
+
+		if response.Status != ubstatus.Success {
+			return fmt.Errorf("failed to verify user: %s", response.Status)
+		}
+
+		fmt.Printf("Successfully verified user with ID: %d\n", id)
+		return nil
+	}
+
+	return ubcli.Command{
+		Name:    commandName,
+		Help:    "Verify a user's credentials",
+		Run:     userVerify,
+		FlagSet: flagset,
+	}
+}
+
 func UserUpdateCommand() ubcli.Command {
 	const commandName = "user-update"
 

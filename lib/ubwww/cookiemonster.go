@@ -15,9 +15,13 @@ type CookieContextKey string
 type IdentityContextKey string
 
 type UserIdentity struct {
-	UserID       int64
-	Email        string
-	Organization int64
+	UserID         int64
+	Email          string
+	OrganizationID int64
+}
+
+func (u *UserIdentity) ToAgent() string {
+	return fmt.Sprintf("user:%d", u.UserID)
 }
 
 type AuthTokenCookie interface {
@@ -32,7 +36,8 @@ type AuthTokenCookieManager[T AuthTokenCookie] interface {
 	WriteAuthTokenCookie(w http.ResponseWriter, token T) error
 	Middleware(handler http.Handler) http.Handler
 	MiddlewareFunc(handler http.HandlerFunc) http.HandlerFunc
-	FromContext(ctx context.Context) (T, bool)
+	TokenFromContext(ctx context.Context) (T, bool)
+	IdentityFromContext(ctx context.Context) (UserIdentity, bool)
 }
 
 type CookieMonster[T AuthTokenCookie] struct {
@@ -130,9 +135,14 @@ func (c *CookieMonster[T]) WriteAuthTokenCookie(w http.ResponseWriter, token T) 
 	return nil
 }
 
-func (c *CookieMonster[T]) FromContext(ctx context.Context) (T, bool) {
+func (c *CookieMonster[T]) TokenFromContext(ctx context.Context) (T, bool) {
 	token, ok := ctx.Value(c.cookieKey).(T)
 	return token, ok
+}
+
+func (c *CookieMonster[T]) IdentityFromContext(ctx context.Context) (UserIdentity, bool) {
+	identity, ok := ctx.Value(c.identityKey).(UserIdentity)
+	return identity, ok
 }
 
 func (c *CookieMonster[T]) middlewareHandler(w http.ResponseWriter, r *http.Request) *http.Request {

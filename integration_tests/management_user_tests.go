@@ -515,7 +515,7 @@ func (s *ManagmentServiceTestSuite) UserDeleteApiKey(t *testing.T) {
 	// Delete the API key
 	deleteResponse, err := s.managementService.UserDeleteApiKey(ctx, ubmanage.UserDeleteApiKeyCommand{
 		UserId: s.createdUserId,
-		ApiKey: response.Data, // The API key ID is the same as the key itself in this implementation
+		ApiKey: response.Data,
 	}, "test-runner")
 
 	if err != nil {

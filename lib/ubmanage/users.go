@@ -386,7 +386,6 @@ type UserApiKeyAddedEvent struct {
 	Id         string `json:"id"`
 	SecretHash string `json:"secretHash"`
 	Name       string `json:"name"`
-	UserID     int64  `json:"userId"`
 	CreatedAt  int64  `json:"createdAt"`
 	ExpiresAt  int64  `json:"expiresAt"`
 }

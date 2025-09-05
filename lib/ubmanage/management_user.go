@@ -2,6 +2,7 @@ package ubmanage
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -723,8 +724,12 @@ func (m *ManagementImpl) UserGetByApiKey(ctx context.Context,
 
 	userApiKey, err := m.dbadapter.UserGetApiKey(ctx, apiKeyId)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return r.StatusError[UserAggregate](ubstatus.NotAuthorized, "API key is invalid"), nil
+		}
+
 		slog.Error("Error getting user by api key", "error", err)
-		return r.StatusError[UserAggregate](ubstatus.NotAuthorized, "API key is invalid"), nil
+		return r.StatusError[UserAggregate](ubstatus.UnexpectedError, "An unexpected error occurred."), nil
 	}
 
 	// Verify the api key

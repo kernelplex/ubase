@@ -69,7 +69,7 @@ type DataAdapter interface {
 	GetUsersInRole(ctx context.Context, roleID int64) ([]User, error)
 	GetRolesForUser(ctx context.Context, userID int64) ([]RoleRow, error)
 
-	UserAddApiKey(ctx context.Context, userID int64, apiKeyId string, apiKeyHash, name string, createdAt time.Time, expiresAt time.Time) error
+	UserAddApiKey(ctx context.Context, userID int64, organizationId int64, apiKeyId string, apiKeyHash, name string, createdAt time.Time, expiresAt time.Time) error
 	UserDeleteApiKey(ctx context.Context, userID int64, apiKeyId string) error
 	UserListApiKeys(ctx context.Context, userID int64) ([]UserApiKeyNoHash, error)
 	UserGetApiKey(ctx context.Context, apiKeyId string) (UserApiKeyWithHash, error)
@@ -86,20 +86,22 @@ type User struct {
 }
 
 type UserApiKeyNoHash struct {
-	Id        string
-	Name      string
-	UserID    int64
-	CreatedAt time.Time
-	ExpiresAt time.Time
+	Id             string
+	Name           string
+	UserID         int64
+	OrganizationID int64
+	CreatedAt      time.Time
+	ExpiresAt      time.Time
 }
 
 type UserApiKeyWithHash struct {
-	Id         string
-	SecretHash string
-	Name       string
-	UserID     int64
-	CreatedAt  time.Time
-	ExpiresAt  time.Time
+	Id             string
+	SecretHash     string
+	Name           string
+	UserID         int64
+	OrganizationID int64
+	CreatedAt      time.Time
+	ExpiresAt      time.Time
 }
 
 type Organization struct {

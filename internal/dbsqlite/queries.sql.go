@@ -836,17 +836,18 @@ func (q *Queries) UpdateUserLoginStats(ctx context.Context, arg UpdateUserLoginS
 }
 
 const userAddApiKey = `-- name: UserAddApiKey :exec
-INSERT INTO user_api_keys (id, secret_hash, user_id, name, created_at, expires_at)
-VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+INSERT INTO user_api_keys (id, secret_hash, user_id, organization_id, name, created_at, expires_at)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
 `
 
 type UserAddApiKeyParams struct {
-	ID         string
-	SecretHash string
-	UserID     int64
-	Name       string
-	CreatedAt  time.Time
-	ExpiresAt  time.Time
+	ID             string
+	SecretHash     string
+	UserID         int64
+	OrganizationID int64
+	Name           string
+	CreatedAt      time.Time
+	ExpiresAt      time.Time
 }
 
 func (q *Queries) UserAddApiKey(ctx context.Context, arg UserAddApiKeyParams) error {
@@ -854,6 +855,7 @@ func (q *Queries) UserAddApiKey(ctx context.Context, arg UserAddApiKeyParams) er
 		arg.ID,
 		arg.SecretHash,
 		arg.UserID,
+		arg.OrganizationID,
 		arg.Name,
 		arg.CreatedAt,
 		arg.ExpiresAt,
@@ -877,18 +879,19 @@ func (q *Queries) UserDeleteApiKey(ctx context.Context, arg UserDeleteApiKeyPara
 }
 
 const userGetApiKey = `-- name: UserGetApiKey :one
-SELECT id, secret_hash, user_id, name, created_at, expires_at
+SELECT id, secret_hash, user_id, organization_id, name, created_at, expires_at
 FROM user_api_keys
 WHERE id = ?1
 `
 
 type UserGetApiKeyRow struct {
-	ID         string
-	SecretHash string
-	UserID     int64
-	Name       string
-	CreatedAt  time.Time
-	ExpiresAt  time.Time
+	ID             string
+	SecretHash     string
+	UserID         int64
+	OrganizationID int64
+	Name           string
+	CreatedAt      time.Time
+	ExpiresAt      time.Time
 }
 
 func (q *Queries) UserGetApiKey(ctx context.Context, apiKeyHash string) (UserGetApiKeyRow, error) {
@@ -898,6 +901,7 @@ func (q *Queries) UserGetApiKey(ctx context.Context, apiKeyHash string) (UserGet
 		&i.ID,
 		&i.SecretHash,
 		&i.UserID,
+		&i.OrganizationID,
 		&i.Name,
 		&i.CreatedAt,
 		&i.ExpiresAt,
@@ -906,17 +910,18 @@ func (q *Queries) UserGetApiKey(ctx context.Context, apiKeyHash string) (UserGet
 }
 
 const userListApiKeys = `-- name: UserListApiKeys :many
-SELECT id, user_id, name, created_at, expires_at
+SELECT id, user_id, organization_id, name, created_at, expires_at
 FROM user_api_keys
 WHERE user_id = ?1
 `
 
 type UserListApiKeysRow struct {
-	ID        string
-	UserID    int64
-	Name      string
-	CreatedAt time.Time
-	ExpiresAt time.Time
+	ID             string
+	UserID         int64
+	OrganizationID int64
+	Name           string
+	CreatedAt      time.Time
+	ExpiresAt      time.Time
 }
 
 func (q *Queries) UserListApiKeys(ctx context.Context, userID int64) ([]UserListApiKeysRow, error) {
@@ -931,6 +936,7 @@ func (q *Queries) UserListApiKeys(ctx context.Context, userID int64) ([]UserList
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
+			&i.OrganizationID,
 			&i.Name,
 			&i.CreatedAt,
 			&i.ExpiresAt,

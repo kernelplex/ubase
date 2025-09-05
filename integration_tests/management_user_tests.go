@@ -407,10 +407,12 @@ func (s *ManagmentServiceTestSuite) UserAddApiKey(t *testing.T) {
 	ctx := context.Background()
 
 	// Generate an API key using the management service
+	expireTime := time.Now().Add(24 * time.Hour)
 	response, err := s.managementService.UserGenerateApiKey(ctx, ubmanage.UserGenerateApiKeyCommand{
-		UserId:    s.createdUserId,
-		Name:      "Test API Key",
-		ExpiresAt: time.Now().Add(24 * time.Hour),
+		UserId:         s.createdUserId,
+		Name:           "Test API Key",
+		OrganizationId: 1,
+		ExpiresAt:      expireTime,
 	}, "test-runner")
 
 	if err != nil {
@@ -426,23 +428,53 @@ func (s *ManagmentServiceTestSuite) UserAddApiKey(t *testing.T) {
 	}
 
 	// Verify the API key was stored by listing API keys for the user
-	apiKeys, err := s.dbadapter.UserListApiKeys(ctx, s.createdUserId)
+	apiKeyId := response.Data[:10] // Assume first 10 characters are the ID
+	apiKey, err := s.dbadapter.UserGetApiKey(ctx, apiKeyId)
 	if err != nil {
-		t.Fatalf("UserListApiKeys failed: %v", err)
+		t.Fatalf("UserGetApiKey failed: %v", err)
+	}
+	if apiKey.UserID != s.createdUserId {
+		t.Fatalf("UserListApiKeys returned wrong user ID: expected %d, got %d", s.createdUserId, apiKey.UserID)
+	}
+	if apiKey.OrganizationID != 1 {
+		t.Fatalf("UserListApiKeys returned wrong organization ID: expected 1, got %d", apiKey.OrganizationID)
 	}
 
-	// Find our added API key
-	found := false
-	for _, key := range apiKeys {
-		if key.Name == "Test API Key" {
-			found = true
-			break
+	if apiKey.Name != "Test API Key" {
+		t.Fatalf("UserListApiKeys returned wrong API key name: expected 'Test API Key', got '%s'", apiKey.Name)
+	}
+	if !apiKey.ExpiresAt.Equal(expireTime) {
+		t.Fatalf("UserListApiKeys returned wrong expiration time: expected %v, got %v", expireTime, apiKey.ExpiresAt)
+	}
+
+	user, err := s.managementService.UserGetByApiKey(ctx, response.Data)
+	if err != nil {
+		t.Fatalf("UserGetByApiKey failed: %v", err)
+	}
+
+	var foundKey *ubmanage.ApiKey
+	for _, key := range user.Data.State.ApiKeys {
+		if key.Id == apiKeyId {
+			foundKey = &key
 		}
 	}
 
-	if !found {
-		t.Fatal("Added API key was not found in the list")
+	if foundKey == nil {
+		t.Fatalf("UserGetByApiKey did not return the expected API key")
+	} else {
+		if foundKey.Name != "Test API Key" {
+			t.Fatalf("UserGetByApiKey returned wrong API key name: expected 'Test API Key', got '%s'", foundKey.Name)
+		}
+		unixExpireTime := expireTime.Unix()
+		if foundKey.ExpiresAt != unixExpireTime {
+			t.Fatalf("UserGetByApiKey returned wrong expiration time: expected %v, got %v", unixExpireTime, foundKey.ExpiresAt)
+		}
+
+		if foundKey.OrganizationId != 1 {
+			t.Fatalf("UserGetByApiKey returned wrong organization ID: expected 1, got %d", foundKey.OrganizationId)
+		}
 	}
+
 }
 
 func (s *ManagmentServiceTestSuite) UserGetByApiKey(t *testing.T) {
@@ -450,9 +482,10 @@ func (s *ManagmentServiceTestSuite) UserGetByApiKey(t *testing.T) {
 
 	// First generate an API key
 	response, err := s.managementService.UserGenerateApiKey(ctx, ubmanage.UserGenerateApiKeyCommand{
-		UserId:    s.createdUserId,
-		Name:      "Test API Key for Get",
-		ExpiresAt: time.Now().Add(24 * time.Hour),
+		UserId:         s.createdUserId,
+		OrganizationId: 1,
+		Name:           "Test API Key for Get",
+		ExpiresAt:      time.Now().Add(24 * time.Hour),
 	}, "test-runner")
 
 	if err != nil {
@@ -495,9 +528,10 @@ func (s *ManagmentServiceTestSuite) UserDeleteApiKey(t *testing.T) {
 
 	// First generate an API key to delete
 	response, err := s.managementService.UserGenerateApiKey(ctx, ubmanage.UserGenerateApiKeyCommand{
-		UserId:    s.createdUserId,
-		Name:      "Test API Key to Delete",
-		ExpiresAt: time.Now().Add(24 * time.Hour),
+		UserId:         s.createdUserId,
+		OrganizationId: 1,
+		Name:           "Test API Key to Delete",
+		ExpiresAt:      time.Now().Add(24 * time.Hour),
 	}, "test-runner")
 
 	if err != nil {

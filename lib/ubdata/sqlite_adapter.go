@@ -413,14 +413,15 @@ func (a *SQLiteAdapter) GetRolesForUser(ctx context.Context, userID int64) ([]Ro
 	return result, nil
 }
 
-func (a *SQLiteAdapter) UserAddApiKey(ctx context.Context, userID int64, apiKeyId string, secretHash string, name string, createdAt time.Time, expiresAt time.Time) error {
+func (a *SQLiteAdapter) UserAddApiKey(ctx context.Context, userID int64, organizationId int64, apiKeyId string, secretHash string, name string, createdAt time.Time, expiresAt time.Time) error {
 	err := a.queries.UserAddApiKey(ctx, dbsqlite.UserAddApiKeyParams{
-		ID:         apiKeyId,
-		SecretHash: secretHash,
-		Name:       name,
-		UserID:     userID,
-		CreatedAt:  createdAt,
-		ExpiresAt:  expiresAt,
+		ID:             apiKeyId,
+		SecretHash:     secretHash,
+		Name:           name,
+		UserID:         userID,
+		OrganizationID: organizationId,
+		CreatedAt:      createdAt,
+		ExpiresAt:      expiresAt,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to add API key: %w", err)
@@ -448,11 +449,12 @@ func (a *SQLiteAdapter) UserListApiKeys(ctx context.Context, userID int64) ([]Us
 	result := make([]UserApiKeyNoHash, len(apiKeys))
 	for i, key := range apiKeys {
 		result[i] = UserApiKeyNoHash{
-			Id:        key.ID,
-			Name:      key.Name,
-			UserID:    key.UserID,
-			CreatedAt: key.CreatedAt,
-			ExpiresAt: key.ExpiresAt,
+			Id:             key.ID,
+			Name:           key.Name,
+			UserID:         key.UserID,
+			OrganizationID: key.OrganizationID,
+			CreatedAt:      key.CreatedAt,
+			ExpiresAt:      key.ExpiresAt,
 		}
 	}
 	return result, nil
@@ -465,11 +467,12 @@ func (a *SQLiteAdapter) UserGetApiKey(ctx context.Context, apiKeyHash string) (U
 	}
 
 	return UserApiKeyWithHash{
-		Id:         apiKey.ID,
-		SecretHash: apiKey.SecretHash,
-		Name:       apiKey.Name,
-		UserID:     apiKey.UserID,
-		CreatedAt:  apiKey.CreatedAt,
-		ExpiresAt:  apiKey.ExpiresAt,
+		Id:             apiKey.ID,
+		SecretHash:     apiKey.SecretHash,
+		Name:           apiKey.Name,
+		UserID:         apiKey.UserID,
+		OrganizationID: apiKey.OrganizationID,
+		CreatedAt:      apiKey.CreatedAt,
+		ExpiresAt:      apiKey.ExpiresAt,
 	}, nil
 }

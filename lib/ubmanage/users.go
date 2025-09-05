@@ -9,10 +9,11 @@ import (
 )
 
 type ApiKey struct {
-	Id         string `json:"id,omitempty"`
-	SecretHash string `json:"secretHash,omitempty"`
-	Name       string `json:"name,omitempty"`
-	ExpiresAt  int64  `json:"expiresAt,omitempty"`
+	Id             string `json:"id,omitempty"`
+	OrganizationId int64  `json:"organizationId,omitempty"`
+	SecretHash     string `json:"secretHash,omitempty"`
+	Name           string `json:"name,omitempty"`
+	ExpiresAt      int64  `json:"expiresAt,omitempty"`
 }
 
 type UserState struct {
@@ -82,10 +83,11 @@ func (t *UserAggregate) ApplyEventState(eventState evercore.EventState, eventTim
 		return nil
 	case UserApiKeyAddedEvent:
 		t.State.ApiKeys = append(t.State.ApiKeys, ApiKey{
-			Id:         ev.Id,
-			SecretHash: ev.SecretHash,
-			Name:       ev.Name,
-			ExpiresAt:  ev.ExpiresAt,
+			Id:             ev.Id,
+			OrganizationId: ev.OrganizationId,
+			SecretHash:     ev.SecretHash,
+			Name:           ev.Name,
+			ExpiresAt:      ev.ExpiresAt,
 		})
 		return nil
 	case UserApiKeyDeletedEvent:
@@ -222,9 +224,19 @@ type UserEnableCommand struct {
 }
 
 type UserGenerateApiKeyCommand struct {
-	UserId    int64     `json:"userId"`
-	Name      string    `json:"name"`
-	ExpiresAt time.Time `json:"expiresAt"`
+	UserId         int64     `json:"userId"`
+	Name           string    `json:"name"`
+	OrganizationId int64     `json:"organizationId,omitempty"`
+	ExpiresAt      time.Time `json:"expiresAt"`
+}
+
+func (c UserGenerateApiKeyCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
+	validationTracker := ubvalidation.NewValidationTracker()
+
+	validationTracker.ValidateIntMinValue("UserId", c.UserId, 1)
+	validationTracker.ValidateField("Name", c.Name, true, 0)
+	validationTracker.ValidateIntMinValue("OrganizationId", c.OrganizationId, 1)
+	return validationTracker.Valid()
 }
 
 type UserDeleteApiKeyCommand struct {
@@ -383,11 +395,12 @@ func (a UserEnabledEvent) Serialize() string {
 
 // evercore:event
 type UserApiKeyAddedEvent struct {
-	Id         string `json:"id"`
-	SecretHash string `json:"secretHash"`
-	Name       string `json:"name"`
-	CreatedAt  int64  `json:"createdAt"`
-	ExpiresAt  int64  `json:"expiresAt"`
+	Id             string `json:"id"`
+	OrganizationId int64  `json:"organizationId"`
+	SecretHash     string `json:"secretHash"`
+	Name           string `json:"name"`
+	CreatedAt      int64  `json:"createdAt"`
+	ExpiresAt      int64  `json:"expiresAt"`
 }
 
 func (a UserApiKeyAddedEvent) GetEventType() string {

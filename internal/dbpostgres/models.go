@@ -42,12 +42,13 @@ type User struct {
 }
 
 type UserApiKey struct {
-	ID         string
-	SecretHash string
-	Name       string
-	UserID     int64
-	CreatedAt  time.Time
-	ExpiresAt  time.Time
+	ID             string
+	SecretHash     string
+	Name           string
+	UserID         int64
+	OrganizationID int64
+	CreatedAt      time.Time
+	ExpiresAt      time.Time
 }
 
 type UserRole struct {

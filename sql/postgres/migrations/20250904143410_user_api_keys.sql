@@ -6,6 +6,7 @@ CREATE TABLE user_api_keys (
     secret_hash VARCHAR(255) NOT NULL,
     name VARCHAR(100) NOT NULL,
     user_id BIGINT NOT NULL,
+    organization_id BIGINT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP NOT NULL
 );

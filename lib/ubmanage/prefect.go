@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/kernelplex/ubase/lib/ubalgorithms"
 	"github.com/kernelplex/ubase/lib/ubstatus"
@@ -17,6 +18,13 @@ type PrefectService interface {
 	GroupInvalidation(ctx context.Context, roleId int64) error
 
 	UserInvalidation(ctx context.Context, userId int64) error
+
+	ApiKeyToUser(ctx context.Context, apiKey string) (ApiKeyData, error)
+}
+type ApiKeyData struct {
+	UserId    int64  `json:"userId"`
+	Email     string `json:"email,omitempty"`
+	ExpiresAt int64  `json:"expiresAt,omitempty"`
 }
 
 type UserData struct {
@@ -35,6 +43,7 @@ type PrefectServiceImpl struct {
 	managementService ManagementService
 	userCache         *ubalgorithms.LRUCache[int64, *UserData]
 	groupCache        *ubalgorithms.LRUCache[int64, *GroupPermissions]
+	apiKeyCache       *ubalgorithms.LRUCache[string, *ApiKeyData]
 }
 
 func NewPrefectService(
@@ -152,4 +161,41 @@ func (p *PrefectServiceImpl) GroupInvalidation(ctx context.Context, groupId int6
 func (p *PrefectServiceImpl) UserInvalidation(ctx context.Context, userId int64) error {
 	p.userCache.Remove(userId)
 	return nil
+}
+
+func (p *PrefectServiceImpl) ApiKeyToUser(ctx context.Context, apiKey string) (ApiKeyData, error) {
+
+	apiKeyData, found := p.apiKeyCache.Get(apiKey)
+	if found {
+		// Check if the API key is expired
+		currentTime := time.Now().Unix()
+		if apiKeyData.ExpiresAt != 0 && apiKeyData.ExpiresAt < currentTime {
+			// API key is expired, remove it from cache
+			p.apiKeyCache.Remove(apiKey)
+			return ApiKeyData{}, fmt.Errorf("api key expired")
+		}
+
+		return *apiKeyData, nil
+	}
+
+	apiKeyResp, err := p.managementService.UserGetByApiKey(ctx, apiKey)
+	if err != nil {
+		return ApiKeyData{}, err
+	}
+	if apiKeyResp.Status != ubstatus.Success {
+		return ApiKeyData{}, fmt.Errorf("failed to get api key data: %s", apiKeyResp.Message)
+	}
+
+	for _, key := range apiKeyResp.Data.State.ApiKeys {
+		if key.Id == apiKey {
+			apiKeyData = &ApiKeyData{
+				UserId:    apiKeyResp.Data.Id,
+				Email:     apiKeyResp.Data.State.Email,
+				ExpiresAt: key.ExpiresAt,
+			}
+			p.apiKeyCache.Put(apiKey, apiKeyData)
+			return *apiKeyData, nil
+		}
+	}
+	return ApiKeyData{}, fmt.Errorf("api key not found")
 }

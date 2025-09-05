@@ -162,20 +162,20 @@ FROM users
 WHERE email ILIKE sqlc.arg(query) OR disoplay_name ILIKE sqlc.arg(query) LIMIT sqlc.arg(count)::int OFFSET sqlc.arg(start)::int; 
 
 -- name: UserAddApiKey :exec
-INSERT INTO user_api_keys (id, secret_hash, user_id, name, created_at, expires_at)
-VALUES (sqlc.arg(id), sqlc.arg(secret_hash), sqlc.arg(user_id), sqlc.arg(name), sqlc.arg(created_at), sqlc.arg(expires_at));
+INSERT INTO user_api_keys (id, secret_hash, user_id, organization_id, name, created_at, expires_at)
+VALUES (sqlc.arg(id), sqlc.arg(secret_hash), sqlc.arg(user_id), sqlc.arg(organization_id), sqlc.arg(name), sqlc.arg(created_at), sqlc.arg(expires_at));
 
 -- name: UserDeleteApiKey :exec
 DELETE FROM user_api_keys
 WHERE id = sqlc.arg(id) AND user_id = sqlc.arg(user_id);
 
 -- name: UserGetApiKey :one
-SELECT id, secret_hash, user_id, name, created_at, expires_at
+SELECT id, secret_hash, user_id, organization_id, name, created_at, expires_at
 FROM user_api_keys
 WHERE id = sqlc.arg(api_key_hash);
 
 -- name: UserListApiKeys :many
-SELECT id, user_id, name, created_at, expires_at
+SELECT id, user_id, organization_id, name, created_at, expires_at
 FROM user_api_keys
 WHERE user_id = sqlc.arg(user_id);
 

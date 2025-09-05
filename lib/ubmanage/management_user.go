@@ -650,6 +650,14 @@ func (m *ManagementImpl) UserGenerateApiKey(ctx context.Context,
 	command UserGenerateApiKeyCommand,
 	agent string) (r.Response[string], error) {
 
+	if ok, issues := command.Validate(); !ok {
+		return r.Response[string]{
+			Status:           ubstatus.ValidationError,
+			Message:          "Validation issues",
+			ValidationIssues: issues,
+		}, nil
+	}
+
 	apiKey, err := evercore.InContext(
 		ctx,
 		m.store,
@@ -680,11 +688,12 @@ func (m *ManagementImpl) UserGenerateApiKey(ctx context.Context,
 			unixTimeCreatedAt := time.Now().Unix()
 
 			event := UserApiKeyAddedEvent{
-				Id:         apiKeyId,
-				SecretHash: secretHash,
-				Name:       command.Name,
-				CreatedAt:  unixTimeCreatedAt,
-				ExpiresAt:  unixTimeExpiresAt,
+				Id:             apiKeyId,
+				OrganizationId: command.OrganizationId,
+				SecretHash:     secretHash,
+				Name:           command.Name,
+				CreatedAt:      unixTimeCreatedAt,
+				ExpiresAt:      unixTimeExpiresAt,
 			}
 
 			err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)
@@ -695,6 +704,7 @@ func (m *ManagementImpl) UserGenerateApiKey(ctx context.Context,
 			err = m.dbadapter.UserAddApiKey(
 				ctx,
 				aggregate.Id,
+				command.OrganizationId,
 				apiKeyId,
 				secretHash,
 				command.Name,

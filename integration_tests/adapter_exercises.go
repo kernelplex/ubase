@@ -176,9 +176,10 @@ func (s *AdapterExercises) TestAddApiKey(t *testing.T) {
 	apiKeyId := "samplehash"
 	apiKeySecret := "Sample Key"
 	name := "Sample Key"
+	orgID := int64(1)
 
 	// Update the user
-	err := s.adapter.UserAddApiKey(ctx, sampleUser.UserID, apiKeyId, apiKeySecret, name, time.Now(), time.Now().Add(24*time.Hour))
+	err := s.adapter.UserAddApiKey(ctx, sampleUser.UserID, orgID, apiKeyId, apiKeySecret, name, time.Now(), time.Now().Add(24*time.Hour))
 	if err != nil {
 		t.Fatalf("UserAddApiKey failed: %v", err)
 	}
@@ -210,9 +211,10 @@ func (s *AdapterExercises) TestDeleteApiKey(t *testing.T) {
 	userID := sampleUser.UserID
 	apiKeyId := "fordeletex"
 	apiKeySecret := "Secret to Delete"
+	orgID := int64(1)
 
 	// First add an API key to delete
-	err := s.adapter.UserAddApiKey(ctx, userID, apiKeyId, apiKeySecret, "Key to Delete", time.Now(), time.Now().Add(24*time.Hour))
+	err := s.adapter.UserAddApiKey(ctx, userID, orgID, apiKeyId, apiKeySecret, "Key to Delete", time.Now(), time.Now().Add(24*time.Hour))
 	if err != nil {
 		t.Fatalf("Setup: UserAddApiKey failed: %v", err)
 	}

@@ -8,23 +8,31 @@ import (
 	"github.com/kernelplex/ubase/lib/ubvalidation"
 )
 
+type ApiKey struct {
+	Id         string `json:"id,omitempty"`
+	SecretHash string `json:"secretHash,omitempty"`
+	Name       string `json:"name,omitempty"`
+	ExpiresAt  int64  `json:"expiresAt,omitempty"`
+}
+
 type UserState struct {
-	Email                 string  `json:"email"`
-	PasswordHash          string  `json:"passwordHash"`
-	FirstName             string  `json:"firstName"`
-	LastName              string  `json:"lastName"`
-	VerificationToken     *string `json:"verificationToken,omitempty"`
-	Verified              bool    `json:"verified"`
-	Disabled              bool    `json:"disabled"`
-	DisplayName           string  `json:"displayName"`
-	ResetToken            *string `json:"resetToken,omitempty"`
-	LastLogin             int64   `json:"lastLogin,omitempty"`
-	LastLoginAttempt      int64   `json:"lastLoginAttempt,omitempty"`
-	FailedLoginAttempts   int64   `json:"failedLoginAttempts,omitempty"`
-	TwoFactorSharedSecret *string `json:"twoFactorSharedSecret,omitempty"`
-	LoginCount            int64   `json:"loginCount,omitempty"`
-	CreatedAt             int64   `json:"createdAt,omitempty"`
-	UpdatedAt             int64   `json:"updatedAt,omitempty"`
+	Email                 string   `json:"email"`
+	PasswordHash          string   `json:"passwordHash"`
+	FirstName             string   `json:"firstName"`
+	LastName              string   `json:"lastName"`
+	VerificationToken     *string  `json:"verificationToken,omitempty"`
+	Verified              bool     `json:"verified"`
+	Disabled              bool     `json:"disabled"`
+	DisplayName           string   `json:"displayName"`
+	ResetToken            *string  `json:"resetToken,omitempty"`
+	LastLogin             int64    `json:"lastLogin,omitempty"`
+	LastLoginAttempt      int64    `json:"lastLoginAttempt,omitempty"`
+	FailedLoginAttempts   int64    `json:"failedLoginAttempts,omitempty"`
+	TwoFactorSharedSecret *string  `json:"twoFactorSharedSecret,omitempty"`
+	LoginCount            int64    `json:"loginCount,omitempty"`
+	CreatedAt             int64    `json:"createdAt,omitempty"`
+	UpdatedAt             int64    `json:"updatedAt,omitempty"`
+	ApiKeys               []ApiKey `json:"apiKeys,omitempty"`
 }
 
 // evercore:aggregate
@@ -72,6 +80,23 @@ func (t *UserAggregate) ApplyEventState(eventState evercore.EventState, eventTim
 	case UserEnabledEvent:
 		t.State.Disabled = false
 		return nil
+	case UserApiKeyAddedEvent:
+		t.State.ApiKeys = append(t.State.ApiKeys, ApiKey{
+			Id:         ev.Id,
+			SecretHash: ev.SecretHash,
+			Name:       ev.Name,
+			ExpiresAt:  ev.ExpiresAt,
+		})
+		return nil
+	case UserApiKeyDeletedEvent:
+		newApiKeys := make([]ApiKey, 0, len(t.State.ApiKeys))
+		for _, apiKey := range t.State.ApiKeys {
+			if apiKey.Id != ev.Id {
+				newApiKeys = append(newApiKeys, apiKey)
+			}
+		}
+		t.State.ApiKeys = newApiKeys
+		return nil
 	default:
 		err = t.StateAggregate.ApplyEventState(eventState, eventTime, reference)
 	}
@@ -81,9 +106,11 @@ func (t *UserAggregate) ApplyEventState(eventState evercore.EventState, eventTim
 	}
 
 	if eventState.GetEventType() != events.UserAddedEventType {
+		t.State.ApiKeys = make([]ApiKey, len(t.State.ApiKeys))
 		t.State.CreatedAt = eventTime.Unix()
 		t.State.UpdatedAt = eventTime.Unix()
 	}
+
 	if eventState.GetEventType() == events.UserUpdatedEventType {
 		t.State.UpdatedAt = eventTime.Unix()
 	}
@@ -192,6 +219,17 @@ type UserDisableCommand struct {
 
 type UserEnableCommand struct {
 	Id int64 `json:"id"`
+}
+
+type UserGenerateApiKeyCommand struct {
+	UserId    int64     `json:"userId"`
+	Name      string    `json:"name"`
+	ExpiresAt time.Time `json:"expiresAt"`
+}
+
+type UserDeleteApiKeyCommand struct {
+	UserId int64  `json:"userId"`
+	ApiKey string `json:"apiKey"`
 }
 
 // ============================================================================
@@ -340,5 +378,35 @@ func (a UserEnabledEvent) GetEventType() string {
 }
 
 func (a UserEnabledEvent) Serialize() string {
+	return evercore.SerializeToJson(a)
+}
+
+// evercore:event
+type UserApiKeyAddedEvent struct {
+	Id         string `json:"id"`
+	SecretHash string `json:"secretHash"`
+	Name       string `json:"name"`
+	UserID     int64  `json:"userId"`
+	CreatedAt  int64  `json:"createdAt"`
+	ExpiresAt  int64  `json:"expiresAt"`
+}
+
+func (a UserApiKeyAddedEvent) GetEventType() string {
+	return events.UserApiKeyAddedEventType
+}
+
+func (a UserApiKeyAddedEvent) Serialize() string {
+	return evercore.SerializeToJson(a)
+}
+
+// evercore:event
+type UserApiKeyDeletedEvent struct {
+	Id string `json:"apiKeyHash"`
+}
+
+func (a UserApiKeyDeletedEvent) GetEventType() string {
+	return events.UserApiKeyDeletedEventType
+}
+func (a UserApiKeyDeletedEvent) Serialize() string {
 	return evercore.SerializeToJson(a)
 }

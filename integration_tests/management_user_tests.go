@@ -3,6 +3,7 @@ package integration_tests
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/kernelplex/ubase/lib/ubmanage"
 	"github.com/kernelplex/ubase/lib/ubstatus"
@@ -399,5 +400,153 @@ func (s *ManagmentServiceTestSuite) VerifyIncorrectTwoFactorCode(t *testing.T) {
 
 	if invalidResponse.Status != ubstatus.NotAuthorized {
 		t.Fatalf("VerifyIncorrectTwoFactorCode expected NotAuthorized status but got: %v", invalidResponse.Status)
+	}
+}
+
+func (s *ManagmentServiceTestSuite) UserAddApiKey(t *testing.T) {
+	ctx := context.Background()
+
+	// Generate an API key using the management service
+	response, err := s.managementService.UserGenerateApiKey(ctx, ubmanage.UserGenerateApiKeyCommand{
+		UserId:    s.createdUserId,
+		Name:      "Test API Key",
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}, "test-runner")
+
+	if err != nil {
+		t.Fatalf("UserGenerateApiKey failed: %v", err)
+	}
+
+	if response.Status != ubstatus.Success {
+		t.Fatalf("UserGenerateApiKey status is not success: %v", response.Status)
+	}
+
+	if response.Data == "" {
+		t.Fatal("UserGenerateApiKey returned empty API key")
+	}
+
+	// Verify the API key was stored by listing API keys for the user
+	apiKeys, err := s.dbadapter.UserListApiKeys(ctx, s.createdUserId)
+	if err != nil {
+		t.Fatalf("UserListApiKeys failed: %v", err)
+	}
+
+	// Find our added API key
+	found := false
+	for _, key := range apiKeys {
+		if key.Name == "Test API Key" {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		t.Fatal("Added API key was not found in the list")
+	}
+}
+
+func (s *ManagmentServiceTestSuite) UserGetByApiKey(t *testing.T) {
+	ctx := context.Background()
+
+	// First generate an API key
+	response, err := s.managementService.UserGenerateApiKey(ctx, ubmanage.UserGenerateApiKeyCommand{
+		UserId:    s.createdUserId,
+		Name:      "Test API Key for Get",
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}, "test-runner")
+
+	if err != nil {
+		t.Fatalf("UserGenerateApiKey failed: %v", err)
+	}
+
+	if response.Status != ubstatus.Success {
+		t.Fatalf("UserGenerateApiKey status is not success: %v", response.Status)
+	}
+
+	if response.Data == "" {
+		t.Fatal("UserGenerateApiKey returned empty API key")
+	}
+
+	t.Logf("************** Generated API Key: %s", response.Data)
+	hash, _ := s.hashingService.GenerateHashBase64(response.Data)
+	t.Logf("************** Generated API Key Hash: %s", hash)
+
+	// Now try to get the user by the API key
+	userResponse, err := s.managementService.UserGetByApiKey(ctx, response.Data)
+	if err != nil {
+		t.Fatalf("UserGetByApiKey failed: %v", err)
+	}
+
+	if userResponse.Status != ubstatus.Success {
+		t.Fatalf("UserGetByApiKey status is not success: %v", userResponse.Status)
+	}
+
+	if userResponse.Data.Id != s.createdUserId {
+		t.Fatalf("UserGetByApiKey returned wrong user ID: expected %d, got %d", s.createdUserId, userResponse.Data.Id)
+	}
+
+	if userResponse.Data.State.Email != updatedUser.Email {
+		t.Fatalf("UserGetByApiKey returned wrong email: expected %s, got %s", updatedUser.Email, userResponse.Data.State.Email)
+	}
+}
+
+func (s *ManagmentServiceTestSuite) UserDeleteApiKey(t *testing.T) {
+	ctx := context.Background()
+
+	// First generate an API key to delete
+	response, err := s.managementService.UserGenerateApiKey(ctx, ubmanage.UserGenerateApiKeyCommand{
+		UserId:    s.createdUserId,
+		Name:      "Test API Key to Delete",
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}, "test-runner")
+
+	if err != nil {
+		t.Fatalf("UserGenerateApiKey failed: %v", err)
+	}
+
+	if response.Status != ubstatus.Success {
+		t.Fatalf("UserGenerateApiKey status is not success: %v", response.Status)
+	}
+
+	if response.Data == "" {
+		t.Fatal("UserGenerateApiKey returned empty API key")
+	}
+
+	// Delete the API key
+	deleteResponse, err := s.managementService.UserDeleteApiKey(ctx, ubmanage.UserDeleteApiKeyCommand{
+		UserId: s.createdUserId,
+		ApiKey: response.Data, // The API key ID is the same as the key itself in this implementation
+	}, "test-runner")
+
+	if err != nil {
+		t.Fatalf("UserDeleteApiKey failed: %v", err)
+	}
+
+	if deleteResponse.Status != ubstatus.Success {
+		t.Fatalf("UserDeleteApiKey status is not success: %v", deleteResponse.Status)
+	}
+
+	// Verify the API key was deleted by trying to get the user by the API key
+	userResponse, err := s.managementService.UserGetByApiKey(ctx, response.Data)
+	if err != nil {
+		t.Fatalf("UserGetByApiKey after deletion failed: %v", err)
+	}
+
+	// Should not be able to find the user with the deleted API key
+	if userResponse.Status != ubstatus.NotAuthorized {
+		t.Fatalf("Expected NotAuthorized status after API key deletion, got: %v", userResponse.Status)
+	}
+
+	// Get the user by ID.
+	userByIdResponse, err := s.managementService.UserGetById(ctx, s.createdUserId)
+	if err != nil {
+		t.Fatalf("UserGetById failed: %v", err)
+	}
+
+	// Ensure the api key is not in the user's API keys
+	for _, apiKey := range userByIdResponse.Data.State.ApiKeys {
+		if apiKey.Name == "Test API Key to Delete" {
+			t.Fatal("Deleted API key was still found in user's API keys")
+		}
 	}
 }

@@ -13,6 +13,8 @@ const (
 	RolePermissionRemovedEventType = "RolePermissionRemovedEvent"
 	RoleUndeletedEventType = "RoleUndeletedEvent"
 	UserAddedToRoleEventType = "UserAddedToRoleEvent"
+	UserApiKeyAddedEventType = "UserApiKeyAddedEvent"
+	UserApiKeyDeletedEventType = "UserApiKeyDeletedEvent"
 	UserDisabledEventType = "UserDisabledEvent"
 	UserEnabledEventType = "UserEnabledEvent"
 	UserLoginFailedEventType = "UserLoginFailedEvent"
@@ -38,6 +40,8 @@ var List = []string{
 	RolePermissionRemovedEventType,
 	RoleUndeletedEventType,
 	UserAddedToRoleEventType,
+	UserApiKeyAddedEventType,
+	UserApiKeyDeletedEventType,
 	UserDisabledEventType,
 	UserEnabledEventType,
 	UserLoginFailedEventType,

@@ -188,6 +188,18 @@ type ManagementService interface {
 
 	// UsersCount returns the total number of users in the system
 	UsersCount(ctx context.Context) (r.Response[int64], error)
+
+	UserGenerateApiKey(ctx context.Context,
+		command UserGenerateApiKeyCommand,
+		agent string) (r.Response[string], error)
+
+	UserGetByApiKey(ctx context.Context,
+		apiKey string) (r.Response[UserAggregate], error)
+
+	UserDeleteApiKey(ctx context.Context,
+		command UserDeleteApiKeyCommand,
+		agent string) (r.Response[any], error)
+
 	// OrganizationsCount returns the total number of organizations in the system
 	OrganizationsCount(ctx context.Context) (r.Response[int64], error)
 

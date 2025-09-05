@@ -44,13 +44,12 @@ CREATE TABLE role_permissions (
 	role_id BIGINT NOT NULL,
 	permission VARCHAR(255) NOT NULL,
 	CONSTRAINT role_permissions_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id),
-	CONSTRAINT role_permissions_role_id_fkey UNIQUE (role_id, permission)
+	CONSTRAINT role_permissions_role_id_ukey UNIQUE (role_id, permission)
 );
 
 -- Create indexes for foreign keys
 CREATE INDEX idx_roles_organization_id ON roles(organization_id);
 CREATE INDEX idx_user_roles_user_id ON user_roles(user_id);
-CREATE INDEX idx_user_roles_organization_id ON user_roles(organization_id);
 CREATE INDEX idx_user_roles_role_id ON user_roles(role_id);
 
 -- +goose StatementEnd

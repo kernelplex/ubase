@@ -103,6 +103,20 @@ func EventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error) {
 			return nil, err
 		}
 		return eventState, nil
+	case events.UserApiKeyAddedEventType:
+		eventState := ubmanage.UserApiKeyAddedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserApiKeyDeletedEventType:
+		eventState := ubmanage.UserApiKeyDeletedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
 	case events.UserDisabledEventType:
 		eventState := ubmanage.UserDisabledEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)

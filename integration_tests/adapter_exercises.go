@@ -69,6 +69,9 @@ func (s *AdapterExercises) RunTests(t *testing.T) {
 	t.Run("TestGetUser", s.TestGetUser)
 	t.Run("TestGetUserByEmail", s.TestGetUserByEmail)
 	t.Run("TestUpdateUser", s.TestUpdateUser)
+	t.Run("TestAddApiKey", s.TestAddApiKey)
+	t.Run("TestGetApiKey", s.TestGetApiKey)
+	t.Run("TestDeleteApiKey", s.TestDeleteApiKey)
 	t.Run("TestAddOrganization", s.TestAddOrganization)
 	t.Run("TestGetOrganization", s.TestGetOrganization)
 
@@ -164,6 +167,72 @@ func (s *AdapterExercises) TestUpdateUser(t *testing.T) {
 	}
 	if user.Email != sampleUpdatedUser.Email {
 		t.Errorf("Email not updated, expected '%s' got '%s'", sampleUpdatedUser.Email, user.Email)
+	}
+}
+
+func (s *AdapterExercises) TestAddApiKey(t *testing.T) {
+	ctx := t.Context()
+
+	apiKeyId := "samplehash"
+	apiKeySecret := "Sample Key"
+	name := "Sample Key"
+
+	// Update the user
+	err := s.adapter.UserAddApiKey(ctx, sampleUser.UserID, apiKeyId, apiKeySecret, name, time.Now(), time.Now().Add(24*time.Hour))
+	if err != nil {
+		t.Fatalf("UserAddApiKey failed: %v", err)
+	}
+}
+
+func (s *AdapterExercises) TestGetApiKey(t *testing.T) {
+	ctx := t.Context()
+	apiKeyId := "samplehash"
+	apiKeySecret := "Sample Key"
+
+	apiKey, err := s.adapter.UserGetApiKey(ctx, apiKeyId)
+	if err != nil {
+		t.Fatalf("UserGetApiKey failed: %v", err)
+	}
+	if apiKey.SecretHash != apiKeySecret {
+		t.Errorf("Expected SecretHash %s, got %s", apiKeySecret, apiKey.SecretHash)
+	}
+
+	if apiKey.UserID != sampleUser.UserID {
+		t.Errorf("Expected UserID %d, got %d", sampleUser.UserID, apiKey.UserID)
+	}
+	if apiKey.Name != "Sample Key" {
+		t.Errorf("Expected Name 'Sample Key', got %s", apiKey.Name)
+	}
+}
+
+func (s *AdapterExercises) TestDeleteApiKey(t *testing.T) {
+	ctx := t.Context()
+	userID := sampleUser.UserID
+	apiKeyId := "fordeletex"
+	apiKeySecret := "Secret to Delete"
+
+	// First add an API key to delete
+	err := s.adapter.UserAddApiKey(ctx, userID, apiKeyId, apiKeySecret, "Key to Delete", time.Now(), time.Now().Add(24*time.Hour))
+	if err != nil {
+		t.Fatalf("Setup: UserAddApiKey failed: %v", err)
+	}
+
+	// Verify the API key was added
+	_, err = s.adapter.UserGetApiKey(ctx, apiKeyId)
+	if err != nil {
+		t.Fatalf("Setup: UserGetApiKey failed: %v", err)
+	}
+
+	// Delete the API key
+	err = s.adapter.UserDeleteApiKey(ctx, userID, apiKeyId)
+	if err != nil {
+		t.Fatalf("UserDeleteApiKey failed: %v", err)
+	}
+
+	// Verify the API key was removed by trying to get it
+	_, err = s.adapter.UserGetApiKey(ctx, apiKeyId)
+	if err == nil {
+		t.Fatalf("Expected error when getting deleted API key, but got none")
 	}
 }
 

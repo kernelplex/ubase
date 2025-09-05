@@ -12,4 +12,13 @@ sqlc:
 
 .PHONY: test
 test: sqlc evercoregen
-	go test integration_tests/*.go
+	go test -count=1 -tags sqlite,postgresql ./integration_tests/...
+
+.PHONY: test-postgresql
+test-postgresql: sqlc evercoregen
+	go test -count=1 -tags postgresql ./integration_tests/...
+
+.PHONY: test-sqlite
+test-sqlite: sqlc evercoregen
+	go test -count=1 -tags sqlite ./integration_tests/...
+

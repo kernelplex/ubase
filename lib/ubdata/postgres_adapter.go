@@ -429,3 +429,64 @@ func (a *PostgresAdapter) GetRolesForUser(ctx context.Context, userID int64) ([]
 	}
 	return result, nil
 }
+
+func (a *PostgresAdapter) UserAddApiKey(ctx context.Context, userID int64, apiKeyId string, secretHash string, name string, createdAt time.Time, expiresAt time.Time) error {
+	err := a.queries.UserAddApiKey(ctx, dbpostgres.UserAddApiKeyParams{
+		ID:         apiKeyId,
+		SecretHash: secretHash,
+		Name:       name,
+		UserID:     userID,
+		CreatedAt:  createdAt,
+		ExpiresAt:  expiresAt,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to add API key: %w", err)
+	}
+	return nil
+}
+
+func (a *PostgresAdapter) UserDeleteApiKey(ctx context.Context, userID int64, apiKeyId string) error {
+	err := a.queries.UserDeleteApiKey(ctx, dbpostgres.UserDeleteApiKeyParams{
+		ID:     apiKeyId,
+		UserID: userID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete API key: %w", err)
+	}
+	return nil
+}
+
+func (a *PostgresAdapter) UserListApiKeys(ctx context.Context, userID int64) ([]UserApiKeyNoHash, error) {
+	apiKeys, err := a.queries.UserListApiKeys(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list API keys: %w", err)
+	}
+
+	result := make([]UserApiKeyNoHash, len(apiKeys))
+	for i, key := range apiKeys {
+		result[i] = UserApiKeyNoHash{
+			Id:        key.ID,
+			Name:      key.Name,
+			UserID:    key.UserID,
+			CreatedAt: key.CreatedAt,
+			ExpiresAt: key.ExpiresAt,
+		}
+	}
+	return result, nil
+}
+
+func (a *PostgresAdapter) UserGetApiKey(ctx context.Context, apiKeyHash string) (UserApiKeyWithHash, error) {
+	apiKey, err := a.queries.UserGetApiKey(ctx, apiKeyHash)
+	if err != nil {
+		return UserApiKeyWithHash{}, fmt.Errorf("failed to get API key: %w", err)
+	}
+
+	return UserApiKeyWithHash{
+		Id:         apiKey.ID,
+		SecretHash: apiKey.SecretHash,
+		Name:       apiKey.Name,
+		UserID:     apiKey.UserID,
+		CreatedAt:  apiKey.CreatedAt,
+		ExpiresAt:  apiKey.ExpiresAt,
+	}, nil
+}

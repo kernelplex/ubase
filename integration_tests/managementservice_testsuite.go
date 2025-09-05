@@ -16,6 +16,7 @@ type ManagmentServiceTestSuite struct {
 	dbadapter         ubdata.DataAdapter
 	managementService ubmanage.ManagementService
 	twoFactorService  ub2fa.TotpService
+	hashingService    ubsecurity.HashGenerator
 
 	createdOrganizationId int64
 	createdUserId         int64
@@ -40,6 +41,7 @@ func NewManagementServiceTestSuite(eventStore *evercore.EventStore, dbadapter ub
 		dbadapter:         dbadapter,
 		managementService: managemntService,
 		twoFactorService:  totpService,
+		hashingService:    hashingService,
 	}
 }
 
@@ -67,5 +69,9 @@ func (s *ManagmentServiceTestSuite) RunTests(t *testing.T) {
 	t.Run("VerifyIncorrectTwoFactorCode", s.VerifyIncorrectTwoFactorCode)
 	t.Run("AddUserToRole", s.AddUserToRole)
 	t.Run("RemoveUserFromRole", s.RemoveUserFromRole)
+
+	t.Run("UserAddApiKey", s.UserAddApiKey)
+	t.Run("UserGetByApiKey", s.UserGetByApiKey)
+	t.Run("UserDeleteApiKey", s.UserDeleteApiKey)
 
 }

@@ -6,6 +6,7 @@ package dbsqlite
 
 import (
 	"database/sql"
+	"time"
 )
 
 type Organization struct {
@@ -38,6 +39,15 @@ type User struct {
 	LastLogin   sql.NullTime
 	LoginCount  int64
 	Verified    bool
+}
+
+type UserApiKey struct {
+	ID         string
+	SecretHash string
+	Name       string
+	UserID     int64
+	CreatedAt  time.Time
+	ExpiresAt  time.Time
 }
 
 type UserRole struct {

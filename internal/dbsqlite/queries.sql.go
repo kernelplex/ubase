@@ -8,6 +8,7 @@ package dbsqlite
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const addOrganization = `-- name: AddOrganization :exec
@@ -832,6 +833,119 @@ type UpdateUserLoginStatsParams struct {
 func (q *Queries) UpdateUserLoginStats(ctx context.Context, arg UpdateUserLoginStatsParams) error {
 	_, err := q.db.ExecContext(ctx, updateUserLoginStats, arg.LastLogin, arg.LoginCount, arg.ID)
 	return err
+}
+
+const userAddApiKey = `-- name: UserAddApiKey :exec
+INSERT INTO user_api_keys (id, secret_hash, user_id, name, created_at, expires_at)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+`
+
+type UserAddApiKeyParams struct {
+	ID         string
+	SecretHash string
+	UserID     int64
+	Name       string
+	CreatedAt  time.Time
+	ExpiresAt  time.Time
+}
+
+func (q *Queries) UserAddApiKey(ctx context.Context, arg UserAddApiKeyParams) error {
+	_, err := q.db.ExecContext(ctx, userAddApiKey,
+		arg.ID,
+		arg.SecretHash,
+		arg.UserID,
+		arg.Name,
+		arg.CreatedAt,
+		arg.ExpiresAt,
+	)
+	return err
+}
+
+const userDeleteApiKey = `-- name: UserDeleteApiKey :exec
+DELETE FROM user_api_keys
+WHERE id = ?1 AND user_id = ?2
+`
+
+type UserDeleteApiKeyParams struct {
+	ID     string
+	UserID int64
+}
+
+func (q *Queries) UserDeleteApiKey(ctx context.Context, arg UserDeleteApiKeyParams) error {
+	_, err := q.db.ExecContext(ctx, userDeleteApiKey, arg.ID, arg.UserID)
+	return err
+}
+
+const userGetApiKey = `-- name: UserGetApiKey :one
+SELECT id, secret_hash, user_id, name, created_at, expires_at
+FROM user_api_keys
+WHERE id = ?1
+`
+
+type UserGetApiKeyRow struct {
+	ID         string
+	SecretHash string
+	UserID     int64
+	Name       string
+	CreatedAt  time.Time
+	ExpiresAt  time.Time
+}
+
+func (q *Queries) UserGetApiKey(ctx context.Context, apiKeyHash string) (UserGetApiKeyRow, error) {
+	row := q.db.QueryRowContext(ctx, userGetApiKey, apiKeyHash)
+	var i UserGetApiKeyRow
+	err := row.Scan(
+		&i.ID,
+		&i.SecretHash,
+		&i.UserID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const userListApiKeys = `-- name: UserListApiKeys :many
+SELECT id, user_id, name, created_at, expires_at
+FROM user_api_keys
+WHERE user_id = ?1
+`
+
+type UserListApiKeysRow struct {
+	ID        string
+	UserID    int64
+	Name      string
+	CreatedAt time.Time
+	ExpiresAt time.Time
+}
+
+func (q *Queries) UserListApiKeys(ctx context.Context, userID int64) ([]UserListApiKeysRow, error) {
+	rows, err := q.db.QueryContext(ctx, userListApiKeys, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UserListApiKeysRow
+	for rows.Next() {
+		var i UserListApiKeysRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.CreatedAt,
+			&i.ExpiresAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const userSearch = `-- name: UserSearch :many

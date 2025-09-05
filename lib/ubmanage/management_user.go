@@ -13,6 +13,10 @@ import (
 	"github.com/kernelplex/ubase/lib/ubstatus"
 )
 
+const ApiKeyLength = 40
+const ApiKeyIdLength = 10
+const VerificationTokenLength = 10
+
 func MapEvercoreErrorToStatus(err error) ubstatus.StatusCode {
 	// Duplicate
 
@@ -81,7 +85,7 @@ func (m *ManagementImpl) UserAdd(ctx context.Context,
 
 			var token string
 			if command.GenerateVerificationToken {
-				token = ubsecurity.GenerateSecureRandomString(10)
+				token = ubsecurity.GenerateSecureRandomString(VerificationTokenLength)
 				encryptedToken, err := m.encryptionService.Encrypt64(token)
 				if err != nil {
 					return IdCode{}, fmt.Errorf("failed to encrypt verification token: %w", err)
@@ -428,7 +432,7 @@ func (m *ManagementImpl) UserGenerateVerificationToken(ctx context.Context,
 				return "", fmt.Errorf("failed to load user: %w", err)
 			}
 
-			token := ubsecurity.GenerateSecureRandomString(10)
+			token := ubsecurity.GenerateSecureRandomString(VerificationTokenLength)
 			encryptedToken, err := m.encryptionService.Encrypt64(token)
 			if err != nil {
 				return "", fmt.Errorf("failed to encrypt verification token: %w", err)
@@ -639,4 +643,156 @@ func (m *ManagementImpl) UsersCount(ctx context.Context) (r.Response[int64], err
 		return r.Error[int64]("Error counting users"), err
 	}
 	return r.Success(count), nil
+}
+
+func (m *ManagementImpl) UserGenerateApiKey(ctx context.Context,
+	command UserGenerateApiKeyCommand,
+	agent string) (r.Response[string], error) {
+
+	apiKey, err := evercore.InContext(
+		ctx,
+		m.store,
+		func(etx evercore.EventStoreContext) (string, error) {
+			aggregate := UserAggregate{}
+			err := etx.LoadStateInto(&aggregate, command.UserId)
+			if err != nil {
+				return "", fmt.Errorf("failed to load user: %w", err)
+			}
+
+			// Generate the API key and hash it
+			apiKey := ubsecurity.GenerateSecureRandomString(ApiKeyLength)
+			if len(apiKey) < 40 {
+				// This should not happen.
+				panic("Generated API key is too short")
+			}
+
+			// Id is the first 10 characters of the API key. Secret is the rest.
+			apiKeyId := apiKey[:ApiKeyIdLength]
+			secret := apiKey[ApiKeyIdLength:]
+
+			secretHash, err := m.hashingService.GenerateHashBase64(secret)
+			if err != nil {
+				return "", fmt.Errorf("failed to hash api key: %w", err)
+			}
+
+			unixTimeExpiresAt := command.ExpiresAt.Unix()
+			unixTimeCreatedAt := time.Now().Unix()
+
+			event := UserApiKeyAddedEvent{
+				Id:         apiKeyId,
+				SecretHash: secretHash,
+				Name:       command.Name,
+				CreatedAt:  unixTimeCreatedAt,
+				ExpiresAt:  unixTimeExpiresAt,
+			}
+
+			err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)
+			if err != nil {
+				return "", fmt.Errorf("failed to apply user api key added event: %w", err)
+			}
+
+			err = m.dbadapter.UserAddApiKey(
+				ctx,
+				aggregate.Id,
+				apiKeyId,
+				secretHash,
+				command.Name,
+				time.Now(),
+				command.ExpiresAt)
+			if err != nil {
+				return "", fmt.Errorf("failed to add api key in database: %w", err)
+			}
+
+			return apiKey, nil
+		})
+	if err != nil {
+		status := MapEvercoreErrorToStatus(err)
+		slog.Error("Error generating api key", "error", err)
+		return r.Response[string]{
+			Status:  status,
+			Message: "Error generating api key",
+		}, err
+	}
+	return r.Success(apiKey), nil
+}
+
+func (m *ManagementImpl) UserGetByApiKey(ctx context.Context,
+	apiKey string) (r.Response[UserAggregate], error) {
+
+	apiKeyId := apiKey[:ApiKeyIdLength]
+
+	userApiKey, err := m.dbadapter.UserGetApiKey(ctx, apiKeyId)
+	if err != nil {
+		slog.Error("Error getting user by api key", "error", err)
+		return r.StatusError[UserAggregate](ubstatus.NotAuthorized, "API key is invalid"), nil
+	}
+
+	// Verify the api key
+	secret := apiKey[ApiKeyIdLength:]
+	match, err := m.hashingService.VerifyBase64(secret, userApiKey.SecretHash)
+	if err != nil {
+		slog.Error("Error verifying api key", "error", err)
+		return r.StatusError[UserAggregate](ubstatus.NotAuthorized, "API key is invalid"), nil
+	}
+	if !match {
+		slog.Error("API key does not match", "apiKeyId", apiKeyId)
+		return r.StatusError[UserAggregate](ubstatus.NotAuthorized, "API key is invalid"), nil
+	}
+
+	// Make sure the api key is not expired
+	if userApiKey.ExpiresAt.Before(time.Now()) {
+		slog.Error("API key is expired",
+			"apiKeyId", apiKeyId,
+			"expiresAt", userApiKey.ExpiresAt,
+			"now", time.Now())
+		return r.StatusError[UserAggregate](ubstatus.NotAuthorized, "API key is expired"), nil
+	}
+
+	return m.UserGetById(ctx, userApiKey.UserID)
+}
+
+func (m *ManagementImpl) UserDeleteApiKey(ctx context.Context,
+	command UserDeleteApiKeyCommand,
+	agent string) (r.Response[any], error) {
+
+	err := m.store.WithContext(
+		ctx,
+		func(etx evercore.EventStoreContext) error {
+			aggregate := UserAggregate{}
+			err := etx.LoadStateInto(&aggregate, command.UserId)
+			if err != nil {
+				return fmt.Errorf("failed to load user: %w", err)
+			}
+
+			apiKeyId := command.ApiKey[:ApiKeyIdLength]
+
+			event := UserApiKeyDeletedEvent{
+				Id: apiKeyId,
+			}
+
+			err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)
+			if err != nil {
+				return fmt.Errorf("failed to apply user api key deleted event: %w", err)
+			}
+
+			err = m.dbadapter.UserDeleteApiKey(
+				ctx,
+				aggregate.Id,
+				apiKeyId,
+			)
+			if err != nil {
+				return fmt.Errorf("failed to delete api key in database: %w", err)
+			}
+
+			return nil
+		})
+	if err != nil {
+		status := MapEvercoreErrorToStatus(err)
+		slog.Error("Error deleting api key", "error", err)
+		return r.Response[any]{
+			Status:  status,
+			Message: "Error deleting api key",
+		}, err
+	}
+	return r.SuccessAny(), nil
 }

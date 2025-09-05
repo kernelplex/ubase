@@ -12,8 +12,16 @@ import (
 )
 
 type CookieContextKey string
+type IdentityContextKey string
+
+type UserIdentity struct {
+	UserID       int64
+	Email        string
+	Organization int64
+}
 
 type AuthTokenCookie interface {
+	ToUserIdentity() UserIdentity
 	IsExpired() bool
 	Touch(unixSec int64)
 }
@@ -33,6 +41,7 @@ type CookieMonster[T AuthTokenCookie] struct {
 	tokenSoftExpiry   int
 	secure            bool
 	cookieKey         CookieContextKey
+	identityKey       IdentityContextKey
 }
 
 func NewCookieMonster[T AuthTokenCookie](
@@ -40,13 +49,15 @@ func NewCookieMonster[T AuthTokenCookie](
 	cookieName string,
 	secure bool,
 	tokenSoftExpiry int64,
-	cookieKey CookieContextKey) AuthTokenCookieManager[T] {
+	cookieKey CookieContextKey,
+	identityKey IdentityContextKey) AuthTokenCookieManager[T] {
 	return &CookieMonster[T]{
 		encryptionService: encryptionService,
 		cookieName:        cookieName,
 		secure:            secure,
 		tokenSoftExpiry:   int(tokenSoftExpiry),
 		cookieKey:         cookieKey,
+		identityKey:       identityKey,
 	}
 }
 
@@ -124,51 +135,39 @@ func (c *CookieMonster[T]) FromContext(ctx context.Context) (T, bool) {
 	return token, ok
 }
 
+func (c *CookieMonster[T]) middlewareHandler(w http.ResponseWriter, r *http.Request) *http.Request {
+	found, token, err := c.ReadAuthTokenCookie(r)
+
+	if err == nil && found {
+		if token.IsExpired() {
+			slog.Debug("Auth token cookie is expired, clearing cookie")
+			c.ClearAuthTokenCookie(w)
+		} else {
+			updateTime := time.Now().Add(time.Duration(c.tokenSoftExpiry) * time.Second).Unix()
+			token.Touch(updateTime)
+			err = c.WriteAuthTokenCookie(w, token)
+			if err != nil {
+				slog.Error("Error updating auth token cookie", "error", err)
+			}
+			ctx := r.Context()
+			ctx = context.WithValue(ctx, c.cookieKey, token)
+			ctx = context.WithValue(ctx, c.identityKey, token.ToUserIdentity())
+			r = r.WithContext(ctx)
+		}
+	}
+	return r
+}
+
 func (c *CookieMonster[T]) MiddlewareFunc(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		found, token, err := c.ReadAuthTokenCookie(r)
-
-		if err == nil && found {
-			if token.IsExpired() {
-				slog.Debug("Auth token cookie is expired, clearing cookie")
-				c.ClearAuthTokenCookie(w)
-			} else {
-				updateTime := time.Now().Add(time.Duration(c.tokenSoftExpiry) * time.Second).Unix()
-				token.Touch(updateTime)
-				err = c.WriteAuthTokenCookie(w, token)
-				if err != nil {
-					slog.Error("Error updating auth token cookie", "error", err)
-				}
-				ctx := r.Context()
-				ctx = context.WithValue(ctx, c.cookieKey, token)
-				r = r.WithContext(ctx)
-			}
-		}
+		r = c.middlewareHandler(w, r)
 		handler(w, r)
 	}
 }
 
 func (c *CookieMonster[T]) Middleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		found, token, err := c.ReadAuthTokenCookie(r)
-
-		if err == nil && found {
-			if token.IsExpired() {
-				slog.Debug("Auth token cookie is expired, clearing cookie")
-				c.ClearAuthTokenCookie(w)
-			} else {
-				updateTime := time.Now().Add(time.Duration(c.tokenSoftExpiry) * time.Second).Unix()
-				token.Touch(updateTime)
-				err = c.WriteAuthTokenCookie(w, token)
-				if err != nil {
-					slog.Error("Error updating auth token cookie", "error", err)
-				}
-				ctx := r.Context()
-				ctx = context.WithValue(ctx, c.cookieKey, token)
-				r = r.WithContext(ctx)
-			}
-		}
+		r = c.middlewareHandler(w, r)
 		handler.ServeHTTP(w, r)
 	})
 }

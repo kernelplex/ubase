@@ -3,6 +3,7 @@ package ubmanage
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"slices"
 	"time"
 
@@ -53,10 +54,12 @@ func NewPrefectService(
 ) PrefectService {
 	userCache := ubalgorithms.NewLRUCache[int64, *UserData](userCacheSize)
 	groupCache := ubalgorithms.NewLRUCache[int64, *GroupPermissions](groupCacheSize)
+	apiKeyCache := ubalgorithms.NewLRUCache[string, *ApiKeyData](groupCacheSize)
 	return &PrefectServiceImpl{
 		managementService: managementService,
 		userCache:         userCache,
 		groupCache:        groupCache,
+		apiKeyCache:       apiKeyCache,
 	}
 }
 
@@ -169,9 +172,10 @@ func (p *PrefectServiceImpl) ApiKeyToUser(ctx context.Context, apiKey string) (A
 	if found {
 		// Check if the API key is expired
 		currentTime := time.Now().Unix()
-		if apiKeyData.ExpiresAt != 0 && apiKeyData.ExpiresAt < currentTime {
+		if apiKeyData.ExpiresAt < currentTime {
 			// API key is expired, remove it from cache
 			p.apiKeyCache.Remove(apiKey)
+			slog.Info("Api key", "key", apiKey, "expiredAt", apiKeyData.ExpiresAt, "currentTime", currentTime)
 			return ApiKeyData{}, fmt.Errorf("api key expired")
 		}
 

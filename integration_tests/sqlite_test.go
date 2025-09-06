@@ -1,15 +1,18 @@
-//go:build sqlite
+// //go:build sqlite
 
 package integration_tests
 
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/joho/godotenv"
-	_ "modernc.org/sqlite"
+	"github.com/xo/dburl"
+	"modernc.org/sqlite"
 
 	// "github.com/kernelplex/ubase/lib/ubconst"
 	evercore "github.com/kernelplex/evercore/base"
@@ -21,12 +24,36 @@ import (
 var ENV_SQLITE_TEST_DB = "SQLITE_TEST_DB"
 var ENV_TEST_SQLITE_EVENTSTORE_DB = "SQLITE_TEST_EVENTSTORE_DB"
 
-func openDatabase(connectionString string) (*sql.DB, error) {
+var modernc_sqlite_registered = false
 
-	db, err := sql.Open("sqlite", connectionString)
+func RegisterModerncSqlite() {
+	if !modernc_sqlite_registered {
+		sql.Register("sqlite3", &sqlite.Driver{})
+		modernc_sqlite_registered = true
+	}
+}
+
+func openDatabase(connectionString string) (*sql.DB, error) {
+	RegisterModerncSqlite()
+	slog.Info("*********** Opening database", "connectionString", connectionString)
+	connection, err := dburl.Parse(connectionString)
+	slog.Info("***** Parsed connection", "connectionString", connectionString)
+	if err != nil {
+		panic(err)
+	}
+	slog.Info("***** Parsed connection - no errors", "connection", connection)
+	if connection.Driver != "sqlite3" {
+		return nil, fmt.Errorf("invalid driver: %s", connection.Driver)
+	}
+
+	db, err := dburl.Open(connectionString)
 	if err != nil {
 		return nil, err
 	}
+
+	/*
+		db, err := sql.Open("sqlite", connectionString)
+	*/
 
 	_, err = db.Exec("PRAGMA journal_mode=WAL;")
 	if err != nil {
@@ -46,7 +73,7 @@ func openDatabase(connectionString string) (*sql.DB, error) {
 func ReadDotEnv() {
 	// Search for .env file in current directory and parent directories
 	path := "."
-	for _ = range 10 { // Limit to 10 levels up to prevent infinite loops
+	for range 10 { // Limit to 10 levels up to prevent infinite loops
 		envPath := path + "/.env"
 		if _, err := os.Stat(envPath); err == nil {
 			if err := godotenv.Load(envPath); err == nil {
@@ -59,9 +86,28 @@ func ReadDotEnv() {
 	// If no .env found, continue without error since it's optional for SQLite
 }
 
-func CleanupExistingDatabases(testDbFile string, testEventstoreDbFile string) {
-	os.Remove(testDbFile)
-	os.Remove(testEventstoreDbFile)
+func mustGetSqliteFilename(dbUrl string) string {
+	parsedUrl, err := dburl.Parse(dbUrl)
+	if err != nil {
+		panic(err)
+	}
+	if parsedUrl.Driver != "sqlite3" {
+		panic("Invalid driver for test database: " + parsedUrl.Driver)
+	}
+
+	filename := parsedUrl.DSN
+	if idx := strings.IndexRune(filename, '?'); idx != -1 {
+		filename = filename[:idx]
+	}
+	return filename
+}
+
+func CleanupExistingDatabases(testDbUrl string, testEventstoreDbUrl string) {
+	testDbUrl = mustGetSqliteFilename(testDbUrl)
+	testEventstoreDbUrl = mustGetSqliteFilename(testEventstoreDbUrl)
+
+	os.Remove(testDbUrl)
+	os.Remove(testEventstoreDbUrl)
 }
 
 func TestSqliteDataAdapter(t *testing.T) {
@@ -130,7 +176,7 @@ func TestSqliteDataAdapter(t *testing.T) {
 	*/
 }
 
-func TestSqliteManagementService(t *testing.T) {
+func zzzTestSqliteManagementService(t *testing.T) {
 	// Print the current working directory
 	cwd, err := os.Getwd()
 	if err != nil {

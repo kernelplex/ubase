@@ -36,6 +36,11 @@ go get github.com/kernelplex/ubase
 ```
 
 ### Configuration (via Environment Variables)
+
+>[!IMPORTANT]a
+> When using sqlite, use the ?_time_format=sqlite query parameter to ensure proper time handling.
+
+
 ```bash
 # Required
 export PEPPER="your-pepper-value" 
@@ -43,8 +48,8 @@ export SECRET_KEY="32-byte-encryption-key"
 export TOTP_ISSUER="YourAppName"
 
 # Database (defaults to SQLite)
-export DATABASE_CONNECTION="postgres://user:pass@localhost/dbname"
-export EVENT_STORE_CONNECTION="sqlite:///var/data/events.db"
+export DATABASE_CONNECTION="postgres://user:pass@localhost/dbname?time_format=sqlite"
+export EVENT_STORE_CONNECTION="sqlite:///var/data/events.db?_time_format=sqlite"
 
 # Optional
 export ENVIRONMENT="development"

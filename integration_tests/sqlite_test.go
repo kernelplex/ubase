@@ -150,33 +150,9 @@ func TestSqliteDataAdapter(t *testing.T) {
 
 	// Run the tests
 	testSuite.RunTests(t)
-
-	/*
-
-		edb, err := openDatabase(testEventstoreDbFile)
-		if err != nil {
-			t.Fatalf("Failed to open eventstore database: %v", err)
-		}
-		defer edb.Close()
-
-		if err := evercoresqlite.MigrateUp(edb); err != nil {
-			t.Fatalf("Failed to migrate eventstore database: %v", err)
-		}
-
-		storage := evercoresqlite.NewSqliteStorageEngine(edb)
-		eventStore := evercore.NewEventStore(storage)
-
-		// Create a new test suite
-		// testSuite := NewStorageEngineTestSuite(eventStore, db, dbType)
-		adapter := ubdata.NewSQLiteAdapter(db)
-		testSuite := NewAdapterExercises(db, adapter)
-
-		// Run the tests
-		testSuite.RunTests(t)
-	*/
 }
 
-func zzzTestSqliteManagementService(t *testing.T) {
+func TestSqliteManagementService(t *testing.T) {
 	// Print the current working directory
 	cwd, err := os.Getwd()
 	if err != nil {

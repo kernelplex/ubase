@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/kernelplex/ubase/lib/ubalgorithms"
@@ -23,9 +24,10 @@ type PrefectService interface {
 	ApiKeyToUser(ctx context.Context, apiKey string) (ApiKeyData, error)
 }
 type ApiKeyData struct {
-	UserId    int64  `json:"userId"`
-	Email     string `json:"email,omitempty"`
-	ExpiresAt int64  `json:"expiresAt,omitempty"`
+	UserId         int64  `json:"userId"`
+	Email          string `json:"email,omitempty"`
+	OrganizationId int64  `json:"organizationId,omitempty"`
+	ExpiresAt      int64  `json:"expiresAt,omitempty"`
 }
 
 type UserData struct {
@@ -191,11 +193,13 @@ func (p *PrefectServiceImpl) ApiKeyToUser(ctx context.Context, apiKey string) (A
 	}
 
 	for _, key := range apiKeyResp.Data.State.ApiKeys {
-		if key.Id == apiKey {
+		// Ensure apiKey starts with key.Id
+		if strings.HasPrefix(apiKey, key.Id) {
 			apiKeyData = &ApiKeyData{
-				UserId:    apiKeyResp.Data.Id,
-				Email:     apiKeyResp.Data.State.Email,
-				ExpiresAt: key.ExpiresAt,
+				UserId:         apiKeyResp.Data.Id,
+				Email:          apiKeyResp.Data.State.Email,
+				OrganizationId: key.OrganizationId,
+				ExpiresAt:      key.ExpiresAt,
 			}
 			p.apiKeyCache.Put(apiKey, apiKeyData)
 			return *apiKeyData, nil

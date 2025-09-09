@@ -38,23 +38,48 @@ go get github.com/kernelplex/ubase
 ### Configuration (via Environment Variables)
 
 >[!IMPORTANT]a
-> When using sqlite, use the ?_time_format=sqlite query parameter to ensure proper time handling.
+> When using sqlite, use the **?_time_format=sqlite** query parameter to ensure proper time handling.
 
 
 ```bash
-# Required
-export PEPPER="your-pepper-value" 
-export SECRET_KEY="32-byte-encryption-key"
+# Required (base64-encoded values)
+export PEPPER="<base64-encoded-32-bytes>"
+export SECRET_KEY="<base64-encoded-32-bytes>"  # AES-256 key
 export TOTP_ISSUER="YourAppName"
 
 # Database (defaults to SQLite)
-export DATABASE_CONNECTION="postgres://user:pass@localhost/dbname?time_format=sqlite"
+export DATABASE_CONNECTION="postgres://user:pass@localhost/dbname"
 export EVENT_STORE_CONNECTION="sqlite:///var/data/events.db?_time_format=sqlite"
 
 # Optional
 export ENVIRONMENT="development"
 export TOKEN_SOFT_EXPIRY_SECONDS="3600"  # 1 hour
 export TOKEN_HARD_EXPIRY_SECONDS="86400" # 24 hours
+
+# Mailer (optional)
+# MAILER_TYPE controls delivery; defaults to "none".
+# Supported values: none, noop, file, smtp
+# For file: set MAILER_FROM and MAILER_OUTPUT_DIR
+# For smtp: set MAILER_FROM, MAILER_USERNAME, MAILER_PASSWORD, MAILER_HOST
+# When MAILER_TYPE is none or noop, no MAILER_* values are required
+# export MAILER_TYPE="none"
+# export MAILER_FROM="no-reply@example.com"
+# export MAILER_OUTPUT_DIR="/var/emails"     # when MAILER_TYPE=file
+# export MAILER_USERNAME="smtp-user"         # when MAILER_TYPE=smtp
+# export MAILER_PASSWORD="smtp-pass"         # when MAILER_TYPE=smtp
+# export MAILER_HOST="smtp.example.com:587"  # when MAILER_TYPE=smtp
+```
+
+Mail delivery is disabled by default (`MAILER_TYPE=none`).
+`MAILER_FROM` and related `MAILER_*` settings are only required when a mailer is enabled:
+- `file`: requires `MAILER_FROM` and `MAILER_OUTPUT_DIR`
+- `smtp`: requires `MAILER_FROM`, `MAILER_USERNAME`, `MAILER_PASSWORD`, `MAILER_HOST`
+- `none` or `noop`: no mailer settings required
+
+Tip: `PEPPER` and `SECRET_KEY` are expected to be base64-encoded bytes. Use the CLI helper to generate secure values:
+
+```bash
+./build/ubase secret --length 32  # generate base64, use for PEPPER/SECRET_KEY
 ```
 
 ### Basic Usage

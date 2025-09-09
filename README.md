@@ -37,7 +37,7 @@ go get github.com/kernelplex/ubase
 
 ### Configuration (via Environment Variables)
 
->[!IMPORTANT]a
+>[!IMPORTANT]
 > When using sqlite, use the **?_time_format=sqlite** query parameter to ensure proper time handling.
 
 

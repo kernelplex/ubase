@@ -91,16 +91,16 @@ func Encrypt(key []byte, data []byte) ([]byte, error) {
 }
 
 func Decrypt(key []byte, data []byte) ([]byte, error) {
-	c, err := aes.NewCipher(key)
+    c, err := aes.NewCipher(key)
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate nonce: %w", err)
-	}
+    if err != nil {
+        return nil, fmt.Errorf("failed to create AES cipher: %w", err)
+    }
 
-	gcm, err := cipher.NewGCM(c)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create AES cipher for decryption: %w", err)
-	}
+    gcm, err := cipher.NewGCM(c)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create GCM: %w", err)
+    }
 
 	nonceSize := gcm.NonceSize()
 	if len(data) < nonceSize {

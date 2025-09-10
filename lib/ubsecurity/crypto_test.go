@@ -1,7 +1,7 @@
 package ubsecurity
 
 import (
-	"testing"
+    "testing"
 )
 
 func TestEncryptionService(t *testing.T) {
@@ -49,17 +49,17 @@ func TestEncryptionService(t *testing.T) {
 		}
 	})
 
-	t.Run("Invalid key size", func(t *testing.T) {
-		// Test with invalid key size
-		invalidKey := GenerateSecureRandom(17) // Not 16, 24 or 32 bytes
-		invalidService := NewEncryptionService(invalidKey)
+    t.Run("Invalid key size panics", func(t *testing.T) {
+        // NewEncryptionService panics on invalid key sizes
+        defer func() {
+            if r := recover(); r == nil {
+                t.Fatal("expected panic for invalid key size, got none")
+            }
+        }()
+        _ = NewEncryptionService(GenerateSecureRandom(17)) // Not 16, 24, or 32
+    })
 
-		if invalidService != nil {
-			t.Error("Expected nil service with invalid key size")
-		}
-	})
-
-	t.Run("Tampered data", func(t *testing.T) {
+    t.Run("Tampered data", func(t *testing.T) {
 		// Test with tampered encrypted data
 		encrypted, err := service.Encrypt(testBytes)
 		if err != nil {
@@ -73,9 +73,9 @@ func TestEncryptionService(t *testing.T) {
 		if err == nil {
 			t.Error("Expected error with tampered data, got nil")
 		}
-	})
+    })
 
-	t.Run("Empty input", func(t *testing.T) {
+    t.Run("Empty input", func(t *testing.T) {
 		// Test with empty input
 		_, err := service.Encrypt([]byte{})
 		if err != nil {
@@ -86,7 +86,35 @@ func TestEncryptionService(t *testing.T) {
 		if err != nil {
 			t.Errorf("Encrypt64 with empty input failed: %v", err)
 		}
-	})
+    })
+
+    t.Run("Decrypt64 with invalid base64", func(t *testing.T) {
+        _, err := service.Decrypt64("!!!not-base64!!!")
+        if err == nil {
+            t.Error("expected error for invalid base64 input, got nil")
+        }
+    })
+
+    t.Run("Valid key sizes 16/24/32", func(t *testing.T) {
+        sizes := []uint32{16, 24, 32}
+        for _, sz := range sizes {
+            key := GenerateSecureRandom(sz)
+            // Expect no panic for valid sizes
+            svc := NewEncryptionService(key)
+            plaintext := []byte("hello")
+            enc, err := svc.Encrypt(plaintext)
+            if err != nil {
+                t.Fatalf("encrypt failed for key size %d: %v", sz, err)
+            }
+            dec, err := svc.Decrypt(enc)
+            if err != nil {
+                t.Fatalf("decrypt failed for key size %d: %v", sz, err)
+            }
+            if string(dec) != string(plaintext) {
+                t.Fatalf("roundtrip mismatch for key size %d", sz)
+            }
+        }
+    })
 }
 
 func TestGenerateSecureRandom(t *testing.T) {
@@ -104,4 +132,41 @@ func TestGenerateSecureRandom(t *testing.T) {
 			t.Errorf("Expected empty slice for zero length, got %d bytes", len(bytes))
 		}
 	})
+}
+
+func TestGenerateSecureRandomString(t *testing.T) {
+    t.Run("Default charset length and chars", func(t *testing.T) {
+        const n = 64
+        s := GenerateSecureRandomString(n)
+        if len(s) != n {
+            t.Fatalf("expected length %d, got %d", n, len(s))
+        }
+        allowed := map[rune]bool{}
+        for _, r := range []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") {
+            allowed[r] = true
+        }
+        for _, r := range []rune(s) {
+            if !allowed[r] {
+                t.Fatalf("unexpected rune %q in output", r)
+            }
+        }
+    })
+
+    t.Run("Custom charset length and chars", func(t *testing.T) {
+        const n = 48
+        chars := []rune("aBc123")
+        s := GenerateSecureRandomStringWithChars(n, chars)
+        if len(s) != n {
+            t.Fatalf("expected length %d, got %d", n, len(s))
+        }
+        allowed := map[rune]bool{}
+        for _, r := range chars {
+            allowed[r] = true
+        }
+        for _, r := range []rune(s) {
+            if !allowed[r] {
+                t.Fatalf("unexpected rune %q in output", r)
+            }
+        }
+    })
 }

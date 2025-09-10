@@ -137,12 +137,12 @@ func (c UserCreateCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 	validationTracker := ubvalidation.NewValidationTracker()
 
 	// Validate required fields
-	validationTracker.ValidateEmail("Email", c.Email)
-	validationTracker.ValidatePasswordComplexity("Password", c.Password)
-	validationTracker.ValidateField("Password", c.Password, true, 0)
-	validationTracker.ValidateField("FirstName", c.FirstName, true, 0)
-	validationTracker.ValidateField("LastName", c.LastName, true, 0)
-	validationTracker.ValidateField("DisplayName", c.DisplayName, true, 0)
+	validationTracker.ValidateEmail("email", c.Email)
+	validationTracker.ValidatePasswordComplexity("password", c.Password)
+	validationTracker.ValidateField("password", c.Password, true, 0)
+	validationTracker.ValidateField("firstName", c.FirstName, true, 0)
+	validationTracker.ValidateField("lastName", c.LastName, true, 0)
+	validationTracker.ValidateField("displayName", c.DisplayName, true, 0)
 
 	return validationTracker.Valid()
 }
@@ -160,12 +160,12 @@ type UserUpdateCommand struct {
 func (c UserUpdateCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 	validationTracker := ubvalidation.NewValidationTracker()
 
-	validationTracker.ValidateIntMinValue("Id", c.Id, 1)
-	validationTracker.ValidateOptionalField("Email", c.Email, 0)
-	validationTracker.ValidateOptionalField("Password", c.Password, 0)
-	validationTracker.ValidateOptionalField("FirstName", c.FirstName, 0)
-	validationTracker.ValidateOptionalField("LastName", c.LastName, 0)
-	validationTracker.ValidateOptionalField("DisplayName", c.DisplayName, 0)
+	validationTracker.ValidateIntMinValue("id", c.Id, 1)
+	validationTracker.ValidateOptionalField("email", c.Email, 0)
+	validationTracker.ValidateOptionalField("password", c.Password, 0)
+	validationTracker.ValidateOptionalField("firstName", c.FirstName, 0)
+	validationTracker.ValidateOptionalField("lastName", c.LastName, 0)
+	validationTracker.ValidateOptionalField("displayName", c.DisplayName, 0)
 
 	return validationTracker.Valid()
 }
@@ -233,9 +233,10 @@ type UserGenerateApiKeyCommand struct {
 func (c UserGenerateApiKeyCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 	validationTracker := ubvalidation.NewValidationTracker()
 
-	validationTracker.ValidateIntMinValue("UserId", c.UserId, 1)
-	validationTracker.ValidateField("Name", c.Name, true, 0)
-	validationTracker.ValidateIntMinValue("OrganizationId", c.OrganizationId, 1)
+	validationTracker.ValidateIntMinValue("userId", c.UserId, 1)
+	validationTracker.ValidateField("name", c.Name, true, 0)
+	validationTracker.ValidateIntMinValue("organizationId", c.OrganizationId, 1)
+	validationTracker.ValidateTimeInFuture("expiresAt", c.ExpiresAt)
 	return validationTracker.Valid()
 }
 

@@ -67,9 +67,9 @@ type RoleCreateCommand struct {
 func (c RoleCreateCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 	validationTracker := ubvalidation.NewValidationTracker()
 
-	validationTracker.ValidateField("Name", c.Name, true, 1)
-	validationTracker.ValidateSystemName("SystemName", &c.SystemName, true)
-	validationTracker.ValidateIntMinValue("OrganizationId", c.OrganizationId, 1)
+	validationTracker.ValidateField("name", c.Name, true, 1)
+	validationTracker.ValidateSystemName("systemName", &c.SystemName, true)
+	validationTracker.ValidateIntMinValue("organizationId", c.OrganizationId, 1)
 
 	return validationTracker.Valid()
 }
@@ -83,9 +83,9 @@ type RoleUpdateCommand struct {
 func (c RoleUpdateCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 	validationTracker := ubvalidation.NewValidationTracker()
 
-	validationTracker.ValidateIntMinValue("Id", c.Id, 1)
-	validationTracker.ValidateOptionalField("Name", c.Name, 1)
-	validationTracker.ValidateOptionalField("SystemName", c.SystemName, 1)
+	validationTracker.ValidateIntMinValue("id", c.Id, 1)
+	validationTracker.ValidateOptionalField("name", c.Name, 1)
+	validationTracker.ValidateOptionalField("systemName", c.SystemName, 1)
 
 	return validationTracker.Valid()
 }
@@ -106,7 +106,7 @@ type RolePermissionAddCommand struct {
 func (c RolePermissionAddCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 	validationTracker := ubvalidation.NewValidationTracker()
 
-	validationTracker.ValidateField("Permission", c.Permission, true, 1)
+	validationTracker.ValidateField("permission", c.Permission, true, 1)
 
 	return validationTracker.Valid()
 }
@@ -119,8 +119,8 @@ type RolePermissionRemoveCommand struct {
 func (c RolePermissionRemoveCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 	validationTracker := ubvalidation.NewValidationTracker()
 
-	validationTracker.ValidateIntMinValue("Id", c.Id, 1)
-	validationTracker.ValidateField("Permission", c.Permission, true, 1)
+	validationTracker.ValidateIntMinValue("id", c.Id, 1)
+	validationTracker.ValidateField("permission", c.Permission, true, 1)
 
 	return validationTracker.Valid()
 }

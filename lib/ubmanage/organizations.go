@@ -31,9 +31,9 @@ type OrganizationCreateCommand struct {
 func (c OrganizationCreateCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 	validationTracker := ubvalidation.NewValidationTracker()
 
-	validationTracker.ValidateField("Name", c.Name, true, 0)
-	validationTracker.ValidateSystemName("SystemName", &c.SystemName, true)
-	validationTracker.ValidateField("Status", c.Status, true, 0)
+	validationTracker.ValidateField("name", c.Name, true, 0)
+	validationTracker.ValidateSystemName("systemName", &c.SystemName, true)
+	validationTracker.ValidateField("status", c.Status, true, 0)
 
 	return validationTracker.Valid()
 }
@@ -49,11 +49,11 @@ func (c OrganizationUpdateCommand) Validate() (bool, []ubvalidation.ValidationIs
 	validationTracker := ubvalidation.NewValidationTracker()
 
 	// Validate required ID field
-	validationTracker.ValidateIntMinValue("Id", c.Id, 1)
+	validationTracker.ValidateIntMinValue("id", c.Id, 1)
 
-	validationTracker.ValidateOptionalField("Name", c.Name, 1)
-	validationTracker.ValidateOptionalField("SystemName", c.SystemName, 1)
-	validationTracker.ValidateOptionalField("Status", c.Status, 1)
+	validationTracker.ValidateOptionalField("name", c.Name, 1)
+	validationTracker.ValidateOptionalField("systemName", c.SystemName, 1)
+	validationTracker.ValidateOptionalField("status", c.Status, 1)
 	return validationTracker.Valid()
 }
 

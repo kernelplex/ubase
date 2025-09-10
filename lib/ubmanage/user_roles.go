@@ -72,8 +72,8 @@ type UserAddToRoleCommand struct {
 func (c UserAddToRoleCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 	validationTracker := ubvalidation.NewValidationTracker()
 
-	validationTracker.ValidateIntMinValue("UserId", c.UserId, 1)
-	validationTracker.ValidateIntMinValue("RoleId", c.RoleId, 1)
+	validationTracker.ValidateIntMinValue("userId", c.UserId, 1)
+	validationTracker.ValidateIntMinValue("roleId", c.RoleId, 1)
 
 	return validationTracker.Valid()
 }
@@ -86,8 +86,8 @@ type UserRemoveFromRoleCommand struct {
 func (c UserRemoveFromRoleCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 	validationTracker := ubvalidation.NewValidationTracker()
 
-	validationTracker.ValidateIntMinValue("UserId", c.UserId, 1)
-	validationTracker.ValidateIntMinValue("RoleId", c.RoleId, 1)
+	validationTracker.ValidateIntMinValue("userId", c.UserId, 1)
+	validationTracker.ValidateIntMinValue("roleId", c.RoleId, 1)
 
 	return validationTracker.Valid()
 }

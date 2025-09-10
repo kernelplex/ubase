@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 )
 
 type ValidationIssues struct {
@@ -208,5 +209,14 @@ func (t *ValidationTracker) ValidateIntMaxValue(fieldName string, value int64, m
 
 	if value > maxValue {
 		t.AddIssue(fieldName, fmt.Sprintf("%s must be at most %d", strings.ToLower(fieldName), maxValue))
+	}
+}
+
+func (t *ValidationTracker) ValidateTimeInFuture(fieldName string, value time.Time) {
+	now := time.Now().Unix()
+	uValue := value.Unix()
+
+	if uValue <= now {
+		t.AddIssue(fieldName, fmt.Sprintf("%s must be in the future", strings.ToLower(fieldName)))
 	}
 }

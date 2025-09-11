@@ -108,9 +108,11 @@ func (t *UserAggregate) ApplyEventState(eventState evercore.EventState, eventTim
 	}
 
 	if eventState.GetEventType() != events.UserAddedEventType {
-		t.State.ApiKeys = make([]ApiKey, len(t.State.ApiKeys))
+		t.State.UpdatedAt = eventTime.Unix()
+	} else {
 		t.State.CreatedAt = eventTime.Unix()
 		t.State.UpdatedAt = eventTime.Unix()
+		t.State.ApiKeys = make([]ApiKey, len(t.State.ApiKeys))
 	}
 
 	if eventState.GetEventType() == events.UserUpdatedEventType {

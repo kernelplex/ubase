@@ -23,22 +23,22 @@ import (
 )
 
 type UbaseConfig struct {
-    DatabaseConnection        string `env:"DATABASE_CONNECTION" default:"/var/data/main.db"`
-    EventStoreConnection      string `env:"EVENT_STORE_CONNECTION" default:"/var/data/main.db"`
-    Pepper                    []byte `env:"PEPPER" required:"true"`
-    SecretKey                 []byte `env:"SECRET_KEY" required:"true"`
-    Environment               string `env:"ENVIRONMENT" default:"production"`
-    TokenMaxSoftExpirySeconds int    `env:"TOKEN_SOFT_EXPIRY_SECONDS" default:"3600"`  // 1 hour
-    TokenMaxHardExpirySeconds int    `env:"TOKEN_HARD_EXPIRY_SECONDS" default:"86400"` // 24 hours
-    TOTPIssuer                string `env:"TOTP_ISSUER" required:"true"`
+	DatabaseConnection        string `env:"DATABASE_CONNECTION" default:"/var/data/main.db"`
+	EventStoreConnection      string `env:"EVENT_STORE_CONNECTION" default:"/var/data/main.db"`
+	Pepper                    []byte `env:"PEPPER" required:"true"`
+	SecretKey                 []byte `env:"SECRET_KEY" required:"true"`
+	Environment               string `env:"ENVIRONMENT" default:"production"`
+	TokenMaxSoftExpirySeconds int    `env:"TOKEN_SOFT_EXPIRY_SECONDS" default:"3600"`  // 1 hour
+	TokenMaxHardExpirySeconds int    `env:"TOKEN_HARD_EXPIRY_SECONDS" default:"86400"` // 24 hours
+	TOTPIssuer                string `env:"TOTP_ISSUER" required:"true"`
 
-    // Mailer
-    MailerType      string `env:"MAILER_TYPE" default:"none"`
-    MailerFrom      string `env:"MAILER_FROM"`
-    MailerUsername  string `env:"MAILER_USERNAME"`
-    MailerPassword  string `env:"MAILER_PASSWORD"`
-    MailerHost      string `env:"MAILER_HOST"`
-    MailerOutputDir string `env:"MAILER_OUTPUT_DIR"`
+	// Mailer
+	MailerType      string `env:"MAILER_TYPE" default:"none"`
+	MailerFrom      string `env:"MAILER_FROM"`
+	MailerUsername  string `env:"MAILER_USERNAME"`
+	MailerPassword  string `env:"MAILER_PASSWORD"`
+	MailerHost      string `env:"MAILER_HOST"`
+	MailerOutputDir string `env:"MAILER_OUTPUT_DIR"`
 }
 
 func UbaseConfigFromEnv() UbaseConfig {
@@ -66,10 +66,10 @@ type UbaseApp struct {
 }
 
 func NewUbaseAppEnvConfig() UbaseApp {
-    config := UbaseConfigFromEnv()
-    app := UbaseApp{}
-    // Store loaded config on the app instance so GetConfig() reflects actual values
-    app.config = config
+	config := UbaseConfigFromEnv()
+	app := UbaseApp{}
+	// Store loaded config on the app instance so GetConfig() reflects actual values
+	app.config = config
 
 	// ======================================================================
 	// Hashing service

@@ -7,7 +7,7 @@ tool github.com/kernelplex/evercore/cmd/evercoregen
 require (
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/joho/godotenv v1.5.1
-	github.com/kernelplex/evercore v0.0.38
+	github.com/kernelplex/evercore v0.0.41
 	github.com/lib/pq v1.10.9
 	github.com/olekukonko/tablewriter v1.0.8
 	github.com/pquerna/otp v1.5.0

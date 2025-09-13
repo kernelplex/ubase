@@ -93,7 +93,8 @@ func (m *ManagementImpl) UserAdd(ctx context.Context,
 				}
 
 				event := UserVerificationTokenGeneratedEvent{
-					Token: encryptedToken,
+					Token:       encryptedToken,
+					Regenerated: false,
 				}
 
 				err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)
@@ -439,7 +440,8 @@ func (m *ManagementImpl) UserGenerateVerificationToken(ctx context.Context,
 				return "", fmt.Errorf("failed to encrypt verification token: %w", err)
 			}
 			event := UserVerificationTokenGeneratedEvent{
-				Token: encryptedToken,
+				Token:       encryptedToken,
+				Regenerated: command.Regenerate,
 			}
 
 			err = etx.ApplyEventTo(&aggregate, event, time.Now(), agent)

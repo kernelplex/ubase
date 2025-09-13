@@ -173,7 +173,8 @@ func (c UserUpdateCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 }
 
 type UserGenerateVerificationTokenCommand struct {
-	Id int64 `json:"id"`
+	Id         int64 `json:"id"`
+	Regenerate bool  `json:"regenerate"`
 }
 
 type UserGenerateVerificationTokenResponse struct {
@@ -312,7 +313,8 @@ func (a UserLoginFailedEvent) Serialize() string {
 
 // evercore:event
 type UserVerificationTokenGeneratedEvent struct {
-	Token string `json:"token"`
+	Token       string `json:"token"`
+	Regenerated bool   `json:"regenerated"`
 }
 
 func (a UserVerificationTokenGeneratedEvent) GetEventType() string {

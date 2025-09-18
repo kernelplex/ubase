@@ -173,9 +173,18 @@ type ManagementService interface {
 
 	// UserEnable reactivates a previously disabled user account
 	// Returns success/failure status or an error
-	UserEnable(ctx context.Context,
-		command UserEnableCommand,
-		agent string) (r.Response[any], error)
+    UserEnable(ctx context.Context,
+        command UserEnableCommand,
+        agent string) (r.Response[any], error)
+
+    // User settings operations
+    UserSettingsAdd(ctx context.Context,
+        command UserSettingsAddCommand,
+        agent string) (r.Response[any], error)
+
+    UserSettingsRemove(ctx context.Context,
+        command UserSettingsRemoveCommand,
+        agent string) (r.Response[any], error)
 
 	// UserAddToRole assigns a role to a user
 	// Returns success/failure status or an error

@@ -136,3 +136,81 @@ func readPassword() (string, error) {
 	term := term.NewTerminal(os.Stdin, "")
 	return term.ReadPassword("")
 }
+
+// parseKeyValuePairs parses a comma-separated list of key=value pairs into a map.
+// Example: "a=1,b=2" -> {"a":"1","b":"2"}
+func parseKeyValuePairs(input string) (map[string]string, error) {
+    result := make(map[string]string)
+    if strings.TrimSpace(input) == "" {
+        return result, nil
+    }
+    pairs := strings.Split(input, ",")
+    for _, p := range pairs {
+        p = strings.TrimSpace(p)
+        if p == "" {
+            continue
+        }
+        kv := strings.SplitN(p, "=", 2)
+        if len(kv) != 2 {
+            return nil, fmt.Errorf("invalid key=value pair: %q", p)
+        }
+        key := strings.TrimSpace(kv[0])
+        val := strings.TrimSpace(kv[1])
+        if key == "" {
+            return nil, fmt.Errorf("empty key in pair: %q", p)
+        }
+        result[key] = val
+    }
+    return result, nil
+}
+
+// promptKeyValuePairs interactively reads key/value pairs until key is empty.
+func promptKeyValuePairs() map[string]string {
+    settings := make(map[string]string)
+    for {
+        key := maybeReadInput("Setting key (empty to finish): ", "")
+        if key == "" {
+            if len(settings) == 0 {
+                fmt.Println("At least one setting is required")
+                continue
+            }
+            break
+        }
+        value := maybeReadInput("Value: ", "")
+        settings[key] = value
+    }
+    return settings
+}
+
+// parseCSVKeys parses a comma-separated list of keys into a slice.
+func parseCSVKeys(input string) []string {
+    if strings.TrimSpace(input) == "" {
+        return []string{}
+    }
+    items := strings.Split(input, ",")
+    out := make([]string, 0, len(items))
+    for _, it := range items {
+        v := strings.TrimSpace(it)
+        if v != "" {
+            out = append(out, v)
+        }
+    }
+    return out
+}
+
+// promptKeys interactively reads keys until empty input.
+func promptKeys() []string {
+    keys := make([]string, 0, 1)
+    for {
+        key := maybeReadInput("Setting key to remove (empty to finish): ", "")
+        if key == "" {
+            if len(keys) == 0 {
+                fmt.Println("At least one key is required")
+                continue
+            }
+            break
+        }
+        keys = append(keys, key)
+    }
+    return keys
+}

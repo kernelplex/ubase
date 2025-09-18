@@ -16,6 +16,8 @@ func GetCommands(name string) *ubcli.CommandLine {
 	commandLine.Add(OrganizationAddCommand())
 	commandLine.Add(OrganizationListCommand())
 	commandLine.Add(OrganizationUpdateCommand())
+	commandLine.Add(OrganizationSettingsSetCommand())
+	commandLine.Add(OrganizationSettingsClearCommand())
 
 	// Role commands
 	commandLine.Add(RoleAddCommand())
@@ -36,6 +38,8 @@ func GetCommands(name string) *ubcli.CommandLine {
 	commandLine.Add(UserDisableCommand())
 	commandLine.Add(UserEnableCommand())
 	commandLine.Add(UserSetTwoFactorSharedSecretCommand())
+	commandLine.Add(UserSettingsSetCommand())
+	commandLine.Add(UserSettingsClearCommand())
 
 	return commandLine
 }

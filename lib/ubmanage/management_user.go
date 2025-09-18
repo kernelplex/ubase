@@ -648,6 +648,66 @@ func (m *ManagementImpl) UsersCount(ctx context.Context) (r.Response[int64], err
 	return r.Success(count), nil
 }
 
+func (m *ManagementImpl) UserSettingsAdd(ctx context.Context,
+    command UserSettingsAddCommand,
+    agent string) (r.Response[any], error) {
+
+    if ok, issues := command.Validate(); !ok {
+        return r.ValidationError[any](issues), nil
+    }
+
+    err := m.store.WithContext(
+        ctx,
+        func(etx evercore.EventStoreContext) error {
+            aggregate := UserAggregate{}
+            if err := etx.LoadStateInto(&aggregate, command.Id); err != nil {
+                return fmt.Errorf("failed to load user: %w", err)
+            }
+            event := UserSettingsAddedEvent{Settings: command.Settings}
+            if err := etx.ApplyEventTo(&aggregate, event, time.Now(), agent); err != nil {
+                return fmt.Errorf("failed to apply user settings added event: %w", err)
+            }
+            return nil
+        })
+
+    if err != nil {
+        slog.Error("Error adding user settings", "error", err)
+        return r.Error[any]("Error adding user settings"), err
+    }
+
+    return r.SuccessAny(), nil
+}
+
+func (m *ManagementImpl) UserSettingsRemove(ctx context.Context,
+    command UserSettingsRemoveCommand,
+    agent string) (r.Response[any], error) {
+
+    if ok, issues := command.Validate(); !ok {
+        return r.ValidationError[any](issues), nil
+    }
+
+    err := m.store.WithContext(
+        ctx,
+        func(etx evercore.EventStoreContext) error {
+            aggregate := UserAggregate{}
+            if err := etx.LoadStateInto(&aggregate, command.Id); err != nil {
+                return fmt.Errorf("failed to load user: %w", err)
+            }
+            event := UserSettingsRemovedEvent{SettingKeys: command.SettingKeys}
+            if err := etx.ApplyEventTo(&aggregate, event, time.Now(), agent); err != nil {
+                return fmt.Errorf("failed to apply user settings removed event: %w", err)
+            }
+            return nil
+        })
+
+    if err != nil {
+        slog.Error("Error removing user settings", "error", err)
+        return r.Error[any]("Error removing user settings"), err
+    }
+
+    return r.SuccessAny(), nil
+}
+
 func (m *ManagementImpl) UserGenerateApiKey(ctx context.Context,
 	command UserGenerateApiKeyCommand,
 	agent string) (r.Response[string], error) {

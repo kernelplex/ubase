@@ -17,15 +17,16 @@ type ApiKey struct {
 }
 
 type UserState struct {
-	Email                 string   `json:"email"`
-	PasswordHash          string   `json:"passwordHash"`
-	FirstName             string   `json:"firstName"`
-	LastName              string   `json:"lastName"`
-	VerificationToken     *string  `json:"verificationToken,omitempty"`
-	Verified              bool     `json:"verified"`
-	Disabled              bool     `json:"disabled"`
-	DisplayName           string   `json:"displayName"`
-	ResetToken            *string  `json:"resetToken,omitempty"`
+    Email                 string   `json:"email"`
+    PasswordHash          string   `json:"passwordHash"`
+    FirstName             string   `json:"firstName"`
+    LastName              string   `json:"lastName"`
+    Settings              map[string]string `json:"settings"`
+    VerificationToken     *string  `json:"verificationToken,omitempty"`
+    Verified              bool     `json:"verified"`
+    Disabled              bool     `json:"disabled"`
+    DisplayName           string   `json:"displayName"`
+    ResetToken            *string  `json:"resetToken,omitempty"`
 	LastLogin             int64    `json:"lastLogin,omitempty"`
 	LastLoginAttempt      int64    `json:"lastLoginAttempt,omitempty"`
 	FailedLoginAttempts   int64    `json:"failedLoginAttempts,omitempty"`
@@ -42,14 +43,29 @@ type UserAggregate struct {
 }
 
 func (t *UserAggregate) ApplyEventState(eventState evercore.EventState, eventTime time.Time, reference string) error {
-	var err error = nil
+    var err error = nil
 
-	switch ev := eventState.(type) {
-	case UserLoginSucceededEvent:
-		t.State.LastLogin = eventTime.Unix()
-		t.State.FailedLoginAttempts = 0
-		t.State.LoginCount++
-		return nil
+    switch ev := eventState.(type) {
+    case UserSettingsAddedEvent:
+        if t.State.Settings == nil {
+            t.State.Settings = make(map[string]string)
+        }
+        for k, v := range ev.Settings {
+            t.State.Settings[k] = v
+        }
+        return nil
+    case UserSettingsRemovedEvent:
+        if t.State.Settings != nil {
+            for _, k := range ev.SettingKeys {
+                delete(t.State.Settings, k)
+            }
+        }
+        return nil
+    case UserLoginSucceededEvent:
+        t.State.LastLogin = eventTime.Unix()
+        t.State.FailedLoginAttempts = 0
+        t.State.LoginCount++
+        return nil
 	case UserLoginPartiallySucceededEvent:
 		t.State.LastLogin = eventTime.Unix()
 		t.State.LastLoginAttempt = eventTime.Unix()
@@ -150,13 +166,13 @@ func (c UserCreateCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 }
 
 type UserUpdateCommand struct {
-	Id          int64   `json:"id"`
-	Email       *string `json:"email"`
-	Password    *string `json:"password"`
-	FirstName   *string `json:"firstName"`
-	LastName    *string `json:"lastName"`
-	DisplayName *string `json:"displayName"`
-	Verified    *bool   `json:"verified"`
+    Id          int64   `json:"id"`
+    Email       *string `json:"email"`
+    Password    *string `json:"password"`
+    FirstName   *string `json:"firstName"`
+    LastName    *string `json:"lastName"`
+    DisplayName *string `json:"displayName"`
+    Verified    *bool   `json:"verified"`
 }
 
 func (c UserUpdateCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
@@ -169,7 +185,47 @@ func (c UserUpdateCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
 	validationTracker.ValidateOptionalField("lastName", c.LastName, 0)
 	validationTracker.ValidateOptionalField("displayName", c.DisplayName, 0)
 
-	return validationTracker.Valid()
+    return validationTracker.Valid()
+}
+
+type UserSettingsAddCommand struct {
+    Id       int64             `json:"id"`
+    Settings map[string]string `json:"settings"`
+}
+
+func (c UserSettingsAddCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
+    v := ubvalidation.NewValidationTracker()
+    v.ValidateIntMinValue("id", c.Id, 1)
+    if len(c.Settings) == 0 {
+        v.AddIssue("settings", "settings cannot be empty")
+    }
+    for k := range c.Settings {
+        if k == "" {
+            v.AddIssue("settings", "settings cannot contain empty keys")
+            break
+        }
+    }
+    return v.Valid()
+}
+
+type UserSettingsRemoveCommand struct {
+    Id          int64    `json:"id"`
+    SettingKeys []string `json:"settingKeys"`
+}
+
+func (c UserSettingsRemoveCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
+    v := ubvalidation.NewValidationTracker()
+    v.ValidateIntMinValue("id", c.Id, 1)
+    if len(c.SettingKeys) == 0 {
+        v.AddIssue("settingKeys", "settingKeys cannot be empty")
+    }
+    for _, k := range c.SettingKeys {
+        if k == "" {
+            v.AddIssue("settingKeys", "settingKeys cannot contain empty values")
+            break
+        }
+    }
+    return v.Valid()
 }
 
 type UserGenerateVerificationTokenCommand struct {
@@ -418,12 +474,31 @@ func (a UserApiKeyAddedEvent) Serialize() string {
 
 // evercore:event
 type UserApiKeyDeletedEvent struct {
-	Id string `json:"apiKeyHash"`
+    Id string `json:"apiKeyHash"`
 }
 
 func (a UserApiKeyDeletedEvent) GetEventType() string {
 	return events.UserApiKeyDeletedEventType
 }
 func (a UserApiKeyDeletedEvent) Serialize() string {
-	return evercore.SerializeToJson(a)
+    return evercore.SerializeToJson(a)
 }
+
+// evercore:event
+type UserSettingsAddedEvent struct {
+    Settings map[string]string `json:"settings"`
+}
+
+func (a UserSettingsAddedEvent) GetEventType() string {
+    return "UserSettingsAddedEvent"
+}
+
+func (a UserSettingsAddedEvent) Serialize() string { return evercore.SerializeToJson(a) }
+
+// evercore:event
+type UserSettingsRemovedEvent struct {
+    SettingKeys []string `json:"settingKeys"`
+}
+
+func (a UserSettingsRemovedEvent) GetEventType() string { return "UserSettingsRemovedEvent" }
+func (a UserSettingsRemovedEvent) Serialize() string   { return evercore.SerializeToJson(a) }

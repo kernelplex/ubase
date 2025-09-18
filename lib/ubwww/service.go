@@ -35,6 +35,13 @@ func (ws *WebServiceImpl) AddRoute(route Route) WebService {
 	return ws
 }
 
+func (ws *WebServiceImpl) AddStatic(filepath string, route string) WebService {
+	fs := http.FileServer(http.Dir(filepath))
+	ws.mux.Handle(route, http.StripPrefix(route, fs))
+	slog.Info("Registered static route", "path", route, "filepath", filepath)
+	return ws
+}
+
 func LoggerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("Received request", "method", r.Method, "url", r.URL.Path, "remote_addr", r.RemoteAddr)
@@ -80,4 +87,3 @@ func (ws *WebServiceImpl) Stop() error {
 	}
 	return nil
 }
-

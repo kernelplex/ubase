@@ -8,6 +8,8 @@ const (
 	RoleUpdatedEventType = "RoleUpdatedEvent"
 	UserAddedEventType = "UserAddedEvent"
 	UserUpdatedEventType = "UserUpdatedEvent"
+	OrganizationSettingsAddedEventType = "OrganizationSettingsAddedEvent"
+	OrganizationSettingsRemovedEventType = "OrganizationSettingsRemovedEvent"
 	RoleDeletedEventType = "RoleDeletedEvent"
 	RolePermissionAddedEventType = "RolePermissionAddedEvent"
 	RolePermissionRemovedEventType = "RolePermissionRemovedEvent"
@@ -35,6 +37,8 @@ var List = []string{
 	RoleUpdatedEventType,
 	UserAddedEventType,
 	UserUpdatedEventType,
+	OrganizationSettingsAddedEventType,
+	OrganizationSettingsRemovedEventType,
 	RoleDeletedEventType,
 	RolePermissionAddedEventType,
 	RolePermissionRemovedEventType,

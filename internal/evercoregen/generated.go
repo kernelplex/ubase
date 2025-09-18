@@ -68,6 +68,20 @@ func StateEventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error)
 
 func EventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error) {
 	switch ev.EventType {
+	case events.OrganizationSettingsAddedEventType:
+		eventState := ubmanage.OrganizationSettingsAddedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.OrganizationSettingsRemovedEventType:
+		eventState := ubmanage.OrganizationSettingsRemovedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
 	case events.RoleDeletedEventType:
 		eventState := ubmanage.RoleDeletedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)

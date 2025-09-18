@@ -44,9 +44,18 @@ type ManagementService interface {
 
 	// OrganizationUpdate modifies an existing organization's details
 	// Returns success/failure status or an error
-	OrganizationUpdate(ctx context.Context,
-		command OrganizationUpdateCommand,
-		agent string) (r.Response[any], error)
+    OrganizationUpdate(ctx context.Context,
+        command OrganizationUpdateCommand,
+        agent string) (r.Response[any], error)
+
+    // Organization settings operations
+    OrganizationSettingsAdd(ctx context.Context,
+        command OrganizationSettingsAddCommand,
+        agent string) (r.Response[any], error)
+
+    OrganizationSettingsRemove(ctx context.Context,
+        command OrganizationSettingsRemoveCommand,
+        agent string) (r.Response[any], error)
 
 	// Role operations
 

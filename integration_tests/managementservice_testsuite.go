@@ -46,9 +46,13 @@ func NewManagementServiceTestSuite(eventStore *evercore.EventStore, dbadapter ub
 }
 
 func (s *ManagmentServiceTestSuite) RunTests(t *testing.T) {
-	t.Run("AddOrganization", s.AddOrganization)
-	t.Run("GetOrganizationBySystemName", s.GetOrganizationBySystemName)
-	t.Run("UpdateOrganization", s.UpdateOrganization)
+    t.Run("AddOrganization", s.AddOrganization)
+    t.Run("GetOrganizationBySystemName", s.GetOrganizationBySystemName)
+    t.Run("UpdateOrganization", s.UpdateOrganization)
+    t.Run("AddOrganizationSettings", s.AddOrganizationSettings)
+    t.Run("AddOrganizationSettingsValidation", s.AddOrganizationSettingsValidation)
+    t.Run("RemoveOrganizationSettings", s.RemoveOrganizationSettings)
+    t.Run("RemoveOrganizationSettingsValidation", s.RemoveOrganizationSettingsValidation)
 	t.Run("AddRole", s.AddRole)
 	t.Run("UpdateRole", s.UpdateRole)
 	t.Run("DeleteRole", s.DeleteRole)

@@ -78,7 +78,7 @@ func MapStatusToHttpStatus(status ubstatus.StatusCode) int {
 	var statusHeader = http.StatusOK
 	switch status {
 	case ubstatus.Success:
-		statusHeader = http.StatusCreated
+		statusHeader = http.StatusOK
 	case ubstatus.ValidationError:
 		statusHeader = http.StatusBadRequest
 	case ubstatus.NotFound:

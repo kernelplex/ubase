@@ -1,14 +1,15 @@
 package ubmanage
 
 import (
-	"context"
-	"fmt"
-	"log/slog"
-	"time"
+    "context"
+    "fmt"
+    "log/slog"
+    "time"
 
-	evercore "github.com/kernelplex/evercore/base"
-	"github.com/kernelplex/ubase/lib/ubdata"
-	r "github.com/kernelplex/ubase/lib/ubresponse"
+    evercore "github.com/kernelplex/evercore/base"
+    "github.com/kernelplex/ubase/lib/ubdata"
+    r "github.com/kernelplex/ubase/lib/ubresponse"
+    "github.com/kernelplex/ubase/lib/ubstatus"
 )
 
 func (m *ManagementImpl) OrganizationList(ctx context.Context) (r.Response[[]ubdata.Organization], error) {
@@ -183,9 +184,79 @@ func (m *ManagementImpl) OrganizationGetBySystemName(
 }
 
 func (m *ManagementImpl) OrganizationsCount(ctx context.Context) (r.Response[int64], error) {
-	count, err := m.dbadapter.OrganizationsCount(ctx)
-	if err != nil {
-		return r.Error[int64]("Error counting organizations"), err
-	}
-	return r.Success(count), nil
+    count, err := m.dbadapter.OrganizationsCount(ctx)
+    if err != nil {
+        return r.Error[int64]("Error counting organizations"), err
+    }
+    return r.Success(count), nil
+}
+
+func (m *ManagementImpl) OrganizationSettingsAdd(ctx context.Context,
+    command OrganizationSettingsAddCommand,
+    agent string) (r.Response[any], error) {
+
+    ok, issues := command.Validate()
+    if !ok {
+        return r.ValidationError[any](issues), nil
+    }
+
+    err := m.store.WithContext(
+        ctx,
+        func(etx evercore.EventStoreContext) error {
+            aggregate := OrganizationAggregate{}
+            if err := etx.LoadStateInto(&aggregate, command.Id); err != nil {
+                return fmt.Errorf("failed to load organization: %w", err)
+            }
+
+            event := OrganizationSettingsAddedEvent{Settings: command.Settings}
+            if err := etx.ApplyEventTo(&aggregate, event, time.Now(), agent); err != nil {
+                return fmt.Errorf("failed to apply organization settings added event: %w", err)
+            }
+            return nil
+        })
+
+    if err != nil {
+        slog.Error("Error adding organization settings", "error", err)
+        return r.Response[any]{
+            Status:  ubstatus.UnexpectedError,
+            Message: "Error adding organization settings",
+        }, err
+    }
+
+    return r.SuccessAny(), nil
+}
+
+func (m *ManagementImpl) OrganizationSettingsRemove(ctx context.Context,
+    command OrganizationSettingsRemoveCommand,
+    agent string) (r.Response[any], error) {
+
+    ok, issues := command.Validate()
+    if !ok {
+        return r.ValidationError[any](issues), nil
+    }
+
+    err := m.store.WithContext(
+        ctx,
+        func(etx evercore.EventStoreContext) error {
+            aggregate := OrganizationAggregate{}
+            if err := etx.LoadStateInto(&aggregate, command.Id); err != nil {
+                return fmt.Errorf("failed to load organization: %w", err)
+            }
+
+            event := OrganizationSettingsRemovedEvent{SettingKeys: command.SettingKeys}
+            if err := etx.ApplyEventTo(&aggregate, event, time.Now(), agent); err != nil {
+                return fmt.Errorf("failed to apply organization settings removed event: %w", err)
+            }
+            return nil
+        })
+
+    if err != nil {
+        slog.Error("Error removing organization settings", "error", err)
+        return r.Response[any]{
+            Status:  ubstatus.UnexpectedError,
+            Message: "Error removing organization settings",
+        }, err
+    }
+
+    return r.SuccessAny(), nil
 }

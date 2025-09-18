@@ -41,5 +41,8 @@ func GetCommands(name string) *ubcli.CommandLine {
 	commandLine.Add(UserSettingsSetCommand())
 	commandLine.Add(UserSettingsClearCommand())
 
+	// Serve command
+	commandLine.Add(ServeCommand())
+
 	return commandLine
 }

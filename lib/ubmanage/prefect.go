@@ -8,6 +8,9 @@ import (
 	"strings"
 	"time"
 
+	evercore "github.com/kernelplex/evercore/base"
+	ev "github.com/kernelplex/ubase/internal/evercoregen/events"
+	"github.com/kernelplex/ubase/lib/ensure"
 	"github.com/kernelplex/ubase/lib/ubalgorithms"
 	"github.com/kernelplex/ubase/lib/ubstatus"
 )
@@ -22,6 +25,9 @@ type PrefectService interface {
 	UserInvalidation(ctx context.Context, userId int64) error
 
 	ApiKeyToUser(ctx context.Context, apiKey string) (ApiKeyData, error)
+
+	Start() error
+	Stop() error
 }
 type ApiKeyData struct {
 	UserId         int64  `json:"userId"`
@@ -47,13 +53,23 @@ type PrefectServiceImpl struct {
 	userCache         *ubalgorithms.LRUCache[int64, *UserData]
 	groupCache        *ubalgorithms.LRUCache[int64, *GroupPermissions]
 	apiKeyCache       *ubalgorithms.LRUCache[string, *ApiKeyData]
+	store             *evercore.EventStore
+	ctx               context.Context
+	cancel            context.CancelFunc
+	started           bool
 }
 
 func NewPrefectService(
 	managementService ManagementService,
+	store *evercore.EventStore,
 	userCacheSize int,
 	groupCacheSize int,
 ) PrefectService {
+	ensure.That(managementService != nil, "managementService cannot be nil")
+	ensure.That(store != nil, "store cannot be nil")
+	ensure.That(userCacheSize > 0, "userCacheSize must be greater than 0")
+	ensure.That(groupCacheSize > 0, "groupCacheSize must be greater than 0")
+
 	userCache := ubalgorithms.NewLRUCache[int64, *UserData](userCacheSize)
 	groupCache := ubalgorithms.NewLRUCache[int64, *GroupPermissions](groupCacheSize)
 	apiKeyCache := ubalgorithms.NewLRUCache[string, *ApiKeyData](groupCacheSize)
@@ -62,11 +78,13 @@ func NewPrefectService(
 		userCache:         userCache,
 		groupCache:        groupCache,
 		apiKeyCache:       apiKeyCache,
+		store:             store,
 	}
 }
 
 func (p *PrefectServiceImpl) getUserData(ctx context.Context, userId int64) (*UserData, error) {
 	userData, found := p.userCache.Get(userId)
+	slog.Info("getUserData", "userId", userId, "foundInCache", found)
 	if !found {
 		// Load user data from management service
 		userResp, err := p.managementService.UserGetById(ctx, userId)
@@ -101,6 +119,11 @@ func (p *PrefectServiceImpl) getUserData(ctx context.Context, userId int64) (*Us
 
 func (p *PrefectServiceImpl) UserBelongsToRole(ctx context.Context, userId int64, groupId int64) (bool, error) {
 
+	if started := p.started; !started {
+		slog.Error("prefect service not started")
+		return false, fmt.Errorf("prefect service not started")
+	}
+
 	userData, err := p.getUserData(ctx, userId)
 	if err != nil {
 		return false, err
@@ -114,6 +137,11 @@ func (p *PrefectServiceImpl) UserBelongsToRole(ctx context.Context, userId int64
 }
 
 func (p *PrefectServiceImpl) getGroupPermissions(ctx context.Context, groupId int64) (*GroupPermissions, error) {
+	if started := p.started; !started {
+		slog.Error("prefect service not started")
+		return nil, fmt.Errorf("prefect service not started")
+	}
+
 	groupData, found := p.groupCache.Get(groupId)
 	if !found {
 		// Load group data from management service
@@ -135,6 +163,12 @@ func (p *PrefectServiceImpl) getGroupPermissions(ctx context.Context, groupId in
 }
 
 func (p *PrefectServiceImpl) UserHasPermission(ctx context.Context, userId int64, orgId int64, permission string) (bool, error) {
+	slog.Info("Checking if user has permission", "userId", userId, "orgId", orgId, "permission", permission)
+	if started := p.started; !started {
+		slog.Error("prefect service not started")
+		return false, fmt.Errorf("prefect service not started")
+	}
+
 	userData, err := p.getUserData(ctx, userId)
 	if err != nil {
 		return false, err
@@ -169,6 +203,10 @@ func (p *PrefectServiceImpl) UserInvalidation(ctx context.Context, userId int64)
 }
 
 func (p *PrefectServiceImpl) ApiKeyToUser(ctx context.Context, apiKey string) (ApiKeyData, error) {
+	if started := p.started; !started {
+		slog.Error("prefect service not started")
+		return ApiKeyData{}, fmt.Errorf("prefect service not started")
+	}
 
 	apiKeyData, found := p.apiKeyCache.Get(apiKey)
 	if found {
@@ -206,4 +244,109 @@ func (p *PrefectServiceImpl) ApiKeyToUser(ctx context.Context, apiKey string) (A
 		}
 	}
 	return ApiKeyData{}, fmt.Errorf("api key not found")
+}
+
+func (p *PrefectServiceImpl) main() {
+	slog.Info("********** Starting Prefect Service **********")
+	filter := evercore.SubscriptionFilter{
+		EventTypes: []string{},
+	}
+
+	start := evercore.StartFrom{
+		Kind: evercore.StartEnd,
+	}
+	options := evercore.Options{
+		BatchSize:    100,
+		PollInterval: 1 * time.Second,
+		Lease:        30 * time.Second,
+	}
+
+	err := p.store.RunEphemeralSubscription(p.ctx, filter, start, options,
+		func(ctx context.Context, evs []evercore.SerializedEvent) error {
+			for _, e := range evs {
+				slog.Info("PrefectService processing event", "eventType", e.EventType, "aggregateId", e.AggregateId, "sequence", e.Sequence)
+				switch e.EventType {
+				case ev.RoleDeletedEventType,
+					ev.RoleUndeletedEventType,
+					ev.RolePermissionAddedEventType,
+					ev.RolePermissionRemovedEventType:
+					p.GroupInvalidation(ctx, e.AggregateId)
+				case ev.UserAddedToRoleEventType:
+					_, state, err := evercore.DecodeEvent(e)
+					if err != nil {
+						return fmt.Errorf("failed to decode event: %w", err)
+					}
+
+					addedToRoleEvent, ok := state.(UserAddedToRoleEvent)
+					if !ok {
+						return fmt.Errorf("failed to cast event")
+					}
+					p.UserInvalidation(ctx, addedToRoleEvent.UserId)
+
+				case ev.UserRemovedFromRoleEventType:
+					_, state, err := evercore.DecodeEvent(e)
+					if err != nil {
+						return fmt.Errorf("failed to decode event: %w", err)
+					}
+
+					addedToRoleEvent, ok := state.(UserRemovedFromRoleEvent)
+					if !ok {
+						return fmt.Errorf("failed to cast event")
+					}
+					p.UserInvalidation(ctx, addedToRoleEvent.UserId)
+				case ev.UserApiKeyDeletedEventType:
+					// Invalidate all API keys for the user
+					_, es, err := evercore.DecodeEvent(e)
+					if err != nil {
+						return fmt.Errorf("failed to decode event: %w", err)
+					}
+
+					apiKeyEvent, ok := es.(UserApiKeyDeletedEvent)
+					if !ok {
+						return fmt.Errorf("failed to cast event")
+					}
+					p.apiKeyCache.Remove(apiKeyEvent.Id)
+				}
+			}
+			return nil
+		})
+
+	// If we get here, either the context was cancelled or there was an error.If there
+	// was an error, something about our understanding of the system is wrong.
+	if err != nil {
+		slog.Error("error running ephemeral subscription", "error", err)
+	}
+
+	// We stop processing here to avoid giving incorrect permissions.
+	p.started = false
+}
+
+func (p *PrefectServiceImpl) Start() error {
+	ctx, cancel := context.WithCancel(context.Background())
+	p.ctx = ctx
+	p.cancel = cancel
+	go p.main()
+	p.started = true
+	return nil
+
+	/*
+	   // No-op
+
+
+	   err := p.store.RunEphemeralSubscription("ubmanage.PrefectService", filter, func(event evercore.Event) {
+	   });
+
+	   	if (err != nil) {
+	   		return fmt.Errorf("failed to start event subscription: %w", err)
+	   	}
+	*/
+}
+
+func (p *PrefectServiceImpl) Stop() error {
+	if p.cancel != nil {
+		p.cancel()
+		p.cancel = nil
+	}
+	p.started = false
+	return nil
 }

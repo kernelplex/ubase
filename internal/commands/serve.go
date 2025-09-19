@@ -44,7 +44,13 @@ func ServeCommand() ubcli.Command {
 				"edit_article", "view_article"},
 		)
 
-		err := web.Start()
+		err := prefectService.Start()
+		if err != nil {
+			slog.Error("Failed to start prefect service", "error", err)
+			return err
+		}
+
+		err = web.Start()
 		if err != nil {
 			slog.Error("Failed to start web server", "error", err)
 			return err

@@ -26,7 +26,7 @@ func AdminRoute() ubwww.Route {
 	}
 
 	return ubwww.Route{
-		Path:               "/admin",
+		Path:               "/admin/",
 		RequiresPermission: PermSystemAdmin,
 		Func:               handler,
 	}

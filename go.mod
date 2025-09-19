@@ -25,7 +25,7 @@ require (
 )
 
 // NOTE: Uncomment the following line to use a local version of evercore
-// replace github.com/kernelplex/evercore => /mnt/data/seddy/proj/evercore
+replace github.com/kernelplex/evercore => /mnt/data/seddy/proj/evercore
 
 require (
 	dario.cat/mergo v1.0.1 // indirect

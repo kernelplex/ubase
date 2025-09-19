@@ -177,7 +177,7 @@ func NewUbaseAppEnvConfig() UbaseApp {
 
 	app.managementService = ubmanage.NewManagement(app.store, dbadapter, app.hashService, app.encryptionService, app.totpService)
 
-	app.prefectService = ubmanage.NewPrefectService(app.managementService, 100, 100)
+	app.prefectService = ubmanage.NewPrefectService(app.managementService, eventStore, 100, 100)
 
 	app.dbadapter = dbadapter
 

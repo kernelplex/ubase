@@ -52,7 +52,7 @@ func RegisterAdminPanelRoutes(
 	web.AddRoute(OrganizationOverviewRoute(mgmt))
 	web.AddRoute(OrganizationCreateRoute(mgmt))
 	web.AddRoute(OrganizationEditRoute(mgmt))
-    web.AddRoute(RoleOverviewRoute(app, mgmt, permissions))
+	web.AddRoute(RoleOverviewRoute(app, mgmt, permissions))
 	web.AddRoute(RoleCreateRoute(mgmt))
 	web.AddRoute(RoleEditRoute(mgmt))
 	web.AddRoute(UsersRoute(app))

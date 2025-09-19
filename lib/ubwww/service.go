@@ -22,14 +22,14 @@ type WebServiceImpl struct {
 	permMiddleware *PermissionMiddleware
 }
 
-func NewWebService(port uint, cookieManager AuthTokenCookieManager[*AuthToken], permMiddleware PermissionMiddleware) WebService {
+func NewWebService(port uint, cookieManager AuthTokenCookieManager[*AuthToken], permMiddleware *PermissionMiddleware) WebService {
 	mux := http.NewServeMux()
 	return &WebServiceImpl{
 		routes:         make([]Route, 0),
 		port:           port,
 		mux:            mux,
 		cookieManager:  cookieManager,
-		permMiddleware: &permMiddleware,
+		permMiddleware: permMiddleware,
 	}
 }
 
@@ -64,8 +64,9 @@ func (ws *WebServiceImpl) setupRoutes() {
 		handler = LoggerMiddleware(http.HandlerFunc(handler)).ServeHTTP
 		if route.RequiresPermission != "" {
 			handler = ws.permMiddleware.RequirePermission(route.RequiresPermission, handler)
-			handler = ws.cookieManager.MiddlewareFunc(handler)
 		}
+		handler = ws.cookieManager.MiddlewareFunc(handler)
+
 		ws.mux.HandleFunc(route.Path, handler)
 		slog.Info("Registered route", "path", route.Path, "requires_permission", route.RequiresPermission, "api", route.Api)
 	}

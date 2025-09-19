@@ -78,6 +78,14 @@ func ConfigFromEnv(cfg any) error {
 				}
 				fieldValue.SetInt(int64(intValue))
 			}
+		case reflect.Uint:
+			{
+				uintValue, err := strconv.ParseUint(envValue, 10, 64)
+				if err != nil {
+					return fmt.Errorf("invalid %s value: %w", envTag, err)
+				}
+				fieldValue.SetUint(uintValue)
+			}
 		case reflect.Slice: // Handle []byte fields (Pepper and SecretKey)
 			if fieldValue.Type().Elem().Kind() == reflect.Uint8 && envValue != "" {
 				decoded, err := base64.StdEncoding.DecodeString(envValue)

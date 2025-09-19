@@ -83,7 +83,6 @@ func (c *CookieMonster[T]) ClearAuthTokenCookie(w http.ResponseWriter) {
 }
 
 func (c *CookieMonster[T]) ReadAuthTokenCookie(r *http.Request) (bool, T, error) {
-	slog.Debug("Reading auth token cookie")
 	var zero T
 	cookie, err := r.Cookie(c.cookieName)
 	if err != nil {
@@ -159,6 +158,7 @@ func (c *CookieMonster[T]) middlewareHandler(w http.ResponseWriter, r *http.Requ
 			if err != nil {
 				slog.Error("Error updating auth token cookie", "error", err)
 			}
+
 			ctx := r.Context()
 			ctx = context.WithValue(ctx, c.cookieKey, token)
 			ctx = context.WithValue(ctx, c.identityKey, token.ToUserIdentity())

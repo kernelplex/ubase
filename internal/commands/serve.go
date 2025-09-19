@@ -34,7 +34,7 @@ func ServeCommand() ubcli.Command {
 		web := ubwww.NewWebService(
 			port,
 			cookieManager,
-			*permissionMiddleware)
+			permissionMiddleware)
 
 		ubadminpanel.RegisterAdminPanelRoutes(
 			&app,

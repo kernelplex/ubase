@@ -23,6 +23,8 @@ const (
 	UserLoginPartiallySucceededEventType = "UserLoginPartiallySucceededEvent"
 	UserLoginSucceededEventType = "UserLoginSucceededEvent"
 	UserRemovedFromRoleEventType = "UserRemovedFromRoleEvent"
+	UserSettingsAddedEventType = "UserSettingsAddedEvent"
+	UserSettingsRemovedEventType = "UserSettingsRemovedEvent"
 	UserTwoFactorAuthenticatedEventType = "UserTwoFactorAuthenticatedEvent"
 	UserTwoFactorDisabledEventType = "UserTwoFactorDisabledEvent"
 	UserTwoFactorEnabledEventType = "UserTwoFactorEnabledEvent"
@@ -52,6 +54,8 @@ var List = []string{
 	UserLoginPartiallySucceededEventType,
 	UserLoginSucceededEventType,
 	UserRemovedFromRoleEventType,
+	UserSettingsAddedEventType,
+	UserSettingsRemovedEventType,
 	UserTwoFactorAuthenticatedEventType,
 	UserTwoFactorDisabledEventType,
 	UserTwoFactorEnabledEventType,

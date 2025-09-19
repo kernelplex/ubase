@@ -173,6 +173,20 @@ func EventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error) {
 			return nil, err
 		}
 		return eventState, nil
+	case events.UserSettingsAddedEventType:
+		eventState := ubmanage.UserSettingsAddedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserSettingsRemovedEventType:
+		eventState := ubmanage.UserSettingsRemovedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
 	case events.UserTwoFactorAuthenticatedEventType:
 		eventState := ubmanage.UserTwoFactorAuthenticatedEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log/slog"
 
+	"github.com/kernelplex/ubase/lib/ubadminpanel"
 	"github.com/kernelplex/ubase/lib/ubapp"
 	"github.com/kernelplex/ubase/lib/ubcli"
 	"github.com/kernelplex/ubase/lib/ubwww"
@@ -28,8 +29,18 @@ func ServeCommand() ubcli.Command {
 			ubwww.IdentityContextKey("user_identity"),
 		)
 		prefectService := app.GetPrefectService()
+		permissionMiddleware := ubwww.NewPermissionMiddleware(
+			prefectService, cookieManager)
+		web := ubwww.NewWebService(
+			port,
+			cookieManager,
+			*permissionMiddleware)
 
-		web := ubwww.NewWebService(port, cookieManager, *ubwww.NewPermissionMiddleware(prefectService))
+		ubadminpanel.RegisterAdminPanelRoutes(
+			&app,
+			web,
+			app.GetManagementService(), cookieManager)
+
 		err := web.Start()
 		if err != nil {
 			slog.Error("Failed to start web server", "error", err)

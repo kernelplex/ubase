@@ -1,0 +1,29 @@
+package views
+
+import "github.com/kernelplex/ubase/lib/ubdata"
+
+templ UserRolesTable(userId int64, roles []ubdata.RoleRow, memberSet map[int64]bool, orgId int64) {
+    <div id="user-roles">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 120px; text-align: left;">ID</th>
+                    <th style="text-align: left;">Name</th>
+                    <th style="text-align: left;">System Name</th>
+                    <th style="width: 100px; text-align: left;">In Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                if len(roles) == 0 {
+                    <tr>
+                        <td colspan="4" style="color: var(--text-muted); padding: 0.75rem 0;">No roles in this organization.</td>
+                    </tr>
+                } else {
+                    for _, r := range roles {
+                        @UserRoleRow(userId, r, memberSet[r.ID], orgId)
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+}

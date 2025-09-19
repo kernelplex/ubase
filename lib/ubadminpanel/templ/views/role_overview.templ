@@ -1,0 +1,39 @@
+package views
+
+import (
+    "fmt"
+    "github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
+)
+
+templ RoleOverview(fragment bool, id int64, name string, systemName string, organizationId int64) {
+    @layouts.LayoutOrFragment(fragment, true) {
+        <div class="admin-card">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: .75rem;">
+                <h1>Role: { name }</h1>
+                <a href={ fmt.Sprintf("/admin/roles/edit/%d", id) } class="role-toggle" title="Edit role">Edit</a>
+            </div>
+            <div style="margin-top: 0.75rem;">
+                <p><strong>ID:</strong> { id }</p>
+                <p><strong>System Name:</strong> { systemName }</p>
+                <p><strong>Organization ID:</strong> { organizationId }</p>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <h2>Users</h2>
+            <div style="margin: 0.75rem 0 1rem 0;">
+                <input
+                    type="text"
+                    name="q"
+                    placeholder="Search users by name or email..."
+                    hx-get={ fmt.Sprintf("/admin/roles/%d/users", id) }
+                    hx-trigger="input changed delay:1s"
+                    hx-target="#role-users"
+                    hx-swap="outerHTML"
+                    style="width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--color-trim); border-radius: 8px; background: var(--color-surface-2); color: var(--text);"
+                />
+            </div>
+            <div id="role-users" hx-get={ fmt.Sprintf("/admin/roles/%d/users", id) } hx-trigger="load" hx-target="#role-users" hx-swap="outerHTML"></div>
+        </div>
+    }
+}

@@ -1,5 +1,5 @@
 
-main: evercoregen sqlc
+main: templ evercoregen sqlc
 	go build -o build/ubase cmd/ubase/main.go
 
 .PHONY: evercoregen
@@ -22,4 +22,8 @@ test-postgresql: sqlc evercoregen
 .PHONY: test-sqlite
 test-sqlite: sqlc evercoregen
 	go test -count=1 -tags sqlite ./integration_tests/...
+
+.PHONY: templ
+templ:
+	go tool templ generate
 

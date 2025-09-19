@@ -1,0 +1,22 @@
+package views
+
+import (
+    "fmt"
+    "github.com/kernelplex/ubase/lib/ubdata"
+)
+
+templ RoleUserToggle(roleId int64, user ubdata.User, inRole bool) {
+    <div id={ fmt.Sprintf("toggle-%d", user.UserID) }>
+        if inRole {
+            <form hx-post={ fmt.Sprintf("/admin/roles/%d/users/remove", roleId) } hx-include='[name="q"]' hx-target={ fmt.Sprintf("#role-row-%d", user.UserID) } hx-swap="outerHTML" style="display:inline">
+                <input type="hidden" name="user_id" value={ user.UserID }/>
+                <button type="submit" class="role-toggle minus" title="Remove from role">-</button>
+            </form>
+        } else {
+            <form hx-post={ fmt.Sprintf("/admin/roles/%d/users/add", roleId) } hx-include='[name="q"]' hx-target={ fmt.Sprintf("#role-row-%d", user.UserID) } hx-swap="outerHTML" style="display:inline">
+                <input type="hidden" name="user_id" value={ user.UserID }/>
+                <button type="submit" class="role-toggle plus" title="Add to role">+</button>
+            </form>
+        }
+    </div>
+}

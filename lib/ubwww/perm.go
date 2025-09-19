@@ -2,6 +2,7 @@ package ubwww
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/kernelplex/ubase/lib/ubmanage"
 )
@@ -11,9 +12,14 @@ type PermissionMiddleware struct {
 	cookieManager  AuthTokenCookieManager[*AuthToken]
 }
 
-func NewPermissionMiddleware(prefectService ubmanage.PrefectService) *PermissionMiddleware {
+func NewPermissionMiddleware(
+	prefectService ubmanage.PrefectService,
+	cookieManager AuthTokenCookieManager[*AuthToken],
+
+) *PermissionMiddleware {
 	return &PermissionMiddleware{
 		prefectService: prefectService,
+		cookieManager:  cookieManager,
 	}
 }
 
@@ -21,8 +27,13 @@ func (pm *PermissionMiddleware) RequirePermission(permission string, next http.H
 	return func(w http.ResponseWriter, r *http.Request) {
 		identity, found := pm.cookieManager.IdentityFromContext(r.Context())
 		if !found {
-			// TODO: Need to figure out how to handle unauthenticated requests
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			// If unauthenticated, redirect to login. Support HTMX fragments.
+			if strings.EqualFold(r.Header.Get("HX-Request"), "true") {
+				w.Header().Set("HX-Redirect", "/admin/login")
+				w.WriteHeader(http.StatusOK)
+			} else {
+				http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
+			}
 			return
 		}
 
@@ -41,4 +52,3 @@ func (pm *PermissionMiddleware) RequirePermission(permission string, next http.H
 		next.ServeHTTP(w, r)
 	}
 }
-

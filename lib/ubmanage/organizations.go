@@ -66,62 +66,62 @@ func (c OrganizationCreateCommand) Validate() (bool, []ubvalidation.ValidationIs
 }
 
 type OrganizationUpdateCommand struct {
-    Id         int64   `json:"id"`
-    Name       *string `json:"name"`
-    SystemName *string `json:"systemName"`
-    Status     *string `json:"status"`
+	Id         int64   `json:"id"`
+	Name       *string `json:"name"`
+	SystemName *string `json:"systemName"`
+	Status     *string `json:"status"`
 }
 
 func (c OrganizationUpdateCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
-    validationTracker := ubvalidation.NewValidationTracker()
+	validationTracker := ubvalidation.NewValidationTracker()
 
-    // Validate required ID field
-    validationTracker.ValidateIntMinValue("id", c.Id, 1)
+	// Validate required ID field
+	validationTracker.ValidateIntMinValue("id", c.Id, 1)
 
-    validationTracker.ValidateOptionalField("name", c.Name, 1)
-    validationTracker.ValidateOptionalField("systemName", c.SystemName, 1)
-    validationTracker.ValidateOptionalField("status", c.Status, 1)
-    return validationTracker.Valid()
+	validationTracker.ValidateOptionalField("name", c.Name, 1)
+	validationTracker.ValidateSystemName("systemName", c.SystemName, false)
+	validationTracker.ValidateOptionalField("status", c.Status, 1)
+	return validationTracker.Valid()
 }
 
 type OrganizationSettingsAddCommand struct {
-    Id       int64             `json:"id"`
-    Settings map[string]string `json:"settings"`
+	Id       int64             `json:"id"`
+	Settings map[string]string `json:"settings"`
 }
 
 func (c OrganizationSettingsAddCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
-    v := ubvalidation.NewValidationTracker()
-    v.ValidateIntMinValue("id", c.Id, 1)
-    if len(c.Settings) == 0 {
-        v.AddIssue("settings", "settings cannot be empty")
-    }
-    for k := range c.Settings {
-        if k == "" {
-            v.AddIssue("settings", "settings cannot contain empty keys")
-            break
-        }
-    }
-    return v.Valid()
+	v := ubvalidation.NewValidationTracker()
+	v.ValidateIntMinValue("id", c.Id, 1)
+	if len(c.Settings) == 0 {
+		v.AddIssue("settings", "settings cannot be empty")
+	}
+	for k := range c.Settings {
+		if k == "" {
+			v.AddIssue("settings", "settings cannot contain empty keys")
+			break
+		}
+	}
+	return v.Valid()
 }
 
 type OrganizationSettingsRemoveCommand struct {
-    Id          int64    `json:"id"`
-    SettingKeys []string `json:"settingKeys"`
+	Id          int64    `json:"id"`
+	SettingKeys []string `json:"settingKeys"`
 }
 
 func (c OrganizationSettingsRemoveCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
-    v := ubvalidation.NewValidationTracker()
-    v.ValidateIntMinValue("id", c.Id, 1)
-    if len(c.SettingKeys) == 0 {
-        v.AddIssue("settingKeys", "settingKeys cannot be empty")
-    }
-    for _, k := range c.SettingKeys {
-        if k == "" {
-            v.AddIssue("settingKeys", "settingKeys cannot contain empty values")
-            break
-        }
-    }
-    return v.Valid()
+	v := ubvalidation.NewValidationTracker()
+	v.ValidateIntMinValue("id", c.Id, 1)
+	if len(c.SettingKeys) == 0 {
+		v.AddIssue("settingKeys", "settingKeys cannot be empty")
+	}
+	for _, k := range c.SettingKeys {
+		if k == "" {
+			v.AddIssue("settingKeys", "settingKeys cannot contain empty values")
+			break
+		}
+	}
+	return v.Valid()
 }
 
 // ============================================================================

@@ -1,0 +1,29 @@
+package views
+
+import "github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
+
+templ Login(fragment bool, err string) {
+    @layouts.LayoutOrFragment(fragment, false) {
+        <section class="auth-screen">
+            <div class="auth-card">
+                <h1>Admin Login</h1>
+                if err != "" {
+                    <div class="error">{ err }</div>
+                }
+                <form class="auth-form" hx-post="/admin/login" hx-target="#main" hx-swap="innerHTML">
+                    <div class="form-field">
+                        <label for="email">Email</label>
+                        <input id="email" type="email" name="email" autocomplete="username" placeholder="you@example.com" required/>
+                    </div>
+                    <div class="form-field">
+                        <label for="password">Password</label>
+                        <input id="password" type="password" name="password" autocomplete="current-password" placeholder="••••••••" required/>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit">Sign In</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    }
+}

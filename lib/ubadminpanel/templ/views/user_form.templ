@@ -1,0 +1,65 @@
+package views
+
+import (
+    "github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
+    "github.com/kernelplex/ubase/lib/ubadminpanel/templ/views/components"
+    "github.com/kernelplex/ubase/lib/ubdata"
+)
+
+templ UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldErrors map[string][]string) {
+    @layouts.LayoutOrFragment(fragment, true) {
+        <section class="auth-screen">
+            <div class="auth-card">
+                if isEdit {
+                    <h1>Edit User</h1>
+                } else {
+                    <h1>Create User</h1>
+                }
+                if err != "" {
+                    <div class="error">{ err }</div>
+                }
+                <form class="auth-form" method="post">
+                    <div class="form-field">
+                        <label for="email">Email</label>
+                        <input id="email" type="email" name="email" value={ func() string { if user != nil { return user.Email } ; return "" }() } required/>
+                        @components.FieldErrors(fieldErrors["email"])
+                    </div>
+                    <div class="form-field">
+                        <label for="password">Password</label>
+                        <input id="password" type="password" name="password" placeholder={ func() string { if isEdit { return "Leave blank to keep current password" } ; return "" }() }/>
+                        @components.FieldErrors(fieldErrors["password"])
+                    </div>
+                    <div class="form-field">
+                        <label for="first_name">First Name</label>
+                        <input id="first_name" type="text" name="first_name" value={ func() string { if user != nil { return user.FirstName } ; return "" }() } required/>
+                        @components.FieldErrors(fieldErrors["firstName"])
+                    </div>
+                    <div class="form-field">
+                        <label for="last_name">Last Name</label>
+                        <input id="last_name" type="text" name="last_name" value={ func() string { if user != nil { return user.LastName } ; return "" }() } required/>
+                        @components.FieldErrors(fieldErrors["lastName"])
+                    </div>
+                    <div class="form-field">
+                        <label for="display_name">Display Name</label>
+                        <input id="display_name" type="text" name="display_name" value={ func() string { if user != nil { return user.DisplayName } ; return "" }() } required/>
+                        @components.FieldErrors(fieldErrors["displayName"])
+                    </div>
+                    <div class="form-field">
+                        <label for="verified">Verified</label>
+                        <input id="verified" type="checkbox" name="verified" checked={ user != nil && user.Verified }/>
+                        @components.FieldErrors(fieldErrors["verified"])
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit">
+                            if isEdit {
+                                <span>Save Changes</span>
+                            } else {
+                                <span>Create User</span>
+                            }
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    }
+}

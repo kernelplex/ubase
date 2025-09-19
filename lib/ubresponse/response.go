@@ -25,6 +25,14 @@ func (r Response[T]) ToJSON() ([]byte, error) {
 	return jsonResponse, nil
 }
 
+func (r Response[T]) GetValidationMap() map[string][]string {
+	validationMap := make(map[string][]string)
+	for _, issue := range r.ValidationIssues {
+		validationMap[issue.Field] = issue.Error
+	}
+	return validationMap
+}
+
 func SuccessAny() Response[any] {
 	return Response[any]{
 		Status: ubstatus.Success,

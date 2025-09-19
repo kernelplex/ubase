@@ -1,0 +1,52 @@
+package views
+
+import (
+    "fmt"
+    "github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
+    "github.com/kernelplex/ubase/lib/ubdata"
+)
+
+templ UserOverview(fragment bool, id int64, displayName string, email string, firstName string, lastName string, verified bool, disabled bool, orgs []ubdata.Organization, selectedOrg int64) {
+    @layouts.LayoutOrFragment(fragment, true) {
+        <div class="admin-card">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: .75rem;">
+                <h1>User: { displayName }</h1>
+                <a href={ fmt.Sprintf("/admin/users/edit/%d", id) } class="role-toggle" title="Edit user">Edit</a>
+            </div>
+            <div style="margin-top: 0.75rem;">
+                <p><strong>ID:</strong> { id }</p>
+                <p><strong>Email:</strong> { email }</p>
+                <p><strong>Name:</strong> { firstName } { lastName }</p>
+                <p><strong>Verified:</strong>
+                    if verified {
+                        { "Yes" }
+                    } else {
+                        { "No" }
+                    }
+                </p>
+                <p><strong>Disabled:</strong>
+                    if disabled {
+                        { "Yes" }
+                    } else {
+                        { "No" }
+                    }
+                </p>
+            </div>
+        </div>
+
+        <div class="admin-card" id="roles-card">
+            <h2>Roles</h2>
+            <div style="margin: 0.75rem 0 1rem 0;">
+                <div class="form-field">
+                    <label for="org-select">Organization</label>
+                    <select id="org-select" name="org" hx-get={ fmt.Sprintf("/admin/users/%d/roles", id) } hx-trigger="change" hx-target="#user-roles" hx-swap="outerHTML">
+                        for _, o := range orgs {
+                            <option value={ o.ID } selected={ o.ID == selectedOrg }>{ o.Name }</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div id="user-roles" hx-get={ fmt.Sprintf("/admin/users/%d/roles?org=%d", id, selectedOrg) } hx-trigger="load" hx-target="#user-roles" hx-swap="outerHTML"></div>
+        </div>
+    }
+}

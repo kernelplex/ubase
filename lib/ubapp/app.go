@@ -30,6 +30,7 @@ type UbaseConfig struct {
 	Environment               string `env:"ENVIRONMENT" default:"production"`
 	TokenMaxSoftExpirySeconds int    `env:"TOKEN_SOFT_EXPIRY_SECONDS" default:"3600"`  // 1 hour
 	TokenMaxHardExpirySeconds int    `env:"TOKEN_HARD_EXPIRY_SECONDS" default:"86400"` // 24 hours
+	PrimaryOrganization       int64  `env:"PRIMARY_ORGANIZATION" required:"true"`
 	TOTPIssuer                string `env:"TOTP_ISSUER" required:"true"`
 
 	// Mailer

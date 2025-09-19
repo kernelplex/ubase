@@ -1,0 +1,61 @@
+package layouts
+
+templ Layout(showLogout bool) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>My Website</title>
+			<link rel="stylesheet" href="/admin/static/style.css"/>
+			<script src="/admin/static/htmx.min.js"></script>
+		</head>
+		<body class="admin-layout">
+            <div class="admin-container">
+                <header class="admin-header">
+					if showLogout {
+						<div class="admin-header__brand">
+							<div class="admin-logo"></div>
+							<a href="/admin">Ubase Admin</a>
+						</div>
+					}
+					<div class="admin-header__actions">
+						if showLogout {
+							<button class="btn-logout" hx-post="/admin/logout">Log Out</button>
+						}
+					</div>
+                </header>
+                if showLogout {
+                    <div class="admin-shell">
+                        <aside class="admin-sidebar">
+                            <div class="admin-brand">Admin</div>
+                            <nav class="admin-nav">
+                                <a href="/admin">Dashboard</a>
+                                <a href="/admin/organizations">Organizations</a>
+                                <a href="/admin/users">Users</a>
+                                <a href="#">Settings</a>
+                            </nav>
+                        </aside>
+                        <section id="panel-content" class="admin-panel">
+                            { children... }
+                        </section>
+                    </div>
+                } else {
+                    <main id="main" class="admin-main">
+                        { children... }
+                    </main>
+                }
+            </div>
+        </body>
+    </html>
+}
+
+templ LayoutOrFragment(fragment bool, showLogout bool) {
+    if (fragment) {
+        { children... }
+    } else {
+        @Layout(showLogout) {
+            { children... }
+        }
+    }
+}

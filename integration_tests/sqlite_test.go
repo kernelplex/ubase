@@ -35,13 +35,10 @@ func RegisterModerncSqlite() {
 
 func openDatabase(connectionString string) (*sql.DB, error) {
 	RegisterModerncSqlite()
-	slog.Info("*********** Opening database", "connectionString", connectionString)
 	connection, err := dburl.Parse(connectionString)
-	slog.Info("***** Parsed connection", "connectionString", connectionString)
 	if err != nil {
 		panic(err)
 	}
-	slog.Info("***** Parsed connection - no errors", "connection", connection)
 	if connection.Driver != "sqlite3" {
 		return nil, fmt.Errorf("invalid driver: %s", connection.Driver)
 	}

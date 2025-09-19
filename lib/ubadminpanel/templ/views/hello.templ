@@ -1,0 +1,12 @@
+package views
+
+import "github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
+
+templ Hello(name string, fragment bool) {
+    @layouts.LayoutOrFragment(fragment, true) {
+        <div class="admin-card">
+            <h1>Admin Control Panel</h1>
+            <p>Select a section from the sidebar to get started.</p>
+        </div>
+    }
+}

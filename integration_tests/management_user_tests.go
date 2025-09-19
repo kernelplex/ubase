@@ -500,10 +500,6 @@ func (s *ManagmentServiceTestSuite) UserGetByApiKey(t *testing.T) {
 		t.Fatal("UserGenerateApiKey returned empty API key")
 	}
 
-	t.Logf("************** Generated API Key: %s", response.Data)
-	hash, _ := s.hashingService.GenerateHashBase64(response.Data)
-	t.Logf("************** Generated API Key Hash: %s", hash)
-
 	// Now try to get the user by the API key
 	userResponse, err := s.managementService.UserGetByApiKey(ctx, response.Data)
 	if err != nil {

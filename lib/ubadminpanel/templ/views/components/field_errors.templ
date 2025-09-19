@@ -1,0 +1,12 @@
+package components
+
+templ FieldErrors(errs []string) {
+    if len(errs) > 0 {
+        <ul class="field-errors">
+            for _, e := range errs {
+                <li>{ e }</li>
+            }
+        </ul>
+    }
+}
+

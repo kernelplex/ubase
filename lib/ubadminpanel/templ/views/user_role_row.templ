@@ -1,0 +1,16 @@
+package views
+
+import (
+    "fmt"
+    "github.com/kernelplex/ubase/lib/ubdata"
+)
+
+templ UserRoleRow(userId int64, role ubdata.RoleRow, inRole bool, orgId int64) {
+    <tr id={ fmt.Sprintf("user-role-row-%d", role.ID) } class={ func() string { if inRole { return "row-in-role" } ; return "" }() }>
+        <td>{ role.ID }</td>
+        <td>{ role.Name }</td>
+        <td>{ role.SystemName }</td>
+        <td>@UserRoleToggle(userId, role, inRole, orgId)</td>
+    </tr>
+}
+

@@ -39,7 +39,10 @@ func ServeCommand() ubcli.Command {
 		ubadminpanel.RegisterAdminPanelRoutes(
 			&app,
 			web,
-			app.GetManagementService(), cookieManager)
+			app.GetManagementService(), cookieManager,
+			[]string{ubadminpanel.PermSystemAdmin,
+				"edit_article", "view_article"},
+		)
 
 		err := web.Start()
 		if err != nil {

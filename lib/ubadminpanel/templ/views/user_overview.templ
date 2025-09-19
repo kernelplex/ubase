@@ -2,35 +2,67 @@ package views
 
 import (
     "fmt"
+    "time"
     "github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
     "github.com/kernelplex/ubase/lib/ubdata"
 )
 
-templ UserOverview(fragment bool, id int64, displayName string, email string, firstName string, lastName string, verified bool, disabled bool, orgs []ubdata.Organization, selectedOrg int64) {
+func formatTimestamp(ts int64) string {
+    if ts <= 0 { return "-" }
+    return time.Unix(ts, 0).UTC().Format("2006-01-02 15:04:05")
+}
+
+templ UserOverview(fragment bool,
+    id int64,
+    displayName string,
+    email string,
+    firstName string,
+    lastName string,
+    verified bool,
+    disabled bool,
+    lastLogin int64,
+    loginCount int64,
+    lastFailedLogin int64,
+    failedLoginAttempts int64,
+    orgs []ubdata.Organization,
+    selectedOrg int64,
+) {
     @layouts.LayoutOrFragment(fragment, true) {
-        <div class="admin-card">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: .75rem;">
-                <h1>User: { displayName }</h1>
-                <a href={ fmt.Sprintf("/admin/users/edit/%d", id) } class="role-toggle" title="Edit user">Edit</a>
+        <div style="display: flex; gap: 1rem; align-items: stretch;">
+            <div class="admin-card" style="flex:1;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: .75rem;">
+                    <h1>User: { displayName }</h1>
+                    <a href={ fmt.Sprintf("/admin/users/edit/%d", id) } class="role-toggle" title="Edit user">Edit</a>
+                </div>
+                <div style="margin-top: 0.75rem;">
+                    <p><strong>ID:</strong> { id }</p>
+                    <p><strong>Email:</strong> { email }</p>
+                    <p><strong>Name:</strong> { firstName } { lastName }</p>
+                    <p><strong>Verified:</strong>
+                        if verified {
+                            { "Yes" }
+                        } else {
+                            { "No" }
+                        }
+                    </p>
+                    <p><strong>Disabled:</strong>
+                        if disabled {
+                            { "Yes" }
+                        } else {
+                            { "No" }
+                        }
+                    </p>
+                </div>
             </div>
-            <div style="margin-top: 0.75rem;">
-                <p><strong>ID:</strong> { id }</p>
-                <p><strong>Email:</strong> { email }</p>
-                <p><strong>Name:</strong> { firstName } { lastName }</p>
-                <p><strong>Verified:</strong>
-                    if verified {
-                        { "Yes" }
-                    } else {
-                        { "No" }
-                    }
-                </p>
-                <p><strong>Disabled:</strong>
-                    if disabled {
-                        { "Yes" }
-                    } else {
-                        { "No" }
-                    }
-                </p>
+
+            <div class="admin-card" style="flex:1;">
+                <h2>Stats</h2>
+                <div style="margin-top: 0.75rem;">
+                    <p><strong>Last Login:</strong> { formatTimestamp(lastLogin) }</p>
+                    <p><strong>Total Logins:</strong> { loginCount }</p>
+                    <p><strong>Last Failed Login:</strong> { formatTimestamp(lastFailedLogin) }</p>
+                    <p><strong>Failed Login Attempts:</strong> { failedLoginAttempts }</p>
+                </div>
             </div>
         </div>
 

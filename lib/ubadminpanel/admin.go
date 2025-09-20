@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kernelplex/ubase/lib/ensure"
 	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/views"
-	"github.com/kernelplex/ubase/lib/ubapp"
+	"github.com/kernelplex/ubase/lib/ubdata"
 	"github.com/kernelplex/ubase/lib/ubmanage"
 	"github.com/kernelplex/ubase/lib/ubstatus"
 	"github.com/kernelplex/ubase/lib/ubwww"
@@ -20,7 +21,8 @@ func isHTMX(r *http.Request) bool {
 }
 
 // hello route is a simple placeholder home page
-func AdminRoute(app *ubapp.UbaseApp, mgmt ubmanage.ManagementService) ubwww.Route {
+func AdminRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) ubwww.Route {
+	ensure.That(adapter != nil, "data adapter is required")
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		orgCountResp, _ := mgmt.OrganizationsCount(r.Context())
@@ -47,7 +49,6 @@ func AdminRoute(app *ubapp.UbaseApp, mgmt ubmanage.ManagementService) ubwww.Rout
 		}
 
 		// Build recent users (top 5 by last_login)
-		adapter := app.GetDBAdapter()
 		ids, _ := adapter.ListRecentUserIds(r.Context(), 5)
 		recent := make([]views.RecentUser, 0, len(ids))
 		for _, uid := range ids {
@@ -73,31 +74,34 @@ func AdminRoute(app *ubapp.UbaseApp, mgmt ubmanage.ManagementService) ubwww.Rout
 // RegisterAdminPanelRoutes adds admin routes and static files.
 // cookieManager is used to read/write the auth cookie; mgmt performs authentication.
 func RegisterAdminPanelRoutes(
-	app *ubapp.UbaseApp,
+	primaryOrganization int64,
+	adapter ubdata.DataAdapter,
 	web ubwww.WebService,
 	mgmt ubmanage.ManagementService,
 	cookieManager ubwww.AuthTokenCookieManager[*ubwww.AuthToken],
 	permissions []string,
 ) {
+	ensure.That(primaryOrganization > 0, "primary organization must be set and greater than zero")
+	ensure.That(adapter != nil, "data adapter is required")
 
 	// Serve static files
 	fs := http.FileServer(http.FS(static))
 	web.AddRouteHandler("/admin/static/", http.StripPrefix("/admin", fs))
 
 	// Home placeholder (can be permission-protected later)
-	web.AddRoute(AdminRoute(app, mgmt))
+	web.AddRoute(AdminRoute(adapter, mgmt))
 	web.AddRoute(OrganizationsRoute(mgmt))
 	web.AddRoute(OrganizationOverviewRoute(mgmt))
 	web.AddRoute(OrganizationCreateRoute(mgmt))
 	web.AddRoute(OrganizationEditRoute(mgmt))
-	web.AddRoute(RoleOverviewRoute(app, mgmt, permissions))
+	web.AddRoute(RoleOverviewRoute(adapter, mgmt, permissions))
 	web.AddRoute(RoleCreateRoute(mgmt))
 	web.AddRoute(RoleEditRoute(mgmt))
-	web.AddRoute(UsersRoute(app))
+	web.AddRoute(UsersRoute(adapter))
 	web.AddRoute(UserOverviewRoute(mgmt))
 	web.AddRoute(UserCreateRoute(mgmt))
 	web.AddRoute(UserEditRoute(mgmt))
-	web.AddRoute(LoginRoute(app, mgmt, cookieManager))
+	web.AddRoute(LoginRoute(primaryOrganization, mgmt, cookieManager))
 	web.AddRoute(VerifyTwoFactorRoute(mgmt, cookieManager))
 	web.AddRoute(LogoutRoute(cookieManager))
 }

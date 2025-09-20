@@ -36,8 +36,12 @@ func ServeCommand() ubcli.Command {
 			cookieManager,
 			permissionMiddleware)
 
+		config := app.GetConfig()
+		dataAdapter := app.GetDBAdapter()
+
 		ubadminpanel.RegisterAdminPanelRoutes(
-			&app,
+			config.PrimaryOrganization,
+			dataAdapter,
 			web,
 			app.GetManagementService(), cookieManager,
 			[]string{ubadminpanel.PermSystemAdmin,

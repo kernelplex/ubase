@@ -7,16 +7,15 @@ import (
 	"strings"
 
 	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/views"
-	"github.com/kernelplex/ubase/lib/ubapp"
 	"github.com/kernelplex/ubase/lib/ubdata"
 	"github.com/kernelplex/ubase/lib/ubmanage"
 	"github.com/kernelplex/ubase/lib/ubstatus"
 	"github.com/kernelplex/ubase/lib/ubwww"
 )
 
-func UsersRoute(app *ubapp.UbaseApp) ubwww.Route {
+func UsersRoute(adapter ubdata.DataAdapter) ubwww.Route {
+
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		adapter := app.GetDBAdapter()
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
 		const limit = 25
 		users, err := adapter.SearchUsers(r.Context(), q, limit, 0)
@@ -137,22 +136,22 @@ func UserOverviewRoute(mgmt ubmanage.ManagementService) ubwww.Route {
 		if len(orgs) > 0 && selectedOrg == 0 {
 			selectedOrg = orgs[0].ID
 		}
-        _ = views.UserOverview(
-            false,
-            id,
-            st.DisplayName,
-            st.Email,
-            st.FirstName,
-            st.LastName,
-            st.Verified,
-            st.Disabled,
-            st.LastLogin,
-            st.LoginCount,
-            st.LastLoginAttempt,
-            st.FailedLoginAttempts,
-            orgs,
-            selectedOrg,
-        ).Render(r.Context(), w)
+		_ = views.UserOverview(
+			false,
+			id,
+			st.DisplayName,
+			st.Email,
+			st.FirstName,
+			st.LastName,
+			st.Verified,
+			st.Disabled,
+			st.LastLogin,
+			st.LoginCount,
+			st.LastLoginAttempt,
+			st.FailedLoginAttempts,
+			orgs,
+			selectedOrg,
+		).Render(r.Context(), w)
 	}
 	return ubwww.Route{Path: "/admin/users/", RequiresPermission: PermSystemAdmin, Func: handler}
 }

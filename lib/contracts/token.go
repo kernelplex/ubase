@@ -1,7 +1,9 @@
-package ubwww
+package contracts
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"time"
 )
 
@@ -38,4 +40,33 @@ func (t *AuthToken) ToUserIdentity() UserIdentity {
 		OrganizationID: t.OrganizationId,
 		Email:          t.Email,
 	}
+}
+
+type CookieContextKey string
+type IdentityContextKey string
+
+type UserIdentity struct {
+	UserID         int64
+	Email          string
+	OrganizationID int64
+}
+
+func (u *UserIdentity) ToAgent() string {
+	return fmt.Sprintf("user:%d", u.UserID)
+}
+
+type AuthTokenCookie interface {
+	ToUserIdentity() UserIdentity
+	IsExpired() bool
+	Touch(unixSec int64)
+}
+
+type AuthTokenCookieManager interface {
+	ClearAuthTokenCookie(w http.ResponseWriter)
+	ReadAuthTokenCookie(r *http.Request) (bool, AuthToken, error)
+	WriteAuthTokenCookie(w http.ResponseWriter, token AuthToken) error
+	Middleware(handler http.Handler) http.Handler
+	MiddlewareFunc(handler http.HandlerFunc) http.HandlerFunc
+	TokenFromContext(ctx context.Context) (AuthToken, bool)
+	IdentityFromContext(ctx context.Context) (UserIdentity, bool)
 }

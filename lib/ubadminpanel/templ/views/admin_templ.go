@@ -28,7 +28,7 @@ func formatTS(ts int64) string {
 	return time.Unix(ts, 0).UTC().Format("2006-01-02 15:04:05")
 }
 
-func Hello(fragment bool, orgCount int64, userCount int64, roleCount int64, recent []RecentUser) templ.Component {
+func AdminPanel(fragment bool, orgCount int64, userCount int64, roleCount int64, recent []RecentUser) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -68,7 +68,7 @@ func Hello(fragment bool, orgCount int64, userCount int64, roleCount int64, rece
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(orgCount)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/hello.templ`, Line: 34, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/admin.templ`, Line: 36, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -81,7 +81,7 @@ func Hello(fragment bool, orgCount int64, userCount int64, roleCount int64, rece
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(userCount)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/hello.templ`, Line: 48, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/admin.templ`, Line: 50, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -94,7 +94,7 @@ func Hello(fragment bool, orgCount int64, userCount int64, roleCount int64, rece
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(roleCount)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/hello.templ`, Line: 61, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/admin.templ`, Line: 63, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -118,7 +118,7 @@ func Hello(fragment bool, orgCount int64, userCount int64, roleCount int64, rece
 					var templ_7745c5c3_Var6 templ.SafeURL
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/admin/users/%d", u.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/hello.templ`, Line: 83, Col: 82}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/admin.templ`, Line: 85, Col: 58}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -131,7 +131,7 @@ func Hello(fragment bool, orgCount int64, userCount int64, roleCount int64, rece
 					var templ_7745c5c3_Var7 string
 					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(u.DisplayName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/hello.templ`, Line: 83, Col: 100}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/admin.templ`, Line: 85, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -144,7 +144,7 @@ func Hello(fragment bool, orgCount int64, userCount int64, roleCount int64, rece
 					var templ_7745c5c3_Var8 string
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(u.Email)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/hello.templ`, Line: 84, Col: 45}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/admin.templ`, Line: 86, Col: 21}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -157,7 +157,7 @@ func Hello(fragment bool, orgCount int64, userCount int64, roleCount int64, rece
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(formatTS(u.LastLogin))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/hello.templ`, Line: 85, Col: 59}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/admin.templ`, Line: 87, Col: 35}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {

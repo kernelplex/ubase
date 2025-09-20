@@ -61,7 +61,7 @@ func AdminRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) con
 			recent = append(recent, views.RecentUser{ID: uid, DisplayName: st.DisplayName, Email: st.Email, LastLogin: st.LastLogin})
 		}
 
-		component := views.Hello(isHTMX(r), orgs, users, roles, recent)
+		component := views.AdminPanel(isHTMX(r), orgs, users, roles, recent)
 		_ = component.Render(r.Context(), w)
 	}
 
@@ -79,7 +79,7 @@ func RegisterAdminPanelRoutes(
 	adapter ubdata.DataAdapter,
 	web ubwww.WebService,
 	mgmt ubmanage.ManagementService,
-	cookieManager ubwww.AuthTokenCookieManager,
+	cookieManager contracts.AuthTokenCookieManager,
 	permissions []string,
 ) {
 	ensure.That(primaryOrganization > 0, "primary organization must be set and greater than zero")

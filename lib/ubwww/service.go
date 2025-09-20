@@ -20,11 +20,11 @@ type WebServiceImpl struct {
 	port           uint
 	mux            *http.ServeMux
 	server         *http.Server
-	cookieManager  AuthTokenCookieManager
+	cookieManager  contracts.AuthTokenCookieManager
 	permMiddleware *PermissionMiddleware
 }
 
-func NewWebService(port uint, cookieManager AuthTokenCookieManager, permMiddleware *PermissionMiddleware) WebService {
+func NewWebService(port uint, cookieManager contracts.AuthTokenCookieManager, permMiddleware *PermissionMiddleware) WebService {
 	mux := http.NewServeMux()
 	return &WebServiceImpl{
 		routes:         make([]contracts.Route, 0),

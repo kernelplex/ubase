@@ -12,14 +12,13 @@ import (
 	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/views"
 	"github.com/kernelplex/ubase/lib/ubmanage"
 	"github.com/kernelplex/ubase/lib/ubstatus"
-	"github.com/kernelplex/ubase/lib/ubwww"
 )
 
 // LoginRoute handles GET (render form) and POST (authenticate).
 func LoginRoute(
 	primaryOrganization int64,
 	mgmt ubmanage.ManagementService,
-	cookieManager ubwww.AuthTokenCookieManager,
+	cookieManager contracts.AuthTokenCookieManager,
 ) contracts.Route {
 	ensure.That(primaryOrganization > 0, "primary organization must be set and greater than zero")
 
@@ -51,7 +50,7 @@ func LoginRoute(
 				case ubstatus.Success:
 
 					now := time.Now().Unix()
-					token := ubwww.AuthToken{
+					token := contracts.AuthToken{
 						UserId:               resp.Data.UserId,
 						OrganizationId:       primaryOrganization,
 						Email:                resp.Data.Email,
@@ -98,7 +97,7 @@ func LoginRoute(
 // VerifyTwoFactorRoute handles POST verification of 2FA code.
 func VerifyTwoFactorRoute(
 	mgmt ubmanage.ManagementService,
-	cookieManager ubwww.AuthTokenCookieManager,
+	cookieManager contracts.AuthTokenCookieManager,
 ) contracts.Route {
 	return contracts.Route{
 		Path: "/admin/verify-2fa",
@@ -126,7 +125,7 @@ func VerifyTwoFactorRoute(
 			}
 
 			now := time.Now().Unix()
-			token := ubwww.AuthToken{
+			token := contracts.AuthToken{
 				UserId:               userId,
 				OrganizationId:       0,
 				Email:                "",
@@ -152,7 +151,7 @@ func VerifyTwoFactorRoute(
 }
 
 // LogoutRoute clears the auth cookie.
-func LogoutRoute(cookieManager ubwww.AuthTokenCookieManager) contracts.Route {
+func LogoutRoute(cookieManager contracts.AuthTokenCookieManager) contracts.Route {
 	return contracts.Route{
 		Path: "/admin/logout",
 		Func: func(w http.ResponseWriter, r *http.Request) {

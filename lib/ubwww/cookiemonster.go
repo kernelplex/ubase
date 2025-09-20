@@ -8,45 +8,17 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kernelplex/ubase/lib/contracts"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
 )
-
-type CookieContextKey string
-type IdentityContextKey string
-
-type UserIdentity struct {
-	UserID         int64
-	Email          string
-	OrganizationID int64
-}
-
-func (u *UserIdentity) ToAgent() string {
-	return fmt.Sprintf("user:%d", u.UserID)
-}
-
-type AuthTokenCookie interface {
-	ToUserIdentity() UserIdentity
-	IsExpired() bool
-	Touch(unixSec int64)
-}
-
-type AuthTokenCookieManager interface {
-	ClearAuthTokenCookie(w http.ResponseWriter)
-	ReadAuthTokenCookie(r *http.Request) (bool, AuthToken, error)
-	WriteAuthTokenCookie(w http.ResponseWriter, token AuthToken) error
-	Middleware(handler http.Handler) http.Handler
-	MiddlewareFunc(handler http.HandlerFunc) http.HandlerFunc
-	TokenFromContext(ctx context.Context) (AuthToken, bool)
-	IdentityFromContext(ctx context.Context) (UserIdentity, bool)
-}
 
 type CookieMonster struct {
 	encryptionService ubsecurity.EncryptionService
 	cookieName        string
 	tokenSoftExpiry   int
 	secure            bool
-	cookieKey         CookieContextKey
-	identityKey       IdentityContextKey
+	cookieKey         contracts.CookieContextKey
+	identityKey       contracts.IdentityContextKey
 }
 
 func NewCookieMonster(
@@ -54,8 +26,8 @@ func NewCookieMonster(
 	cookieName string,
 	secure bool,
 	tokenSoftExpiry int64,
-	cookieKey CookieContextKey,
-	identityKey IdentityContextKey) AuthTokenCookieManager {
+	cookieKey contracts.CookieContextKey,
+	identityKey contracts.IdentityContextKey) contracts.AuthTokenCookieManager {
 	return &CookieMonster{
 		encryptionService: encryptionService,
 		cookieName:        cookieName,
@@ -82,8 +54,8 @@ func (c *CookieMonster) ClearAuthTokenCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &cookie)
 }
 
-func (c *CookieMonster) ReadAuthTokenCookie(r *http.Request) (bool, AuthToken, error) {
-	var zero AuthToken
+func (c *CookieMonster) ReadAuthTokenCookie(r *http.Request) (bool, contracts.AuthToken, error) {
+	var zero contracts.AuthToken
 	cookie, err := r.Cookie(c.cookieName)
 	if err != nil {
 		slog.Debug("Error reading auth token cookie", "error", err)
@@ -98,7 +70,7 @@ func (c *CookieMonster) ReadAuthTokenCookie(r *http.Request) (bool, AuthToken, e
 	slog.Debug("************ Decrypted auth token cookie", "cookie", string(tokenBytes))
 	slog.Debug("************ Decrypted auth token cookie", "cookie", []byte(string(tokenBytes)))
 
-	var jsonToken AuthToken
+	var jsonToken contracts.AuthToken
 	err = json.Unmarshal([]byte(string(tokenBytes)), &jsonToken)
 	if err != nil {
 		slog.Debug("Error unmarshaling auth token cookie", "error", err)
@@ -108,13 +80,13 @@ func (c *CookieMonster) ReadAuthTokenCookie(r *http.Request) (bool, AuthToken, e
 	return true, jsonToken, nil
 }
 
-func (c *CookieMonster) WriteAuthTokenCookie(w http.ResponseWriter, token AuthToken) error {
+func (c *CookieMonster) WriteAuthTokenCookie(w http.ResponseWriter, token contracts.AuthToken) error {
 	tokenJson, err := json.Marshal(token)
 	if err != nil {
 		return err
 	}
 
-	newToken := AuthToken{}
+	newToken := contracts.AuthToken{}
 	err = json.Unmarshal(tokenJson, &newToken)
 	if err != nil {
 		slog.Debug("Error re-unmarshaling auth token cookie", "error", err)
@@ -145,13 +117,13 @@ func (c *CookieMonster) WriteAuthTokenCookie(w http.ResponseWriter, token AuthTo
 	return nil
 }
 
-func (c *CookieMonster) TokenFromContext(ctx context.Context) (AuthToken, bool) {
-	token, ok := ctx.Value(c.cookieKey).(AuthToken)
+func (c *CookieMonster) TokenFromContext(ctx context.Context) (contracts.AuthToken, bool) {
+	token, ok := ctx.Value(c.cookieKey).(contracts.AuthToken)
 	return token, ok
 }
 
-func (c *CookieMonster) IdentityFromContext(ctx context.Context) (UserIdentity, bool) {
-	identity, ok := ctx.Value(c.identityKey).(UserIdentity)
+func (c *CookieMonster) IdentityFromContext(ctx context.Context) (contracts.UserIdentity, bool) {
+	identity, ok := ctx.Value(c.identityKey).(contracts.UserIdentity)
 	return identity, ok
 }
 

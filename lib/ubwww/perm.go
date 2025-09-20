@@ -4,17 +4,18 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kernelplex/ubase/lib/contracts"
 	"github.com/kernelplex/ubase/lib/ubmanage"
 )
 
 type PermissionMiddleware struct {
 	prefectService ubmanage.PrefectService
-	cookieManager  AuthTokenCookieManager
+	cookieManager  contracts.AuthTokenCookieManager
 }
 
 func NewPermissionMiddleware(
 	prefectService ubmanage.PrefectService,
-	cookieManager AuthTokenCookieManager,
+	cookieManager contracts.AuthTokenCookieManager,
 
 ) *PermissionMiddleware {
 	return &PermissionMiddleware{

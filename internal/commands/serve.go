@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/kernelplex/ubase/lib/contracts"
 	"github.com/kernelplex/ubase/lib/ubadminpanel"
 	"github.com/kernelplex/ubase/lib/ubapp"
 	"github.com/kernelplex/ubase/lib/ubcli"
@@ -33,8 +34,8 @@ func ServeCommand() ubcli.Command {
 			"ubase_auth_token",
 			false,
 			3600,
-			ubwww.CookieContextKey("auth_token"),
-			ubwww.IdentityContextKey("user_identity"),
+			contracts.CookieContextKey("auth_token"),
+			contracts.IdentityContextKey("user_identity"),
 		)
 		prefectService := app.GetPrefectService()
 		permissionMiddleware := ubwww.NewPermissionMiddleware(

@@ -64,7 +64,7 @@ func RoleOverview(fragment bool, id int64, name string, systemName string, organ
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 templ.SafeURL
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/admin/roles/edit/%d", id))
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/admin/roles/%d/edit", id))
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/role_overview.templ`, Line: 13, Col: 65}
 			}

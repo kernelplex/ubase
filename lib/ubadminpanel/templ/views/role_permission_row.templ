@@ -1,0 +1,9 @@
+package views
+
+templ RolePermissionRow(roleId int64, perm string, inRole bool) {
+    <tr class={ func() string { if inRole { return "row-in-role" } ; return "" }() }>
+        <td>{ perm }</td>
+        <td>@RolePermissionToggle(roleId, perm, inRole)</td>
+    </tr>
+}
+

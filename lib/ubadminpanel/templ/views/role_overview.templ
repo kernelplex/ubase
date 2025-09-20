@@ -10,7 +10,7 @@ templ RoleOverview(fragment bool, id int64, name string, systemName string, orga
         <div class="admin-card">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: .75rem;">
                 <h1>Role: { name }</h1>
-                <a href={ fmt.Sprintf("/admin/roles/edit/%d", id) } class="role-toggle" title="Edit role">Edit</a>
+                <a href={ fmt.Sprintf("/admin/roles/%d/edit", id) } class="role-toggle" title="Edit role">Edit</a>
             </div>
             <div class="field-list">
                 <div class="field-label">ID</div>

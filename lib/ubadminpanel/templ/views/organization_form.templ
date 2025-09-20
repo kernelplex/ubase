@@ -32,8 +32,18 @@ templ OrganizationForm(fragment bool, isEdit bool, org *ubdata.Organization, err
                     <div class="form-field">
                         <label for="status">Status</label>
                         <select id="status" name="status" required>
-                            <option value="active" selected={ func() bool { if org != nil { return org.Status == "active" } ; return true }() }>Active</option>
-                            <option value="inactive" selected={ org != nil && org.Status == "inactive" }>Inactive</option>
+                            if org != nil {
+                                if org.Status == "inactive" {
+                                    <option value="active">Active</option>
+                                    <option value="inactive" selected>Inactive</option>
+                                } else {
+                                    <option value="active" selected>Active</option>
+                                    <option value="inactive">Inactive</option>
+                                }
+                            } else {
+                                <option value="active" selected>Active</option>
+                                <option value="inactive">Inactive</option>
+                            }
                         </select>
                         @components.FieldErrors(fieldErrors["status"])
                     </div>

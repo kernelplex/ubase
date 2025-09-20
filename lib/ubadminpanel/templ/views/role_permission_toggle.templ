@@ -1,0 +1,20 @@
+package views
+
+import (
+    "fmt"
+)
+
+templ RolePermissionToggle(roleId int64, perm string, inRole bool) {
+    if inRole {
+        <form hx-post={ fmt.Sprintf("/admin/roles/%d/permissions/remove", roleId) } hx-include='[name="q"]' hx-target="closest tr" hx-swap="outerHTML" style="display:inline">
+            <input type="hidden" name="permission" value={ perm }/>
+            <button type="submit" class="role-toggle minus" title="Remove permission">-</button>
+        </form>
+    } else {
+        <form hx-post={ fmt.Sprintf("/admin/roles/%d/permissions/add", roleId) } hx-include='[name="q"]' hx-target="closest tr" hx-swap="outerHTML" style="display:inline">
+            <input type="hidden" name="permission" value={ perm }/>
+            <button type="submit" class="role-toggle plus" title="Add permission">+</button>
+        </form>
+    }
+}
+

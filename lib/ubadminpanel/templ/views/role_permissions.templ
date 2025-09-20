@@ -1,0 +1,26 @@
+package views
+
+templ RolePermissionsTable(permissions []string, memberSet map[string]bool, roleId int64) {
+    <div id="role-permissions">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Permission</th>
+                    <th style="width: 80px; text-align: left;">In Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                if len(permissions) == 0 {
+                    <tr>
+                        <td colspan="2" style="color: var(--text-muted); padding: 0.75rem 0;">No permissions found.</td>
+                    </tr>
+                } else {
+                    for _, p := range permissions {
+                        @RolePermissionRow(roleId, p, memberSet[p])
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+}
+

@@ -46,7 +46,11 @@ templ UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldE
                     </div>
                     <div class="form-field">
                         <label for="verified">Verified</label>
-                        <input id="verified" type="checkbox" name="verified" checked={ user != nil && user.Verified }/>
+                        if user != nil && user.Verified {
+                            <input id="verified" type="checkbox" name="verified" checked/>
+                        } else {
+                            <input id="verified" type="checkbox" name="verified"/>
+                        }
                         @components.FieldErrors(fieldErrors["verified"])
                     </div>
                     <div class="form-actions">

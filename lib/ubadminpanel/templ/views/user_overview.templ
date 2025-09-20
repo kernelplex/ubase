@@ -70,7 +70,11 @@ templ UserOverview(fragment bool,
                     <label for="org-select">Organization</label>
                     <select id="org-select" name="org" hx-get={ fmt.Sprintf("/admin/users/%d/roles", id) } hx-trigger="change" hx-target="#user-roles" hx-swap="outerHTML">
                         for _, o := range orgs {
-                            <option value={ o.ID } selected={ o.ID == selectedOrg }>{ o.Name }</option>
+                            if o.ID == selectedOrg {
+                                <option value={ o.ID } selected>{ o.Name }</option>
+                            } else {
+                                <option value={ o.ID }>{ o.Name }</option>
+                            }
                         }
                     </select>
                 </div>

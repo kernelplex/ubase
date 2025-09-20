@@ -34,34 +34,31 @@ templ UserOverview(fragment bool,
                     <h1>User: { displayName }</h1>
                     <a href={ fmt.Sprintf("/admin/users/edit/%d", id) } class="role-toggle" title="Edit user">Edit</a>
                 </div>
-                <div style="margin-top: 0.75rem;">
-                    <p><strong>ID:</strong> { id }</p>
-                    <p><strong>Email:</strong> { email }</p>
-                    <p><strong>Name:</strong> { firstName } { lastName }</p>
-                    <p><strong>Verified:</strong>
-                        if verified {
-                            { "Yes" }
-                        } else {
-                            { "No" }
-                        }
-                    </p>
-                    <p><strong>Disabled:</strong>
-                        if disabled {
-                            { "Yes" }
-                        } else {
-                            { "No" }
-                        }
-                    </p>
+                <div class="field-list">
+                    <div class="field-label">ID</div>
+                    <div class="field-value">{ id }</div>
+                    <div class="field-label">Email</div>
+                    <div class="field-value">{ email }</div>
+                    <div class="field-label">Name</div>
+                    <div class="field-value">{ firstName } { lastName }</div>
+                    <div class="field-label">Verified</div>
+                    <div class="field-value">{ func() string { if verified { return "Yes" }; return "No" }() }</div>
+                    <div class="field-label">Disabled</div>
+                    <div class="field-value">{ func() string { if disabled { return "Yes" }; return "No" }() }</div>
                 </div>
             </div>
 
             <div class="admin-card" style="flex:1;">
                 <h2>Stats</h2>
-                <div style="margin-top: 0.75rem;">
-                    <p><strong>Last Login:</strong> { formatTimestamp(lastLogin) }</p>
-                    <p><strong>Total Logins:</strong> { loginCount }</p>
-                    <p><strong>Last Failed Login:</strong> { formatTimestamp(lastFailedLogin) }</p>
-                    <p><strong>Failed Login Attempts:</strong> { failedLoginAttempts }</p>
+                <div class="field-list">
+                    <div class="field-label">Last Login</div>
+                    <div class="field-value">{ formatTimestamp(lastLogin) }</div>
+                    <div class="field-label">Total Logins</div>
+                    <div class="field-value">{ loginCount }</div>
+                    <div class="field-label">Last Failed Login</div>
+                    <div class="field-value">{ formatTimestamp(lastFailedLogin) }</div>
+                    <div class="field-label">Failed Login Attempts</div>
+                    <div class="field-value">{ failedLoginAttempts }</div>
                 </div>
             </div>
         </div>

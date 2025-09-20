@@ -62,8 +62,9 @@ type DataAdapter interface {
 	ListUserOrganizationRoles(ctx context.Context, userID int64) ([]ListUserOrganizationRolesRow, error)
 
 	OrganizationsCount(ctx context.Context) (int64, error)
-	UsersCount(ctx context.Context) (int64, error)
-	UpdateUserLoginStats(ctx context.Context, userID int64, lastLogin int64, loginCount int64) error
+    UsersCount(ctx context.Context) (int64, error)
+    UpdateUserLoginStats(ctx context.Context, userID int64, lastLogin int64, loginCount int64) error
+    ListRecentUserIds(ctx context.Context, limit int32) ([]int64, error)
 
 	ListOrganizationsRolesWithUserCounts(ctx context.Context, organizationId int64) ([]ListRolesWithUserCountsRow, error)
 	GetUsersInRole(ctx context.Context, roleID int64) ([]User, error)

@@ -66,6 +66,9 @@ func (f *fakeDB) UserGetApiKey(ctx context.Context, apiKeyId string) (ubdata.Use
     return ubdata.UserApiKeyWithHash{}, nil
 }
 
+// New method added to DataAdapter; tests don't use it, return empty.
+func (f *fakeDB) ListRecentUserIds(ctx context.Context, limit int32) ([]int64, error) { return []int64{}, nil }
+
 type fakeHasher struct{}
 func (f *fakeHasher) GenerateHashBytes(s string) []byte             { return nil }
 func (f *fakeHasher) GenerateHashBase64(s string) (string, error)   { return "", nil }

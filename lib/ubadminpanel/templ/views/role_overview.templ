@@ -12,10 +12,13 @@ templ RoleOverview(fragment bool, id int64, name string, systemName string, orga
                 <h1>Role: { name }</h1>
                 <a href={ fmt.Sprintf("/admin/roles/edit/%d", id) } class="role-toggle" title="Edit role">Edit</a>
             </div>
-            <div style="margin-top: 0.75rem;">
-                <p><strong>ID:</strong> { id }</p>
-                <p><strong>System Name:</strong> { systemName }</p>
-                <p><strong>Organization ID:</strong> { organizationId }</p>
+            <div class="field-list">
+                <div class="field-label">ID</div>
+                <div class="field-value">{ id }</div>
+                <div class="field-label">System Name</div>
+                <div class="field-value">{ systemName }</div>
+                <div class="field-label">Organization ID</div>
+                <div class="field-value">{ organizationId }</div>
             </div>
         </div>
 

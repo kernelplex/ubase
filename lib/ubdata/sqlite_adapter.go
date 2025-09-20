@@ -307,11 +307,11 @@ func (a *SQLiteAdapter) OrganizationsCount(ctx context.Context) (int64, error) {
 }
 
 func (a *SQLiteAdapter) UsersCount(ctx context.Context) (int64, error) {
-	count, err := a.queries.UsersCount(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get user count: %w", err)
-	}
-	return count, nil
+    count, err := a.queries.UsersCount(ctx)
+    if err != nil {
+        return 0, fmt.Errorf("failed to get user count: %w", err)
+    }
+    return count, nil
 }
 
 func (a *SQLiteAdapter) UpdateUserLoginStats(ctx context.Context, userID int64, lastLogin int64, loginCount int64) error {
@@ -347,6 +347,15 @@ func (a *SQLiteAdapter) ListOrganizationsRolesWithUserCounts(ctx context.Context
 		}
 	}
 	return result, nil
+}
+
+func (a *SQLiteAdapter) ListRecentUserIds(ctx context.Context, limit int32) ([]int64, error) {
+    ids, err := a.queries.ListRecentUserIds(ctx, int64(limit))
+    if err != nil {
+        return nil, fmt.Errorf("failed to list recent user ids: %w", err)
+    }
+    // ids is []int64 from sqlc
+    return ids, nil
 }
 
 func (a *SQLiteAdapter) SearchUsers(ctx context.Context, searchTerm string, limit, offset int) ([]User, error) {

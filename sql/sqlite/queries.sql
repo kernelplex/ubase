@@ -152,6 +152,11 @@ UPDATE users
 SET last_login = sqlc.arg(last_login), login_count = sqlc.arg(login_count) 
 WHERE id = sqlc.arg(id);
 
+-- name: ListRecentUserIds :many
+SELECT id FROM users
+ORDER BY last_login DESC
+LIMIT sqlc.arg(limit);
+
 -- name: ListRolesWithUserCounts :many
 SELECT r.id, r.name, r.system_name, count(ur.user_id) AS user_count
 FROM roles r
@@ -183,5 +188,4 @@ WHERE id = sqlc.arg(api_key_hash);
 SELECT id, user_id, organization_id, name, created_at, expires_at
 FROM user_api_keys
 WHERE user_id = sqlc.arg(user_id);
-
 

@@ -5,7 +5,6 @@ package integration_tests
 import (
 	"database/sql"
 	"fmt"
-	"log/slog"
 	"os"
 	"strings"
 	"testing"

@@ -51,19 +51,25 @@ func UbaseConfigFromEnv() UbaseConfig {
 	return config
 }
 
+type BackgroundService interface {
+	Start() error
+	Stop() error
+}
+
 type UbaseApp struct {
-	config            UbaseConfig
-	db                *sql.DB
-	dburl             *dburl.URL
-	dbadapter         ubdata.DataAdapter
-	store             *evercore.EventStore // Event store
-	hashService       ubsecurity.HashGenerator
-	encryptionService ubsecurity.EncryptionService
-	totpService       ub2fa.TotpService
-	managementService ubmanage.ManagementService
-	mailer            ubmailer.Mailer
-	backgroundMailer  *ubmailer.BackgroundMailer
-	prefectService    ubmanage.PrefectService
+	config             UbaseConfig
+	db                 *sql.DB
+	dburl              *dburl.URL
+	dbadapter          ubdata.DataAdapter
+	store              *evercore.EventStore // Event store
+	hashService        ubsecurity.HashGenerator
+	encryptionService  ubsecurity.EncryptionService
+	totpService        ub2fa.TotpService
+	managementService  ubmanage.ManagementService
+	mailer             ubmailer.Mailer
+	backgroundMailer   *ubmailer.BackgroundMailer
+	prefectService     ubmanage.PrefectService
+	backgroundServices []BackgroundService
 }
 
 func NewUbaseAppEnvConfig() UbaseApp {
@@ -178,6 +184,7 @@ func NewUbaseAppEnvConfig() UbaseApp {
 	app.managementService = ubmanage.NewManagement(app.store, dbadapter, app.hashService, app.encryptionService, app.totpService)
 
 	app.prefectService = ubmanage.NewPrefectService(app.managementService, eventStore, 100, 100)
+	app.RegisterService(app.prefectService)
 
 	app.dbadapter = dbadapter
 
@@ -253,4 +260,29 @@ func (app *UbaseApp) MigrateUp() error {
 
 func (app *UbaseApp) GetPrefectService() ubmanage.PrefectService {
 	return app.prefectService
+}
+
+func (app *UbaseApp) RegisterService(service BackgroundService) {
+	app.backgroundServices = append(app.backgroundServices, service)
+}
+
+func (app *UbaseApp) StartServices() error {
+	for _, service := range app.backgroundServices {
+		slog.Info("Starting service...", "service", fmt.Sprintf("%T", service))
+		err := service.Start()
+		if err != nil {
+			return fmt.Errorf("failed to start service: %w", err)
+		}
+	}
+	return nil
+}
+
+func (app *UbaseApp) StopServices() error {
+	for _, service := range app.backgroundServices {
+		err := service.Stop()
+		if err != nil {
+			slog.Error("Error stopping service", "error", err)
+		}
+	}
+	return nil
 }

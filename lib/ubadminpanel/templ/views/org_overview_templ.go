@@ -73,40 +73,40 @@ func OrganizationOverview(fragment bool, id int64, name string, systemName strin
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"role-toggle\" title=\"Edit organization\">Edit</a></div><div style=\"margin-top: 0.75rem; margin-bottom: 1rem;\"><p><strong>ID:</strong> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"role-toggle\" title=\"Edit organization\">Edit</a></div><div class=\"field-list\" style=\"margin-bottom: 1rem;\"><div class=\"field-label\">ID</div><div class=\"field-value\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 17, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 18, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</p><p><strong>System Name:</strong> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div class=\"field-label\">System Name</div><div class=\"field-value\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(systemName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 18, Col: 61}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 20, Col: 53}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</p></div></div><div class=\"admin-card\"><div style=\"display: flex; align-items: center; justify-content: space-between; gap: .75rem;\"><h2>Roles</h2><a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></div></div><div class=\"admin-card\"><div style=\"display: flex; align-items: center; justify-content: space-between; gap: .75rem;\"><h2>Roles</h2><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 templ.SafeURL
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/admin/roles/new?org=%d", id))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 25, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 27, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -130,7 +130,7 @@ func OrganizationOverview(fragment bool, id int64, name string, systemName strin
 					var templ_7745c5c3_Var8 templ.SafeURL
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/admin/roles/%d", r.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 45, Col: 86}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 47, Col: 86}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -143,7 +143,7 @@ func OrganizationOverview(fragment bool, id int64, name string, systemName strin
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(r.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 45, Col: 95}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 47, Col: 95}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -156,7 +156,7 @@ func OrganizationOverview(fragment bool, id int64, name string, systemName strin
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(r.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 46, Col: 48}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 48, Col: 48}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -169,7 +169,7 @@ func OrganizationOverview(fragment bool, id int64, name string, systemName strin
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(r.SystemName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 47, Col: 54}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 49, Col: 54}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -182,7 +182,7 @@ func OrganizationOverview(fragment bool, id int64, name string, systemName strin
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(r.UserCount)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 48, Col: 53}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 50, Col: 53}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {

@@ -5,6 +5,7 @@ import (
 	"log/slog"
 )
 
+// TODO:: Background mailer should implement BackgroundService interface.
 type BackgroundMailer struct {
 	mailer Mailer
 	queue  chan EmailJob

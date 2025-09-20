@@ -29,6 +29,7 @@ type PrefectService interface {
 	Start() error
 	Stop() error
 }
+
 type ApiKeyData struct {
 	UserId         int64  `json:"userId"`
 	Email          string `json:"email,omitempty"`

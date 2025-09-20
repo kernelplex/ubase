@@ -32,7 +32,7 @@ templ UserOverview(fragment bool,
             <div class="admin-card" style="flex:1;">
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: .75rem;">
                     <h1>User: { displayName }</h1>
-                    <a href={ fmt.Sprintf("/admin/users/edit/%d", id) } class="role-toggle" title="Edit user">Edit</a>
+                    <a href={ fmt.Sprintf("/admin/users/%d/edit", id) } class="role-toggle" title="Edit user">Edit</a>
                 </div>
                 <div class="field-list">
                     <div class="field-label">ID</div>

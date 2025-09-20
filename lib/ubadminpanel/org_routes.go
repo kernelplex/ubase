@@ -6,12 +6,27 @@ import (
     "strconv"
     "strings"
 
+    "github.com/kernelplex/ubase/lib/forms"
     "github.com/kernelplex/ubase/lib/ubadminpanel/templ/views"
     "github.com/kernelplex/ubase/lib/ubdata"
     "github.com/kernelplex/ubase/lib/ubmanage"
     "github.com/kernelplex/ubase/lib/ubstatus"
     "github.com/kernelplex/ubase/lib/ubwww"
 )
+
+// orgCreateForm is used to parse organization creation form fields.
+type orgCreateForm struct {
+    Name       string `json:"name"`
+    SystemName string `json:"system_name"`
+    Status     string `json:"status"`
+}
+
+// orgEditForm is used to parse organization edit form fields.
+type orgEditForm struct {
+    Name       string `json:"name"`
+    SystemName string `json:"system_name"`
+    Status     string `json:"status"`
+}
 
 // OrganizationsRoute shows a searchable list of organizations.
 func OrganizationsRoute(mgmt ubmanage.ManagementService) ubwww.Route {
@@ -42,22 +57,13 @@ func OrganizationsRoute(mgmt ubmanage.ManagementService) ubwww.Route {
         _ = views.OrganizationsPage(false, orgs, q).Render(r.Context(), w)
     }
 
-    return ubwww.Route{Path: "/admin/organizations", RequiresPermission: PermSystemAdmin, Func: handler}
+    return ubwww.Route{Path: "GET /admin/organizations", RequiresPermission: PermSystemAdmin, Func: handler}
 }
 
 // OrganizationOverviewRoute shows a single organization's overview by ID.
 func OrganizationOverviewRoute(mgmt ubmanage.ManagementService) ubwww.Route {
     handler := func(w http.ResponseWriter, r *http.Request) {
-        prefix := "/admin/organizations/"
-        if !strings.HasPrefix(r.URL.Path, prefix) {
-            http.NotFound(w, r)
-            return
-        }
-        idStr := strings.TrimPrefix(r.URL.Path, prefix)
-        if idStr == "" {
-            http.NotFound(w, r)
-            return
-        }
+        idStr := r.PathValue("id")
         id, err := strconv.ParseInt(idStr, 10, 64)
         if err != nil || id <= 0 {
             http.NotFound(w, r)
@@ -82,49 +88,49 @@ func OrganizationOverviewRoute(mgmt ubmanage.ManagementService) ubwww.Route {
         _ = views.OrganizationOverview(false, id, name, systemName, roles).Render(r.Context(), w)
     }
 
-    return ubwww.Route{Path: "/admin/organizations/", RequiresPermission: PermSystemAdmin, Func: handler}
+    return ubwww.Route{Path: "GET /admin/organizations/{id}", RequiresPermission: PermSystemAdmin, Func: handler}
 }
 
 // OrganizationCreateRoute renders and processes the add organization form.
 func OrganizationCreateRoute(mgmt ubmanage.ManagementService) ubwww.Route {
     handler := func(w http.ResponseWriter, r *http.Request) {
-        if r.Method == http.MethodGet {
-            _ = views.OrganizationForm(isHTMX(r), false, nil, "", nil).Render(r.Context(), w)
-            return
-        }
-        if r.Method == http.MethodPost {
-            if err := r.ParseForm(); err != nil {
-                _ = views.OrganizationForm(isHTMX(r), false, nil, "Invalid form submission", nil).Render(r.Context(), w)
-                return
-            }
-            name := strings.TrimSpace(r.FormValue("name"))
-            sys := strings.TrimSpace(r.FormValue("system_name"))
-            status := strings.TrimSpace(r.FormValue("status"))
-            resp, err := mgmt.OrganizationAdd(r.Context(), ubmanage.OrganizationCreateCommand{Name: name, SystemName: sys, Status: status}, "web:ubadminpanel")
-            if err != nil || resp.Status != ubstatus.Success {
-                if err != nil { slog.Error("org add error", "error", err) }
-                errMap := resp.GetValidationMap()
-                msg := resp.Message
-                draft := ubdata.Organization{Name: name, SystemName: sys, Status: status}
-                _ = views.OrganizationForm(isHTMX(r), false, &draft, msg, errMap).Render(r.Context(), w)
-                return
-            }
-            dest := "/admin/organizations/" + strconv.FormatInt(resp.Data.Id, 10)
-            if isHTMX(r) { w.Header().Set("HX-Redirect", dest); w.WriteHeader(http.StatusOK); return }
-            http.Redirect(w, r, dest, http.StatusSeeOther)
-            return
-        }
-        http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+        if r.Method != http.MethodGet { http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed); return }
+        _ = views.OrganizationForm(isHTMX(r), false, nil, "", nil).Render(r.Context(), w)
     }
-    return ubwww.Route{Path: "/admin/organizations/new", RequiresPermission: PermSystemAdmin, Func: handler}
+    return ubwww.Route{Path: "GET /admin/organizations/new", RequiresPermission: PermSystemAdmin, Func: handler}
+}
+
+func OrganizationCreatePostRoute(mgmt ubmanage.ManagementService) ubwww.Route {
+    handler := func(w http.ResponseWriter, r *http.Request) {
+        if r.Method != http.MethodPost { http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed); return }
+        var f orgCreateForm
+        if err := forms.ParseFormToStruct(r, &f); err != nil {
+            _ = views.OrganizationForm(isHTMX(r), false, nil, "Invalid form submission", nil).Render(r.Context(), w)
+            return
+        }
+        name := strings.TrimSpace(f.Name)
+        sys := strings.TrimSpace(f.SystemName)
+        status := strings.TrimSpace(f.Status)
+        resp, err := mgmt.OrganizationAdd(r.Context(), ubmanage.OrganizationCreateCommand{Name: name, SystemName: sys, Status: status}, "web:ubadminpanel")
+        if err != nil || resp.Status != ubstatus.Success {
+            if err != nil { slog.Error("org add error", "error", err) }
+            errMap := resp.GetValidationMap()
+            msg := resp.Message
+            draft := ubdata.Organization{Name: name, SystemName: sys, Status: status}
+            _ = views.OrganizationForm(isHTMX(r), false, &draft, msg, errMap).Render(r.Context(), w)
+            return
+        }
+        dest := "/admin/organizations/" + strconv.FormatInt(resp.Data.Id, 10)
+        if isHTMX(r) { w.Header().Set("HX-Redirect", dest); w.WriteHeader(http.StatusOK); return }
+        http.Redirect(w, r, dest, http.StatusSeeOther)
+    }
+    return ubwww.Route{Path: "POST /admin/organizations/new", RequiresPermission: PermSystemAdmin, Func: handler}
 }
 
 // OrganizationEditRoute renders and processes the edit organization form.
 func OrganizationEditRoute(mgmt ubmanage.ManagementService) ubwww.Route {
     handler := func(w http.ResponseWriter, r *http.Request) {
-        prefix := "/admin/organizations/edit/"
-        if !strings.HasPrefix(r.URL.Path, prefix) { http.NotFound(w, r); return }
-        idStr := strings.TrimPrefix(r.URL.Path, prefix)
+        idStr := r.PathValue("id")
         id, _ := strconv.ParseInt(idStr, 10, 64)
         if id <= 0 { http.NotFound(w, r); return }
 
@@ -137,13 +143,14 @@ func OrganizationEditRoute(mgmt ubmanage.ManagementService) ubwww.Route {
         }
 
         if r.Method == http.MethodPost {
-            if err := r.ParseForm(); err != nil {
+            var f orgEditForm
+            if err := forms.ParseFormToStruct(r, &f); err != nil {
                 _ = views.OrganizationForm(isHTMX(r), true, nil, "Invalid form submission", nil).Render(r.Context(), w)
                 return
             }
-            name := strings.TrimSpace(r.FormValue("name"))
-            sys := strings.TrimSpace(r.FormValue("system_name"))
-            status := strings.TrimSpace(r.FormValue("status"))
+            name := strings.TrimSpace(f.Name)
+            sys := strings.TrimSpace(f.SystemName)
+            status := strings.TrimSpace(f.Status)
             cmd := ubmanage.OrganizationUpdateCommand{Id: id, Name: &name, SystemName: &sys, Status: &status}
             uresp, err := mgmt.OrganizationUpdate(r.Context(), cmd, "web:ubadminpanel")
             if err != nil || uresp.Status != ubstatus.Success {
@@ -159,6 +166,5 @@ func OrganizationEditRoute(mgmt ubmanage.ManagementService) ubwww.Route {
         }
         http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
     }
-    return ubwww.Route{Path: "/admin/organizations/edit/", RequiresPermission: PermSystemAdmin, Func: handler}
+    return ubwww.Route{Path: "/admin/organizations/{id}/edit", RequiresPermission: PermSystemAdmin, Func: handler}
 }
-

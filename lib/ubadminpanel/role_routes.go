@@ -6,12 +6,26 @@ import (
     "strconv"
     "strings"
 
+    "github.com/kernelplex/ubase/lib/forms"
     "github.com/kernelplex/ubase/lib/ubadminpanel/templ/views"
     "github.com/kernelplex/ubase/lib/ubdata"
     "github.com/kernelplex/ubase/lib/ubmanage"
     "github.com/kernelplex/ubase/lib/ubstatus"
     "github.com/kernelplex/ubase/lib/ubwww"
 )
+
+// roleEditForm is used to parse the role edit form fields.
+type roleEditForm struct {
+    Name       string `json:"name"`
+    SystemName string `json:"system_name"`
+}
+
+// roleCreateForm is used to parse the role creation form fields.
+type roleCreateForm struct {
+    Name           string `json:"name"`
+    SystemName     string `json:"system_name"`
+    OrganizationId int64  `json:"organization_id"`
+}
 
 func RoleOverviewRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService, permissions []string) ubwww.Route {
     handler := func(w http.ResponseWriter, r *http.Request) {
@@ -355,23 +369,18 @@ func RoleCreatePostRoute(mgmt ubmanage.ManagementService) ubwww.Route {
         if orgsResp.Status == ubstatus.Success {
             orgs = orgsResp.Data
         }
-        selectedOrg := int64(0)
-        if v := strings.TrimSpace(r.URL.Query().Get("org")); v != "" {
-            if oid, err := strconv.ParseInt(v, 10, 64); err == nil {
-                selectedOrg = oid
+        var f roleCreateForm
+        if err := forms.ParseFormToStruct(r, &f); err != nil {
+            selectedOrg := int64(0)
+            if len(orgs) > 0 {
+                selectedOrg = orgs[0].ID
             }
-        }
-        if len(orgs) > 0 && selectedOrg == 0 {
-            selectedOrg = orgs[0].ID
-        }
-        if err := r.ParseForm(); err != nil {
             _ = views.RoleForm(isHTMX(r), false, nil, orgs, selectedOrg, "Invalid form submission", nil).Render(r.Context(), w)
             return
         }
-        name := strings.TrimSpace(r.FormValue("name"))
-        sys := strings.TrimSpace(r.FormValue("system_name"))
-        orgStr := r.FormValue("organization_id")
-        oid, _ := strconv.ParseInt(orgStr, 10, 64)
+        name := strings.TrimSpace(f.Name)
+        sys := strings.TrimSpace(f.SystemName)
+        oid := f.OrganizationId
         cmd := ubmanage.RoleCreateCommand{Name: name, SystemName: sys, OrganizationId: oid}
         resp, err := mgmt.RoleAdd(r.Context(), cmd, "web:ubadminpanel")
         if err != nil || resp.Status != ubstatus.Success {
@@ -412,12 +421,13 @@ func RoleEditPostRoute(mgmt ubmanage.ManagementService) ubwww.Route {
         if orgsResp.Status == ubstatus.Success {
             orgs = orgsResp.Data
         }
-        if err := r.ParseForm(); err != nil {
+        var f roleEditForm
+        if err := forms.ParseFormToStruct(r, &f); err != nil {
             _ = views.RoleForm(isHTMX(r), true, nil, orgs, 0, "Invalid form submission", nil).Render(r.Context(), w)
             return
         }
-        name := strings.TrimSpace(r.FormValue("name"))
-        sys := strings.TrimSpace(r.FormValue("system_name"))
+        name := f.Name
+        sys := f.SystemName
         cmd := ubmanage.RoleUpdateCommand{Id: roleId, Name: &name, SystemName: &sys}
         resp, err := mgmt.RoleUpdate(r.Context(), cmd, "web:ubadminpanel")
         if err != nil || resp.Status != ubstatus.Success {

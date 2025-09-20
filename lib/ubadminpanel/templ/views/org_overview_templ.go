@@ -65,7 +65,7 @@ func OrganizationOverview(fragment bool, id int64, name string, systemName strin
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 templ.SafeURL
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/admin/organizations/edit/%d", id))
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/admin/organizations/%d/edit", id))
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 14, Col: 73}
 			}

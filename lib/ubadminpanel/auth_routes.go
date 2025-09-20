@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kernelplex/ubase/lib/contracts"
 	"github.com/kernelplex/ubase/lib/ensure"
 	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/views"
 	"github.com/kernelplex/ubase/lib/ubmanage"
@@ -18,11 +19,11 @@ import (
 func LoginRoute(
 	primaryOrganization int64,
 	mgmt ubmanage.ManagementService,
-	cookieManager ubwww.AuthTokenCookieManager[*ubwww.AuthToken],
-) ubwww.Route {
+	cookieManager ubwww.AuthTokenCookieManager,
+) contracts.Route {
 	ensure.That(primaryOrganization > 0, "primary organization must be set and greater than zero")
 
-	return ubwww.Route{
+	return contracts.Route{
 		Path: "/admin/login",
 		Func: func(w http.ResponseWriter, r *http.Request) {
 			switch r.Method {
@@ -50,7 +51,7 @@ func LoginRoute(
 				case ubstatus.Success:
 
 					now := time.Now().Unix()
-					token := &ubwww.AuthToken{
+					token := ubwww.AuthToken{
 						UserId:               resp.Data.UserId,
 						OrganizationId:       primaryOrganization,
 						Email:                resp.Data.Email,
@@ -97,9 +98,9 @@ func LoginRoute(
 // VerifyTwoFactorRoute handles POST verification of 2FA code.
 func VerifyTwoFactorRoute(
 	mgmt ubmanage.ManagementService,
-	cookieManager ubwww.AuthTokenCookieManager[*ubwww.AuthToken],
-) ubwww.Route {
-	return ubwww.Route{
+	cookieManager ubwww.AuthTokenCookieManager,
+) contracts.Route {
+	return contracts.Route{
 		Path: "/admin/verify-2fa",
 		Func: func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != http.MethodPost {
@@ -125,7 +126,7 @@ func VerifyTwoFactorRoute(
 			}
 
 			now := time.Now().Unix()
-			token := &ubwww.AuthToken{
+			token := ubwww.AuthToken{
 				UserId:               userId,
 				OrganizationId:       0,
 				Email:                "",
@@ -134,6 +135,7 @@ func VerifyTwoFactorRoute(
 				SoftExpiry:           now + 3600,
 				HardExpiry:           now + 86400,
 			}
+
 			if err := cookieManager.WriteAuthTokenCookie(w, token); err != nil {
 				slog.Error("write cookie error", "error", err)
 				_ = views.TwoFactor(isHTMX(r), userId, "Failed to create session. Try again.").Render(r.Context(), w)
@@ -150,8 +152,8 @@ func VerifyTwoFactorRoute(
 }
 
 // LogoutRoute clears the auth cookie.
-func LogoutRoute(cookieManager ubwww.AuthTokenCookieManager[*ubwww.AuthToken]) ubwww.Route {
-	return ubwww.Route{
+func LogoutRoute(cookieManager ubwww.AuthTokenCookieManager) contracts.Route {
+	return contracts.Route{
 		Path: "/admin/logout",
 		Func: func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != http.MethodPost {

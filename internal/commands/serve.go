@@ -3,6 +3,7 @@ package commands
 import (
 	"flag"
 	"log/slog"
+	"os"
 
 	"github.com/kernelplex/ubase/lib/ubadminpanel"
 	"github.com/kernelplex/ubase/lib/ubapp"
@@ -16,11 +17,18 @@ func ServeCommand() ubcli.Command {
 	flagset.UintVar(&port, "port", 8089, "Port to run the server on")
 
 	serve := func(args []string) error {
+
+		handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			Level: slog.LevelDebug, // Example: Set to Debug to see all levels
+		})
+		logger := slog.New(handler)
+		slog.SetDefault(logger)
+
 		flagset.Parse(args)
 		app := ubapp.NewUbaseAppEnvConfig()
 		defer app.Shutdown()
 
-		cookieManager := ubwww.NewCookieMonster[*ubwww.AuthToken](
+		cookieManager := ubwww.NewCookieMonster(
 			app.GetEncryptionService(),
 			"ubase_auth_token",
 			false,

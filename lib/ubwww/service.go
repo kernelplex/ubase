@@ -4,28 +4,30 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+
+	"github.com/kernelplex/ubase/lib/contracts"
 )
 
 type WebService interface {
-	AddRoute(route Route) WebService
+	AddRoute(route contracts.Route) WebService
 	AddRouteHandler(path string, handler http.Handler) WebService
 	Start() error
 	Stop() error
 }
 
 type WebServiceImpl struct {
-	routes         []Route
+	routes         []contracts.Route
 	port           uint
 	mux            *http.ServeMux
 	server         *http.Server
-	cookieManager  AuthTokenCookieManager[*AuthToken]
+	cookieManager  AuthTokenCookieManager
 	permMiddleware *PermissionMiddleware
 }
 
-func NewWebService(port uint, cookieManager AuthTokenCookieManager[*AuthToken], permMiddleware *PermissionMiddleware) WebService {
+func NewWebService(port uint, cookieManager AuthTokenCookieManager, permMiddleware *PermissionMiddleware) WebService {
 	mux := http.NewServeMux()
 	return &WebServiceImpl{
-		routes:         make([]Route, 0),
+		routes:         make([]contracts.Route, 0),
 		port:           port,
 		mux:            mux,
 		cookieManager:  cookieManager,
@@ -33,7 +35,7 @@ func NewWebService(port uint, cookieManager AuthTokenCookieManager[*AuthToken], 
 	}
 }
 
-func (ws *WebServiceImpl) AddRoute(route Route) WebService {
+func (ws *WebServiceImpl) AddRoute(route contracts.Route) WebService {
 	ws.routes = append(ws.routes, route)
 	return ws
 }

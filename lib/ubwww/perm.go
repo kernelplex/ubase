@@ -9,12 +9,12 @@ import (
 
 type PermissionMiddleware struct {
 	prefectService ubmanage.PrefectService
-	cookieManager  AuthTokenCookieManager[*AuthToken]
+	cookieManager  AuthTokenCookieManager
 }
 
 func NewPermissionMiddleware(
 	prefectService ubmanage.PrefectService,
-	cookieManager AuthTokenCookieManager[*AuthToken],
+	cookieManager AuthTokenCookieManager,
 
 ) *PermissionMiddleware {
 	return &PermissionMiddleware{

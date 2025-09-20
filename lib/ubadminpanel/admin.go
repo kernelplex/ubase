@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kernelplex/ubase/lib/contracts"
 	"github.com/kernelplex/ubase/lib/ensure"
 	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/views"
 	"github.com/kernelplex/ubase/lib/ubdata"
@@ -14,14 +15,14 @@ import (
 )
 
 //go:embed static
-var static embed.FS
+var Static embed.FS
 
 func isHTMX(r *http.Request) bool {
 	return strings.EqualFold(r.Header.Get("HX-Request"), "true")
 }
 
 // hello route is a simple placeholder home page
-func AdminRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) ubwww.Route {
+func AdminRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) contracts.Route {
 	ensure.That(adapter != nil, "data adapter is required")
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +65,7 @@ func AdminRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) ubw
 		_ = component.Render(r.Context(), w)
 	}
 
-	return ubwww.Route{
+	return contracts.Route{
 		Path:               "/admin/",
 		RequiresPermission: PermSystemAdmin,
 		Func:               handler,
@@ -78,23 +79,23 @@ func RegisterAdminPanelRoutes(
 	adapter ubdata.DataAdapter,
 	web ubwww.WebService,
 	mgmt ubmanage.ManagementService,
-	cookieManager ubwww.AuthTokenCookieManager[*ubwww.AuthToken],
+	cookieManager ubwww.AuthTokenCookieManager,
 	permissions []string,
 ) {
 	ensure.That(primaryOrganization > 0, "primary organization must be set and greater than zero")
 	ensure.That(adapter != nil, "data adapter is required")
 
 	// Serve static files
-	fs := http.FileServer(http.FS(static))
+	fs := http.FileServer(http.FS(Static))
 	web.AddRouteHandler("/admin/static/", http.StripPrefix("/admin", fs))
 
 	// Home placeholder (can be permission-protected later)
 	web.AddRoute(AdminRoute(adapter, mgmt))
-    web.AddRoute(OrganizationsRoute(mgmt))
-    web.AddRoute(OrganizationOverviewRoute(mgmt))
-    web.AddRoute(OrganizationCreateRoute(mgmt))
-    web.AddRoute(OrganizationCreatePostRoute(mgmt))
-    web.AddRoute(OrganizationEditRoute(mgmt))
+	web.AddRoute(OrganizationsRoute(mgmt))
+	web.AddRoute(OrganizationOverviewRoute(mgmt))
+	web.AddRoute(OrganizationCreateRoute(mgmt))
+	web.AddRoute(OrganizationCreatePostRoute(mgmt))
+	web.AddRoute(OrganizationEditRoute(mgmt))
 	web.AddRoute(RoleOverviewRoute(adapter, mgmt, permissions))
 	web.AddRoute(RoleUsersListRoute(adapter))
 	web.AddRoute(RoleUsersAddRoute(adapter, mgmt))
@@ -106,14 +107,14 @@ func RegisterAdminPanelRoutes(
 	web.AddRoute(RoleCreatePostRoute(mgmt))
 	web.AddRoute(RoleEditRoute(mgmt))
 	web.AddRoute(RoleEditPostRoute(mgmt))
-    web.AddRoute(UsersListRoute(adapter))
-    web.AddRoute(UserOverviewRoute(mgmt))
-    web.AddRoute(UserRolesListRoute(mgmt))
-    web.AddRoute(UserRolesAddRoute(mgmt))
-    web.AddRoute(UserRolesRemoveRoute(mgmt))
-    web.AddRoute(UserCreateRoute(mgmt))
-    web.AddRoute(UserCreatePostRoute(mgmt))
-    web.AddRoute(UserEditRoute(mgmt))
+	web.AddRoute(UsersListRoute(adapter))
+	web.AddRoute(UserOverviewRoute(mgmt))
+	web.AddRoute(UserRolesListRoute(mgmt))
+	web.AddRoute(UserRolesAddRoute(mgmt))
+	web.AddRoute(UserRolesRemoveRoute(mgmt))
+	web.AddRoute(UserCreateRoute(mgmt))
+	web.AddRoute(UserCreatePostRoute(mgmt))
+	web.AddRoute(UserEditRoute(mgmt))
 	web.AddRoute(LoginRoute(primaryOrganization, mgmt, cookieManager))
 	web.AddRoute(VerifyTwoFactorRoute(mgmt, cookieManager))
 	web.AddRoute(LogoutRoute(cookieManager))

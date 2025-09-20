@@ -6,33 +6,95 @@ import (
 	"net/http"
 
 	"github.com/kernelplex/ubase/lib/contracts"
+	"github.com/kernelplex/ubase/lib/ensure"
+	"github.com/kernelplex/ubase/lib/ubadminpanel"
+	"github.com/kernelplex/ubase/lib/ubdata"
+	"github.com/kernelplex/ubase/lib/ubmanage"
 )
 
 type WebService interface {
 	AddRoute(route contracts.Route) WebService
 	AddRouteHandler(path string, handler http.Handler) WebService
+	AddAdminRoutes() WebService
 	Start() error
 	Stop() error
 }
 
 type WebServiceImpl struct {
-	routes         []contracts.Route
-	port           uint
-	mux            *http.ServeMux
-	server         *http.Server
-	cookieManager  contracts.AuthTokenCookieManager
-	permMiddleware *PermissionMiddleware
+	routes              []contracts.Route
+	primaryOrganization int64
+	adapter             ubdata.DataAdapter
+	port                uint
+	mux                 *http.ServeMux
+	server              *http.Server
+	cookieManager       contracts.AuthTokenCookieManager
+	managementService   ubmanage.ManagementService
+	permMiddleware      *PermissionMiddleware
+	permissions         []string
 }
 
-func NewWebService(port uint, cookieManager contracts.AuthTokenCookieManager, permMiddleware *PermissionMiddleware) WebService {
+func NewWebService(
+	port uint,
+	primaryOrganization int64,
+	dataAdapter ubdata.DataAdapter,
+	cookieManager contracts.AuthTokenCookieManager,
+	managementService ubmanage.ManagementService,
+	permMiddleware *PermissionMiddleware,
+	permissions []string) WebService {
 	mux := http.NewServeMux()
 	return &WebServiceImpl{
-		routes:         make([]contracts.Route, 0),
-		port:           port,
-		mux:            mux,
-		cookieManager:  cookieManager,
-		permMiddleware: permMiddleware,
+		routes:              make([]contracts.Route, 0, 20),
+		port:                port,
+		mux:                 mux,
+		adapter:             dataAdapter,
+		cookieManager:       cookieManager,
+		permMiddleware:      permMiddleware,
+		managementService:   managementService,
+		primaryOrganization: primaryOrganization,
+		permissions:         permissions,
 	}
+}
+
+func (ws *WebServiceImpl) AddAdminRoutes() WebService {
+	ensure.That(ws.primaryOrganization > 0, "primary organization must be set and greater than zero")
+	ensure.That(ws.adapter != nil, "data adapter is required")
+	ensure.That(ws.managementService != nil, "management service is required")
+
+	// Serve static files
+	fs := http.FileServer(http.FS(ubadminpanel.Static))
+	ws.AddRouteHandler("/admin/static/", http.StripPrefix("/admin", fs))
+
+	// Home placeholder (can be permission-protected later)
+	ws.AddRoute(ubadminpanel.AdminRoute(ws.adapter, ws.managementService))
+	ws.AddRoute(ubadminpanel.OrganizationsRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.OrganizationOverviewRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.OrganizationCreateRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.OrganizationCreatePostRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.OrganizationEditRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.RoleOverviewRoute(ws.adapter, ws.managementService, ws.permissions))
+	ws.AddRoute(ubadminpanel.RoleUsersListRoute(ws.adapter))
+	ws.AddRoute(ubadminpanel.RoleUsersAddRoute(ws.adapter, ws.managementService))
+	ws.AddRoute(ubadminpanel.RoleUsersRemoveRoute(ws.adapter, ws.managementService))
+	ws.AddRoute(ubadminpanel.RolePermissionsListRoute(ws.adapter, ws.permissions))
+	ws.AddRoute(ubadminpanel.RolePermissionsAddRoute(ws.adapter, ws.managementService))
+	ws.AddRoute(ubadminpanel.RolePermissionsRemoveRoute(ws.adapter, ws.managementService))
+	ws.AddRoute(ubadminpanel.RoleCreateRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.RoleCreatePostRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.RoleEditRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.RoleEditPostRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.UsersListRoute(ws.adapter))
+	ws.AddRoute(ubadminpanel.UserOverviewRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.UserRolesListRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.UserRolesAddRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.UserRolesRemoveRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.UserCreateRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.UserCreatePostRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.UserEditRoute(ws.managementService))
+	ws.AddRoute(ubadminpanel.LoginRoute(ws.primaryOrganization, ws.managementService, ws.cookieManager))
+	ws.AddRoute(ubadminpanel.VerifyTwoFactorRoute(ws.managementService, ws.cookieManager))
+	ws.AddRoute(ubadminpanel.LogoutRoute(ws.cookieManager))
+
+	return ws
 }
 
 func (ws *WebServiceImpl) AddRoute(route contracts.Route) WebService {

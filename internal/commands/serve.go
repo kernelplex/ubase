@@ -40,22 +40,23 @@ func ServeCommand() ubcli.Command {
 		prefectService := app.GetPrefectService()
 		permissionMiddleware := ubwww.NewPermissionMiddleware(
 			prefectService, cookieManager)
-		web := ubwww.NewWebService(
-			port,
-			cookieManager,
-			permissionMiddleware)
 
 		config := app.GetConfig()
 		dataAdapter := app.GetDBAdapter()
+		permissions := []string{ubadminpanel.PermSystemAdmin,
+			"edit_article", "view_article"}
 
-		ubadminpanel.RegisterAdminPanelRoutes(
+		slog.Info("Config", "config", config.PrimaryOrganization)
+		web := ubwww.NewWebService(
+			port,
 			config.PrimaryOrganization,
 			dataAdapter,
-			web,
-			app.GetManagementService(), cookieManager,
-			[]string{ubadminpanel.PermSystemAdmin,
-				"edit_article", "view_article"},
-		)
+			cookieManager,
+			app.GetManagementService(),
+			permissionMiddleware,
+			permissions)
+
+		web.AddAdminRoutes()
 
 		err := prefectService.Start()
 		if err != nil {

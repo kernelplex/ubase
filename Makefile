@@ -27,3 +27,6 @@ test-sqlite: sqlc evercoregen
 templ:
 	go tool templ generate
 
+.PHONY: lint
+lint:
+	./scripts/check_route_style.sh

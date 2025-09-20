@@ -57,7 +57,11 @@ func OrganizationsRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		_ = views.OrganizationsPage(false, orgs, q).Render(r.Context(), w)
 	}
 
-	return contracts.Route{Path: "GET /admin/organizations", RequiresPermission: PermSystemAdmin, Func: handler}
+    return contracts.Route{
+        Path:               "GET /admin/organizations",
+        RequiresPermission: PermSystemAdmin,
+        Func:               handler,
+    }
 }
 
 // OrganizationOverviewRoute shows a single organization's overview by ID.
@@ -88,7 +92,11 @@ func OrganizationOverviewRoute(mgmt ubmanage.ManagementService) contracts.Route 
 		_ = views.OrganizationOverview(false, id, name, systemName, roles).Render(r.Context(), w)
 	}
 
-	return contracts.Route{Path: "GET /admin/organizations/{id}", RequiresPermission: PermSystemAdmin, Func: handler}
+    return contracts.Route{
+        Path:               "GET /admin/organizations/{id}",
+        RequiresPermission: PermSystemAdmin,
+        Func:               handler,
+    }
 }
 
 // OrganizationCreateRoute renders and processes the add organization form.
@@ -100,7 +108,12 @@ func OrganizationCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		_ = views.OrganizationForm(isHTMX(r), false, nil, "", nil).Render(r.Context(), w)
 	}
-	return contracts.Route{Path: "GET /admin/organizations/new", RequiresPermission: PermSystemAdmin, Func: handler}
+
+	return contracts.Route{
+		Path:               "GET /admin/organizations/new",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 func OrganizationCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
@@ -136,7 +149,12 @@ func OrganizationCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Rout
 		}
 		http.Redirect(w, r, dest, http.StatusSeeOther)
 	}
-	return contracts.Route{Path: "POST /admin/organizations/new", RequiresPermission: PermSystemAdmin, Func: handler}
+
+	return contracts.Route{
+		Path:               "POST /admin/organizations/new",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 // OrganizationEditRoute renders and processes the edit organization form.
@@ -189,5 +207,10 @@ func OrganizationEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
-	return contracts.Route{Path: "/admin/organizations/{id}/edit", RequiresPermission: PermSystemAdmin, Func: handler}
+
+	return contracts.Route{
+		Path:               "/admin/organizations/{id}/edit",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }

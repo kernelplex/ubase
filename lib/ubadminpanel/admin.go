@@ -11,7 +11,6 @@ import (
 	"github.com/kernelplex/ubase/lib/ubdata"
 	"github.com/kernelplex/ubase/lib/ubmanage"
 	"github.com/kernelplex/ubase/lib/ubstatus"
-	"github.com/kernelplex/ubase/lib/ubwww"
 )
 
 //go:embed static
@@ -70,52 +69,4 @@ func AdminRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) con
 		RequiresPermission: PermSystemAdmin,
 		Func:               handler,
 	}
-}
-
-// RegisterAdminPanelRoutes adds admin routes and static files.
-// cookieManager is used to read/write the auth cookie; mgmt performs authentication.
-func RegisterAdminPanelRoutes(
-	primaryOrganization int64,
-	adapter ubdata.DataAdapter,
-	web ubwww.WebService,
-	mgmt ubmanage.ManagementService,
-	cookieManager contracts.AuthTokenCookieManager,
-	permissions []string,
-) {
-	ensure.That(primaryOrganization > 0, "primary organization must be set and greater than zero")
-	ensure.That(adapter != nil, "data adapter is required")
-
-	// Serve static files
-	fs := http.FileServer(http.FS(Static))
-	web.AddRouteHandler("/admin/static/", http.StripPrefix("/admin", fs))
-
-	// Home placeholder (can be permission-protected later)
-	web.AddRoute(AdminRoute(adapter, mgmt))
-	web.AddRoute(OrganizationsRoute(mgmt))
-	web.AddRoute(OrganizationOverviewRoute(mgmt))
-	web.AddRoute(OrganizationCreateRoute(mgmt))
-	web.AddRoute(OrganizationCreatePostRoute(mgmt))
-	web.AddRoute(OrganizationEditRoute(mgmt))
-	web.AddRoute(RoleOverviewRoute(adapter, mgmt, permissions))
-	web.AddRoute(RoleUsersListRoute(adapter))
-	web.AddRoute(RoleUsersAddRoute(adapter, mgmt))
-	web.AddRoute(RoleUsersRemoveRoute(adapter, mgmt))
-	web.AddRoute(RolePermissionsListRoute(adapter, permissions))
-	web.AddRoute(RolePermissionsAddRoute(adapter, mgmt))
-	web.AddRoute(RolePermissionsRemoveRoute(adapter, mgmt))
-	web.AddRoute(RoleCreateRoute(mgmt))
-	web.AddRoute(RoleCreatePostRoute(mgmt))
-	web.AddRoute(RoleEditRoute(mgmt))
-	web.AddRoute(RoleEditPostRoute(mgmt))
-	web.AddRoute(UsersListRoute(adapter))
-	web.AddRoute(UserOverviewRoute(mgmt))
-	web.AddRoute(UserRolesListRoute(mgmt))
-	web.AddRoute(UserRolesAddRoute(mgmt))
-	web.AddRoute(UserRolesRemoveRoute(mgmt))
-	web.AddRoute(UserCreateRoute(mgmt))
-	web.AddRoute(UserCreatePostRoute(mgmt))
-	web.AddRoute(UserEditRoute(mgmt))
-	web.AddRoute(LoginRoute(primaryOrganization, mgmt, cookieManager))
-	web.AddRoute(VerifyTwoFactorRoute(mgmt, cookieManager))
-	web.AddRoute(LogoutRoute(cookieManager))
 }

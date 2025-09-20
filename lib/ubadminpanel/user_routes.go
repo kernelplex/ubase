@@ -50,7 +50,11 @@ func UsersListRoute(adapter ubdata.DataAdapter) contracts.Route {
 		}
 		_ = views.UsersPage(false, users, q).Render(r.Context(), w)
 	}
-	return contracts.Route{Path: "GET /admin/users", RequiresPermission: PermSystemAdmin, Func: handler}
+    return contracts.Route{
+        Path:               "GET /admin/users",
+        RequiresPermission: PermSystemAdmin,
+        Func:               handler,
+    }
 }
 
 func UserOverviewRoute(mgmt ubmanage.ManagementService) contracts.Route {
@@ -84,7 +88,11 @@ func UserOverviewRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		_ = views.UserOverview(false, id, st.DisplayName, st.Email, st.FirstName, st.LastName, st.Verified, st.Disabled, st.LastLogin, st.LoginCount, st.LastLoginAttempt, st.FailedLoginAttempts, orgs, selectedOrg).Render(r.Context(), w)
 	}
-	return contracts.Route{Path: "GET /admin/users/{id}", RequiresPermission: PermSystemAdmin, Func: handler}
+    return contracts.Route{
+        Path:               "GET /admin/users/{id}",
+        RequiresPermission: PermSystemAdmin,
+        Func:               handler,
+    }
 }
 
 func UserRolesListRoute(mgmt ubmanage.ManagementService) contracts.Route {
@@ -115,7 +123,11 @@ func UserRolesListRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		_ = views.UserRolesTable(id, rolesResp.Data, memberSet, orgId).Render(r.Context(), w)
 	}
-	return contracts.Route{Path: "GET /admin/users/{id}/roles", RequiresPermission: PermSystemAdmin, Func: handler}
+    return contracts.Route{
+        Path:               "GET /admin/users/{id}/roles",
+        RequiresPermission: PermSystemAdmin,
+        Func:               handler,
+    }
 }
 
 func UserRolesAddRoute(mgmt ubmanage.ManagementService) contracts.Route {
@@ -158,7 +170,11 @@ func UserRolesAddRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		_ = views.UserRoleRow(id, role, memberSet[roleId], orgId).Render(r.Context(), w)
 	}
-	return contracts.Route{Path: "POST /admin/users/{id}/roles/add", RequiresPermission: PermSystemAdmin, Func: handler}
+    return contracts.Route{
+        Path:               "POST /admin/users/{id}/roles/add",
+        RequiresPermission: PermSystemAdmin,
+        Func:               handler,
+    }
 }
 
 func UserRolesRemoveRoute(mgmt ubmanage.ManagementService) contracts.Route {
@@ -201,7 +217,11 @@ func UserRolesRemoveRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		_ = views.UserRoleRow(id, role, memberSet[roleId], orgId).Render(r.Context(), w)
 	}
-	return contracts.Route{Path: "POST /admin/users/{id}/roles/remove", RequiresPermission: PermSystemAdmin, Func: handler}
+    return contracts.Route{
+        Path:               "POST /admin/users/{id}/roles/remove",
+        RequiresPermission: PermSystemAdmin,
+        Func:               handler,
+    }
 }
 
 func UserCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
@@ -212,7 +232,11 @@ func UserCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
-	return contracts.Route{Path: "GET /admin/users/new", RequiresPermission: PermSystemAdmin, Func: handler}
+    return contracts.Route{
+        Path:               "GET /admin/users/new",
+        RequiresPermission: PermSystemAdmin,
+        Func:               handler,
+    }
 }
 
 func UserCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
@@ -252,7 +276,11 @@ func UserCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		http.Redirect(w, r, dest, http.StatusSeeOther)
 	}
-	return contracts.Route{Path: "POST /admin/users/new", RequiresPermission: PermSystemAdmin, Func: handler}
+    return contracts.Route{
+        Path:               "POST /admin/users/new",
+        RequiresPermission: PermSystemAdmin,
+        Func:               handler,
+    }
 }
 
 func UserEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
@@ -314,5 +342,9 @@ func UserEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
-	return contracts.Route{Path: "/admin/users/{id}/edit", RequiresPermission: PermSystemAdmin, Func: handler}
+    return contracts.Route{
+        Path:               "/admin/users/{id}/edit",
+        RequiresPermission: PermSystemAdmin,
+        Func:               handler,
+    }
 }

@@ -20,7 +20,7 @@ func NewBackgroundMailer(m Mailer) *BackgroundMailer {
 	}
 }
 
-func (b *BackgroundMailer) Start() {
+func (b *BackgroundMailer) Start() error {
 	go func() {
 		for {
 			select {
@@ -35,10 +35,12 @@ func (b *BackgroundMailer) Start() {
 			}
 		}
 	}()
+	return nil
 }
 
-func (b *BackgroundMailer) Stop() {
+func (b *BackgroundMailer) Stop() error {
 	close(b.done)
+	return nil
 }
 
 func (b *BackgroundMailer) Send(job EmailJob) {

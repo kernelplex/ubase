@@ -2,6 +2,7 @@ package ubdata
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/kernelplex/ubase/lib/ubconst"
 )
@@ -13,6 +14,6 @@ func NewDatabase(dbType ubconst.DatabaseType, db *sql.DB) DataAdapter {
 	case ubconst.DatabaseTypeSQLite:
 		return NewSQLiteAdapter(db)
 	default:
-		panic("unknown database type")
+		panic(fmt.Sprintf("unsupported database type: '%s'", dbType))
 	}
 }

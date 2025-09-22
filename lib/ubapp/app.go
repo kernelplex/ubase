@@ -4,17 +4,22 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"net/http"
 
 	evercore "github.com/kernelplex/evercore/base"
 	"github.com/kernelplex/evercore/evercoreuri"
 	_ "github.com/kernelplex/ubase/internal/evercoregen"
+	"github.com/kernelplex/ubase/lib/contracts"
+	"github.com/kernelplex/ubase/lib/ensure"
 	"github.com/kernelplex/ubase/lib/ub2fa"
+	"github.com/kernelplex/ubase/lib/ubadminpanel"
 	"github.com/kernelplex/ubase/lib/ubconst"
 	"github.com/kernelplex/ubase/lib/ubdata"
 	"github.com/kernelplex/ubase/lib/ubenv"
 	"github.com/kernelplex/ubase/lib/ubmailer"
 	"github.com/kernelplex/ubase/lib/ubmanage"
 	"github.com/kernelplex/ubase/lib/ubsecurity"
+	"github.com/kernelplex/ubase/lib/ubwww"
 	ubase_postgres "github.com/kernelplex/ubase/sql/postgres"
 	ubase_sqlite "github.com/kernelplex/ubase/sql/sqlite"
 	_ "github.com/lib/pq"
@@ -23,6 +28,7 @@ import (
 )
 
 type UbaseConfig struct {
+	WebPort                   uint   `env:"WEB_PORT" default:"8080"`
 	DatabaseConnection        string `env:"DATABASE_CONNECTION" default:"/var/data/main.db"`
 	EventStoreConnection      string `env:"EVENT_STORE_CONNECTION" default:"/var/data/main.db"`
 	Pepper                    []byte `env:"PEPPER" required:"true"`
@@ -57,47 +63,38 @@ type BackgroundService interface {
 }
 
 type UbaseApp struct {
-	config             UbaseConfig
-	db                 *sql.DB
-	dburl              *dburl.URL
-	dbadapter          ubdata.DataAdapter
-	store              *evercore.EventStore // Event store
-	hashService        ubsecurity.HashGenerator
-	encryptionService  ubsecurity.EncryptionService
-	totpService        ub2fa.TotpService
-	managementService  ubmanage.ManagementService
-	mailer             ubmailer.Mailer
-	backgroundMailer   *ubmailer.BackgroundMailer
-	prefectService     ubmanage.PrefectService
-	backgroundServices []BackgroundService
+	config                *UbaseConfig
+	db                    *sql.DB
+	dbtype                ubconst.DatabaseType
+	dburl                 *dburl.URL
+	dbadapter             ubdata.DataAdapter
+	store                 *evercore.EventStore // Event store
+	hashService           ubsecurity.HashGenerator
+	encryptionService     ubsecurity.EncryptionService
+	totpService           ub2fa.TotpService
+	managementService     ubmanage.ManagementService
+	mailer                ubmailer.Mailer
+	backgroundMailer      *ubmailer.BackgroundMailer
+	prefectService        ubmanage.PrefectService
+	backgroundServices    []BackgroundService
+	permissionsMiddleware *ubwww.PermissionMiddleware
+
+	cookieManager         contracts.AuthTokenCookieManager
+	webService            ubwww.WebService
+	adminPanelInitialized bool
 }
 
 func NewUbaseAppEnvConfig() UbaseApp {
 	config := UbaseConfigFromEnv()
 	app := UbaseApp{}
 	// Store loaded config on the app instance so GetConfig() reflects actual values
-	app.config = config
+	app.config = &config
 
-	// ======================================================================
-	// Hashing service
-	// ======================================================================
-	hashService := ubsecurity.DefaultArgon2Id
-	hashService.Pepper = config.Pepper
-	app.hashService = hashService
+	return app
+}
 
-	// ======================================================================
-	// Database connections
-	// ====================================================st==================
-	eventStore, err := evercoreuri.Connect(config.EventStoreConnection)
-	if err != nil {
-		panic(fmt.Errorf("failed to connect to event store: %w", err))
-	}
-
-	app.store = eventStore
-
-	// ======================================================================
-	// UBase database
-	// ======================================================================
+func buildDatabase(app *UbaseApp, config *UbaseConfig) {
+	ensure.That(len(config.DatabaseConnection) > 0, "database connection string must be set")
 	dburl, err := dburl.Parse(config.DatabaseConnection)
 	if err != nil {
 		panic(fmt.Errorf("failed to parse database connection URL: %w", err))
@@ -109,16 +106,16 @@ func NewUbaseAppEnvConfig() UbaseApp {
 		panic(fmt.Errorf("failed to open database connection: %w", err))
 	}
 
-	var databaseType ubconst.DatabaseType
-
 	switch dburl.Driver {
 	case "postgres":
+		slog.Info("Using Postgres database")
 		err := ubase_postgres.MigrateUp(app.db)
 		if err != nil {
 			panic(fmt.Errorf("failed to migrate database: %w", err))
 		}
-		databaseType = ubconst.DatabaseTypePostgres
+		app.dbtype = ubconst.DatabaseTypePostgres
 	case "sqlite3":
+		slog.Info("Using SQLite database")
 
 		// Execute sane PRAGMA settings for SQLite
 		_, err := app.db.Exec("PRAGMA journal_mode=WAL;")
@@ -145,100 +142,142 @@ func NewUbaseAppEnvConfig() UbaseApp {
 			panic(fmt.Errorf("failed to migrate database: %w", err))
 		}
 
-		databaseType = ubconst.DatabaseTypeSQLite
+		app.dbtype = ubconst.DatabaseTypeSQLite
+		slog.Info("Database type set to", "type", app.dbtype)
 	default:
 		panic(fmt.Sprintf("unsupported database type: %s", dburl.Driver))
 	}
-
-	dbadapter := ubdata.NewDatabase(databaseType, app.db)
-	app.dbadapter = dbadapter
-
-	// ======================================================================
-	// UBase TOTP
-	// ======================================================================
-
-	app.totpService = ub2fa.NewTotpService(config.TOTPIssuer)
-
-	// ======================================================================
-	// UBase mailer
-	// ======================================================================
-	app.mailer = ubmailer.MaybeNewMailer(ubmailer.MailerConfig{
-		Type:      ubmailer.MailerType(config.MailerType),
-		From:      config.MailerFrom,
-		OutputDir: config.MailerOutputDir,
-	})
-	if app.mailer != nil {
-		slog.Info("Mailer enabled")
-		app.backgroundMailer = ubmailer.NewBackgroundMailer(app.mailer)
-		app.backgroundMailer.Start()
-	} else {
-		slog.Info("Mailer disabled")
-	}
-
-	// ======================================================================
-	// UBase services
-	// ======================================================================
-
-	app.encryptionService = ubsecurity.NewEncryptionService(config.SecretKey)
-
-	app.managementService = ubmanage.NewManagement(app.store, dbadapter, app.hashService, app.encryptionService, app.totpService)
-
-	app.prefectService = ubmanage.NewPrefectService(app.managementService, eventStore, 100, 100)
-	app.RegisterService(app.prefectService)
-
-	app.dbadapter = dbadapter
-
-	return app
+	slog.Info("Database type set to", "type", app.dbtype)
 }
 
 func (app *UbaseApp) GetConfig() *UbaseConfig {
-	return &app.config
+	if app.config == nil {
+		app.config = &UbaseConfig{}
+		ubenv.ConfigFromEnv(app.config)
+	}
+	return app.config
 }
 
 func (app *UbaseApp) GetDB() *sql.DB {
+	if app.db == nil {
+		config := app.GetConfig()
+		buildDatabase(app, config)
+		slog.Info("Database type set to", "type", app.dbtype)
+	}
 	return app.db
 }
 
 func (app *UbaseApp) GetDBAdapter() ubdata.DataAdapter {
+	if app.dbadapter == nil {
+		db := app.GetDB()
+		dbadapter := ubdata.NewDatabase(app.dbtype, db)
+		app.dbadapter = dbadapter
+	}
 	return app.dbadapter
 }
 
 func (app *UbaseApp) GetEventStore() *evercore.EventStore {
+	if app.store == nil {
+		config := app.GetConfig()
+
+		ensure.That(len(config.EventStoreConnection) > 0, "event store connection string must be set")
+		eventStore, err := evercoreuri.Connect(config.EventStoreConnection)
+		if err != nil {
+			panic(fmt.Errorf("failed to connect to event store: %w", err))
+		}
+		app.store = eventStore
+	}
+
 	return app.store
 }
 
 func (app *UbaseApp) GetManagementService() ubmanage.ManagementService {
+	if app.managementService == nil {
+		store := app.GetEventStore()
+		dbadapter := app.GetDBAdapter()
+		hashService := app.GetHashService()
+		encryptionService := app.GetEncryptionService()
+		totpService := app.GetTOTPService()
+
+		app.managementService = ubmanage.NewManagement(store, dbadapter, hashService, encryptionService, totpService)
+	}
+
 	return app.managementService
 }
 
 func (app *UbaseApp) GetHashService() ubsecurity.HashGenerator {
+	if app.hashService == nil {
+		config := app.GetConfig()
+		hashService := ubsecurity.DefaultArgon2Id
+		hashService.Pepper = config.Pepper
+		ensure.That(len(hashService.Pepper) > 0, "pepper must be set and greater than zero")
+		app.hashService = hashService
+	}
 	return app.hashService
 }
 
 func (app *UbaseApp) GetEncryptionService() ubsecurity.EncryptionService {
+	if app.encryptionService == nil {
+		config := app.GetConfig()
+		ensure.That(len(config.SecretKey) > 0, "secret key must be set and greater than zero")
+		app.encryptionService = ubsecurity.NewEncryptionService(config.SecretKey)
+	}
+
 	return app.encryptionService
 }
 
 func (app *UbaseApp) GetTOTPService() ub2fa.TotpService {
+	if app.totpService == nil {
+		config := app.GetConfig()
+		ensure.That(len(config.TOTPIssuer) > 0, "TOTP issuer must be set and greater than zero")
+		app.totpService = ub2fa.NewTotpService(config.TOTPIssuer)
+	}
 	return app.totpService
 }
 
 func (app *UbaseApp) GetMailer() ubmailer.Mailer {
+	if app.mailer == nil {
+		config := app.GetConfig()
+		app.mailer = ubmailer.MaybeNewMailer(ubmailer.MailerConfig{
+			Type:      ubmailer.MailerType(config.MailerType),
+			From:      config.MailerFrom,
+			OutputDir: config.MailerOutputDir,
+		})
+		ensure.That(app.mailer != nil, "mailer cannot be nil, check MAILER_TYPE configuration")
+	}
 	return app.mailer
 }
 
 func (app *UbaseApp) GetBackgroundMailer() *ubmailer.BackgroundMailer {
+	if app.backgroundMailer == nil {
+		mailer := app.GetMailer()
+		app.backgroundMailer = ubmailer.NewBackgroundMailer(mailer)
+		app.RegisterService(app.backgroundMailer)
+		app.backgroundMailer.Start()
+
+	}
+
+	if app.mailer != nil {
+		slog.Info("Mailer enabled")
+	} else {
+		slog.Info("Mailer disabled")
+	}
 	return app.backgroundMailer
 }
 
 func (app *UbaseApp) Shutdown() {
-	err := app.db.Close()
-	if err != nil {
-		slog.Error("Error closing database", "error", err)
+
+	if app.db != nil {
+		err := app.db.Close()
+		if err != nil {
+			slog.Error("Error closing database", "error", err)
+		}
 	}
-	err = app.store.Close()
-	if err != nil {
-		slog.Error("Error closing event store", "error", err)
+	if app.store != nil {
+		err := app.store.Close()
+		if err != nil {
+			slog.Error("Error closing event store", "error", err)
+		}
 	}
 
 	if app.backgroundMailer != nil {
@@ -259,10 +298,26 @@ func (app *UbaseApp) MigrateUp() error {
 }
 
 func (app *UbaseApp) GetPrefectService() ubmanage.PrefectService {
+
+	if app.prefectService == nil {
+		managementService := app.GetManagementService()
+		eventStore := app.GetEventStore()
+		app.prefectService = ubmanage.NewPrefectService(managementService, eventStore, 100, 100)
+		app.RegisterService(app.prefectService)
+	}
+
 	return app.prefectService
 }
 
 func (app *UbaseApp) RegisterService(service BackgroundService) {
+	// Check to see if the service is already registered
+	for _, s := range app.backgroundServices {
+		if fmt.Sprintf("%T", s) == fmt.Sprintf("%T", service) {
+			slog.Warn("Service already registered, skipping", "service", fmt.Sprintf("%T", service))
+			return
+		}
+	}
+	slog.Info("Registering service", "service", fmt.Sprintf("%T", service))
 	app.backgroundServices = append(app.backgroundServices, service)
 }
 
@@ -275,6 +330,101 @@ func (app *UbaseApp) StartServices() error {
 		}
 	}
 	return nil
+}
+
+func (app *UbaseApp) GetCookieManager() contracts.AuthTokenCookieManager {
+	if app.cookieManager == nil {
+		config := app.GetConfig()
+		encryptionService := app.GetEncryptionService()
+		secure := config.Environment == "production"
+
+		cookieManager := ubwww.NewCookieMonster(
+			encryptionService,
+			"auth_token",
+			secure,
+			int64(config.TokenMaxSoftExpirySeconds),
+			contracts.CookieContextKey("auth_token"),
+			contracts.IdentityContextKey("user_identity"),
+		)
+		app.cookieManager = cookieManager
+	}
+	return app.cookieManager
+}
+
+func (app *UbaseApp) GetPermissionsMiddleware() *ubwww.PermissionMiddleware {
+	if app.permissionsMiddleware == nil {
+		prefectService := app.GetPrefectService()
+		cookieManager := app.GetCookieManager()
+		permissionMiddleware := ubwww.NewPermissionMiddleware(
+			prefectService,
+			cookieManager)
+		app.permissionsMiddleware = permissionMiddleware
+	}
+	return app.permissionsMiddleware
+}
+
+func (app *UbaseApp) WithAdminPanel(permissions []string) {
+	if !app.adminPanelInitialized {
+		adapter := app.GetDBAdapter()
+		managementService := app.GetManagementService()
+		cookieManager := app.GetCookieManager()
+		primaryOrganization := app.GetConfig().PrimaryOrganization
+
+		ws := app.GetWebService()
+		fs := http.FileServer(http.FS(ubadminpanel.Static))
+		ws.AddRouteHandler("/admin/static/", http.StripPrefix("/admin", fs))
+		ws.AddRoute(ubadminpanel.AdminRoute(adapter, managementService))
+		ws.AddRoute(ubadminpanel.OrganizationsRoute(managementService))
+		ws.AddRoute(ubadminpanel.OrganizationOverviewRoute(managementService))
+		ws.AddRoute(ubadminpanel.OrganizationCreateRoute(managementService))
+		ws.AddRoute(ubadminpanel.OrganizationCreatePostRoute(managementService))
+		ws.AddRoute(ubadminpanel.OrganizationEditRoute(managementService))
+		ws.AddRoute(ubadminpanel.RoleOverviewRoute(adapter, managementService, permissions))
+		ws.AddRoute(ubadminpanel.RoleUsersListRoute(adapter))
+		ws.AddRoute(ubadminpanel.RoleUsersAddRoute(adapter, managementService))
+		ws.AddRoute(ubadminpanel.RoleUsersRemoveRoute(adapter, managementService))
+		ws.AddRoute(ubadminpanel.RolePermissionsListRoute(adapter, permissions))
+		ws.AddRoute(ubadminpanel.RolePermissionsAddRoute(adapter, managementService))
+		ws.AddRoute(ubadminpanel.RolePermissionsRemoveRoute(adapter, managementService))
+		ws.AddRoute(ubadminpanel.RoleCreateRoute(managementService))
+		ws.AddRoute(ubadminpanel.RoleCreatePostRoute(managementService))
+		ws.AddRoute(ubadminpanel.RoleEditRoute(managementService))
+		ws.AddRoute(ubadminpanel.RoleEditPostRoute(managementService))
+		ws.AddRoute(ubadminpanel.UsersListRoute(adapter))
+		ws.AddRoute(ubadminpanel.UserOverviewRoute(managementService))
+		ws.AddRoute(ubadminpanel.UserRolesListRoute(managementService))
+		ws.AddRoute(ubadminpanel.UserRolesAddRoute(managementService))
+		ws.AddRoute(ubadminpanel.UserRolesRemoveRoute(managementService))
+		ws.AddRoute(ubadminpanel.UserCreateRoute(managementService))
+		ws.AddRoute(ubadminpanel.UserCreatePostRoute(managementService))
+		ws.AddRoute(ubadminpanel.UserEditRoute(managementService))
+		ws.AddRoute(ubadminpanel.LoginRoute(primaryOrganization, managementService, cookieManager))
+		ws.AddRoute(ubadminpanel.VerifyTwoFactorRoute(managementService, cookieManager))
+		ws.AddRoute(ubadminpanel.LogoutRoute(cookieManager))
+
+		app.adminPanelInitialized = true
+	}
+}
+
+func (app *UbaseApp) GetWebService() ubwww.WebService {
+	if app.webService == nil {
+		config := app.GetConfig()
+		ensure.That(config.PrimaryOrganization > 0, "primary organization must be set and greater than zero")
+		ensure.That(config.WebPort > 0, "web port must be set and greater than zero")
+		cookieManager := app.GetCookieManager()
+		permissionMiddleware := app.GetPermissionsMiddleware()
+
+		webService := ubwww.NewWebService(
+			config.WebPort,
+			config.PrimaryOrganization,
+			cookieManager,
+			permissionMiddleware)
+		app.webService = webService
+
+		app.RegisterService(webService)
+
+	}
+	return app.webService
 }
 
 func (app *UbaseApp) StopServices() error {

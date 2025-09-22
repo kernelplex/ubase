@@ -6,56 +6,45 @@ import (
 	"net/http"
 
 	"github.com/kernelplex/ubase/lib/contracts"
-	"github.com/kernelplex/ubase/lib/ensure"
-	"github.com/kernelplex/ubase/lib/ubadminpanel"
-	"github.com/kernelplex/ubase/lib/ubdata"
-	"github.com/kernelplex/ubase/lib/ubmanage"
+	//"github.com/kernelplex/ubase/lib/ensure"
+	//"github.com/kernelplex/ubase/lib/ubadminpanel"
+	// "github.com/kernelplex/ubase/lib/ubdata"
+	//"github.com/kernelplex/ubase/lib/ubmanage"
 )
 
 type WebService interface {
 	AddRoute(route contracts.Route) WebService
 	AddRouteHandler(path string, handler http.Handler) WebService
-	AddAdminRoutes() WebService
 	Start() error
 	Stop() error
 }
 
 type WebServiceImpl struct {
-	routes              []contracts.Route
-	primaryOrganization int64
-	adapter             ubdata.DataAdapter
-	port                uint
-	mux                 *http.ServeMux
-	server              *http.Server
-	cookieManager       contracts.AuthTokenCookieManager
-	managementService   ubmanage.ManagementService
-	permMiddleware      *PermissionMiddleware
-	permissions         []string
+	routes         []contracts.Route
+	port           uint
+	mux            *http.ServeMux
+	server         *http.Server
+	cookieManager  contracts.AuthTokenCookieManager
+	permMiddleware *PermissionMiddleware
 }
 
 func NewWebService(
 	port uint,
 	primaryOrganization int64,
-	dataAdapter ubdata.DataAdapter,
 	cookieManager contracts.AuthTokenCookieManager,
-	managementService ubmanage.ManagementService,
-	permMiddleware *PermissionMiddleware,
-	permissions []string) WebService {
+	permMiddleware *PermissionMiddleware) WebService {
 	mux := http.NewServeMux()
 	return &WebServiceImpl{
-		routes:              make([]contracts.Route, 0, 20),
-		port:                port,
-		mux:                 mux,
-		adapter:             dataAdapter,
-		cookieManager:       cookieManager,
-		permMiddleware:      permMiddleware,
-		managementService:   managementService,
-		primaryOrganization: primaryOrganization,
-		permissions:         permissions,
+		routes:         make([]contracts.Route, 0, 20),
+		port:           port,
+		mux:            mux,
+		cookieManager:  cookieManager,
+		permMiddleware: permMiddleware,
 	}
 }
 
-func (ws *WebServiceImpl) AddAdminRoutes() WebService {
+/*
+func AddAdminRoutes(ws *WebServiceImpl, permissions []string) WebService {
 	ensure.That(ws.primaryOrganization > 0, "primary organization must be set and greater than zero")
 	ensure.That(ws.adapter != nil, "data adapter is required")
 	ensure.That(ws.managementService != nil, "management service is required")
@@ -96,6 +85,7 @@ func (ws *WebServiceImpl) AddAdminRoutes() WebService {
 
 	return ws
 }
+*/
 
 func (ws *WebServiceImpl) AddRoute(route contracts.Route) WebService {
 	ws.routes = append(ws.routes, route)

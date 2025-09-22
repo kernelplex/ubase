@@ -20,8 +20,11 @@ func isHTMX(r *http.Request) bool {
 	return strings.EqualFold(r.Header.Get("HX-Request"), "true")
 }
 
-// hello route is a simple placeholder home page
+// IsHTMX is an exported helper for consumers to detect HTMX requests.
+func IsHTMX(r *http.Request) bool { return isHTMX(r) }
+
 func AdminRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) contracts.Route {
+
 	ensure.That(adapter != nil, "data adapter is required")
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -50,17 +53,25 @@ func AdminRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) con
 
 		// Build recent users (top 5 by last_login)
 		ids, _ := adapter.ListRecentUserIds(r.Context(), 5)
-		recent := make([]views.RecentUser, 0, len(ids))
+		recent := make([]contracts.RecentUser, 0, len(ids))
 		for _, uid := range ids {
 			uref, _ := mgmt.UserGetById(r.Context(), uid)
 			if uref.Status != ubstatus.Success {
 				continue
 			}
 			st := uref.Data.State
-			recent = append(recent, views.RecentUser{ID: uid, DisplayName: st.DisplayName, Email: st.Email, LastLogin: st.LastLogin})
+			recent = append(recent, contracts.RecentUser{ID: uid, DisplayName: st.DisplayName, Email: st.Email, LastLogin: st.LastLogin})
 		}
 
-		component := views.AdminPanel(isHTMX(r), orgs, users, roles, recent)
+		vm := contracts.AdminPanelViewModel{
+			BaseViewModel: contracts.BaseViewModel{Fragment: isHTMX(r)},
+			OrgCount:      orgs,
+			UserCount:     users,
+			RoleCount:     roles,
+			Recent:        recent,
+		}
+
+		component := views.AdminPanel(vm)
 		_ = component.Render(r.Context(), w)
 	}
 

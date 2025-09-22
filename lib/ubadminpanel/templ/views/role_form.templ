@@ -1,50 +1,50 @@
 package views
 
 import (
+	"github.com/kernelplex/ubase/lib/contracts"
 	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
 	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/views/components"
-	"github.com/kernelplex/ubase/lib/ubdata"
 )
 
-templ RoleForm(fragment bool, isEdit bool, role *ubdata.RoleRow, orgs []ubdata.Organization, selectedOrg int64, err string, fieldErrors map[string][]string) {
-	@layouts.LayoutOrFragment(fragment, true) {
+templ RoleForm(vm contracts.RoleFormViewModel) {
+	@layouts.LayoutOrFragment(vm.Fragment, true, vm.Links) {
 		<section class="auth-screen">
 			<div class="auth-card">
-				if isEdit {
+				if vm.IsEdit {
 					<h1>Edit Role</h1>
 				} else {
 					<h1>Create Role</h1>
 				}
-				if err != "" {
-					<div class="error">{ err }</div>
+				if vm.Error != "" {
+					<div class="error">{ vm.Error }</div>
 				}
 				<form class="auth-form" method="post">
 					<div class="form-field">
 						<label for="name">Name</label>
-						<input id="name" type="text" name="name" value={ func() string { if role != nil { return role.Name } ; return "" }() } required/>
-						@components.FieldErrors(fieldErrors["name"])
+						<input id="name" type="text" name="name" value={ func() string { if vm.Role != nil { return vm.Role.Name } ; return "" }() } required/>
+						@components.FieldErrors(vm.FieldErrors["name"])
 					</div>
 					<div class="form-field">
 						<label for="system_name">System Name</label>
-						<input id="system_name" type="text" name="system_name" value={ func() string { if role != nil { return role.SystemName } ; return "" }() } required/>
-						@components.FieldErrors(fieldErrors["systemName"])
+						<input id="system_name" type="text" name="system_name" value={ func() string { if vm.Role != nil { return vm.Role.SystemName } ; return "" }() } required/>
+						@components.FieldErrors(vm.FieldErrors["systemName"])
 					</div>
 					<div class="form-field">
 						<label for="organization_id">Organization</label>
 						<select id="organization_id" name="organization_id" required>
-							for _, o := range orgs {
-								if o.ID == selectedOrg {
+							for _, o := range vm.Organizations {
+								if o.ID == vm.SelectedOrg {
 									<option value={ o.ID } selected>{ o.Name }</option>
 								} else {
 									<option value={ o.ID }>{ o.Name }</option>
 								}
 							}
 						</select>
-						@components.FieldErrors(fieldErrors["organizationId"])
+						@components.FieldErrors(vm.FieldErrors["organizationId"])
 					</div>
 					<div class="form-actions">
 						<button type="submit">
-							if isEdit {
+							if vm.IsEdit {
 								<span>Save Changes</span>
 							} else {
 								<span>Create Role</span>

@@ -1,6 +1,10 @@
 package layouts
 
-templ Layout(showLogout bool) {
+import (
+	"github.com/kernelplex/ubase/lib/contracts"
+)
+
+templ Layout(showLogout bool, links []contracts.AdminLink) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -11,8 +15,8 @@ templ Layout(showLogout bool) {
 			<script src="/admin/static/htmx.min.js"></script>
 		</head>
 		<body class="admin-layout">
-            <div class="admin-container">
-                <header class="admin-header">
+			<div class="admin-container">
+				<header class="admin-header">
 					if showLogout {
 						<div class="admin-header__brand">
 							<div class="admin-logo"></div>
@@ -24,38 +28,37 @@ templ Layout(showLogout bool) {
 							<button class="btn-logout" hx-post="/admin/logout">Log Out</button>
 						}
 					</div>
-                </header>
-                if showLogout {
-                    <div class="admin-shell">
-                        <aside class="admin-sidebar">
-                            <div class="admin-brand">Admin</div>
-                            <nav class="admin-nav">
-                                <a href="/admin">Dashboard</a>
-                                <a href="/admin/organizations">Organizations</a>
-                                <a href="/admin/users">Users</a>
-                                <a href="#">Settings</a>
-                            </nav>
-                        </aside>
-                        <section id="panel-content" class="admin-panel">
-                            { children... }
-                        </section>
-                    </div>
-                } else {
-                    <main id="main" class="admin-main">
-                        { children... }
-                    </main>
-                }
-            </div>
-        </body>
-    </html>
+				</header>
+				if showLogout {
+					<div class="admin-shell">
+						<aside class="admin-sidebar">
+							<div class="admin-brand">Admin</div>
+							<nav class="admin-nav">
+								for _, link := range links {
+									<a href={ link.Path }>{ link.Title }</a>
+								}
+							</nav>
+						</aside>
+						<section id="panel-content" class="admin-panel">
+							{ children... }
+						</section>
+					</div>
+				} else {
+					<main id="main" class="admin-main">
+						{ children... }
+					</main>
+				}
+			</div>
+		</body>
+	</html>
 }
 
-templ LayoutOrFragment(fragment bool, showLogout bool) {
-    if (fragment) {
-        { children... }
-    } else {
-        @Layout(showLogout) {
-            { children... }
-        }
-    }
+templ LayoutOrFragment(fragment bool, showLogout bool, links []contracts.AdminLink) {
+	if (fragment) {
+		{ children... }
+	} else {
+		@Layout(showLogout, links) {
+			{ children... }
+		}
+	}
 }

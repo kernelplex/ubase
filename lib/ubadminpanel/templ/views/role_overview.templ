@@ -2,23 +2,24 @@ package views
 
 import (
     "fmt"
+    "github.com/kernelplex/ubase/lib/contracts"
     "github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
 )
 
-templ RoleOverview(fragment bool, id int64, name string, systemName string, organizationId int64) {
-    @layouts.LayoutOrFragment(fragment, true) {
+templ RoleOverview(vm contracts.RoleOverviewViewModel) {
+    @layouts.LayoutOrFragment(vm.Fragment, true, vm.Links) {
         <div class="admin-card">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: .75rem;">
-                <h1>Role: { name }</h1>
-                <a href={ fmt.Sprintf("/admin/roles/%d/edit", id) } class="role-toggle" title="Edit role">Edit</a>
+                <h1>Role: { vm.Name }</h1>
+                <a href={ fmt.Sprintf("/admin/roles/%d/edit", vm.ID) } class="role-toggle" title="Edit role">Edit</a>
             </div>
             <div class="field-list">
                 <div class="field-label">ID</div>
-                <div class="field-value">{ id }</div>
+                <div class="field-value">{ vm.ID }</div>
                 <div class="field-label">System Name</div>
-                <div class="field-value">{ systemName }</div>
+                <div class="field-value">{ vm.SystemName }</div>
                 <div class="field-label">Organization ID</div>
-                <div class="field-value">{ organizationId }</div>
+                <div class="field-value">{ vm.OrganizationID }</div>
             </div>
         </div>
 
@@ -29,14 +30,14 @@ templ RoleOverview(fragment bool, id int64, name string, systemName string, orga
                     type="text"
                     name="q"
                     placeholder="Search users by name or email..."
-                    hx-get={ fmt.Sprintf("/admin/roles/%d/users", id) }
+                    hx-get={ fmt.Sprintf("/admin/roles/%d/users", vm.ID) }
                     hx-trigger="input changed delay:1s"
                     hx-target="#role-users"
                     hx-swap="outerHTML"
                     style="width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--color-trim); border-radius: 8px; background: var(--color-surface-2); color: var(--text);"
                 />
             </div>
-            <div id="role-users" hx-get={ fmt.Sprintf("/admin/roles/%d/users", id) } hx-trigger="load" hx-target="#role-users" hx-swap="outerHTML"></div>
+            <div id="role-users" hx-get={ fmt.Sprintf("/admin/roles/%d/users", vm.ID) } hx-trigger="load" hx-target="#role-users" hx-swap="outerHTML"></div>
         </div>
 
         <div class="admin-card">
@@ -46,14 +47,14 @@ templ RoleOverview(fragment bool, id int64, name string, systemName string, orga
                     type="text"
                     name="q"
                     placeholder="Search permissions by name..."
-                    hx-get={ fmt.Sprintf("/admin/roles/%d/permissions", id) }
+                    hx-get={ fmt.Sprintf("/admin/roles/%d/permissions", vm.ID) }
                     hx-trigger="input changed delay:1s"
                     hx-target="#role-permissions"
                     hx-swap="outerHTML"
                     style="width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--color-trim); border-radius: 8px; background: var(--color-surface-2); color: var(--text);"
                 />
             </div>
-            <div id="role-permissions" hx-get={ fmt.Sprintf("/admin/roles/%d/permissions", id) } hx-trigger="load" hx-target="#role-permissions" hx-swap="outerHTML"></div>
+            <div id="role-permissions" hx-get={ fmt.Sprintf("/admin/roles/%d/permissions", vm.ID) } hx-trigger="load" hx-target="#role-permissions" hx-swap="outerHTML"></div>
         </div>
     }
 }

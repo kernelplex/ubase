@@ -1,14 +1,17 @@
 package views
 
-import "github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
+import (
+	"github.com/kernelplex/ubase/lib/contracts"
+	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
+)
 
-templ Login(fragment bool, err string) {
-    @layouts.LayoutOrFragment(fragment, false) {
+templ Login(vm contracts.LoginViewModel) {
+    @layouts.LayoutOrFragment(vm.Fragment, false, vm.Links) {
         <section class="auth-screen">
             <div class="auth-card">
                 <h1>Admin Login</h1>
-                if err != "" {
-                    <div class="error">{ err }</div>
+                if vm.Error != "" {
+                    <div class="error">{ vm.Error }</div>
                 }
                 <form class="auth-form" hx-post="/admin/login" hx-target="#main" hx-swap="innerHTML">
                     <div class="form-field">

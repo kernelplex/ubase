@@ -1,85 +1,71 @@
 package views
 
 import (
-    "fmt"
-    "time"
-    "github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
-    "github.com/kernelplex/ubase/lib/ubdata"
+	"fmt"
+	"github.com/kernelplex/ubase/lib/contracts"
+	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
+	"time"
 )
 
 func formatTimestamp(ts int64) string {
-    if ts <= 0 { return "-" }
-    return time.Unix(ts, 0).UTC().Format("2006-01-02 15:04:05")
+	if ts <= 0 {
+		return "-"
+	}
+	return time.Unix(ts, 0).UTC().Format("2006-01-02 15:04:05")
 }
 
-templ UserOverview(fragment bool,
-    id int64,
-    displayName string,
-    email string,
-    firstName string,
-    lastName string,
-    verified bool,
-    disabled bool,
-    lastLogin int64,
-    loginCount int64,
-    lastFailedLogin int64,
-    failedLoginAttempts int64,
-    orgs []ubdata.Organization,
-    selectedOrg int64,
-) {
-    @layouts.LayoutOrFragment(fragment, true) {
-        <div style="display: flex; gap: 1rem; align-items: stretch;">
-            <div class="admin-card" style="flex:1;">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: .75rem;">
-                    <h1>User: { displayName }</h1>
-                    <a href={ fmt.Sprintf("/admin/users/%d/edit", id) } class="role-toggle" title="Edit user">Edit</a>
-                </div>
-                <div class="field-list">
-                    <div class="field-label">ID</div>
-                    <div class="field-value">{ id }</div>
-                    <div class="field-label">Email</div>
-                    <div class="field-value">{ email }</div>
-                    <div class="field-label">Name</div>
-                    <div class="field-value">{ firstName } { lastName }</div>
-                    <div class="field-label">Verified</div>
-                    <div class="field-value">{ func() string { if verified { return "Yes" }; return "No" }() }</div>
-                    <div class="field-label">Disabled</div>
-                    <div class="field-value">{ func() string { if disabled { return "Yes" }; return "No" }() }</div>
-                </div>
-            </div>
-
-            <div class="admin-card" style="flex:1;">
-                <h2>Stats</h2>
-                <div class="field-list">
-                    <div class="field-label">Last Login</div>
-                    <div class="field-value">{ formatTimestamp(lastLogin) }</div>
-                    <div class="field-label">Total Logins</div>
-                    <div class="field-value">{ loginCount }</div>
-                    <div class="field-label">Last Failed Login</div>
-                    <div class="field-value">{ formatTimestamp(lastFailedLogin) }</div>
-                    <div class="field-label">Failed Login Attempts</div>
-                    <div class="field-value">{ failedLoginAttempts }</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="admin-card" id="roles-card">
-            <h2>Roles</h2>
-            <div style="margin: 0.75rem 0 1rem 0;">
-                <div class="form-field">
-                    <label for="org-select">Organization</label>
-                    <select id="org-select" name="org" hx-get={ fmt.Sprintf("/admin/users/%d/roles", id) } hx-trigger="change" hx-target="#user-roles" hx-swap="outerHTML">
-                        for _, o := range orgs {
-                            if o.ID == selectedOrg {
-                                <option value={ o.ID } selected>{ o.Name }</option>
-                            } else {
-                                <option value={ o.ID }>{ o.Name }</option>
-                            }
-                        }
-                    </select>
-                </div>
-            </div>
-            <div id="user-roles" hx-get={ fmt.Sprintf("/admin/users/%d/roles?org=%d", id, selectedOrg) } hx-trigger="load" hx-target="#user-roles" hx-swap="outerHTML"></div>
-        </div>
-    }
+templ UserOverview(vm contracts.UserOverviewViewModel) {
+	@layouts.LayoutOrFragment(vm.Fragment, true, vm.Links) {
+		<div style="display: flex; gap: 1rem; align-items: stretch;">
+			<div class="admin-card" style="flex:1;">
+				<div style="display: flex; align-items: center; justify-content: space-between; gap: .75rem;">
+					<h1>User: { vm.DisplayName }</h1>
+					<a href={ fmt.Sprintf("/admin/users/%d/edit", vm.ID) } class="role-toggle" title="Edit user">Edit</a>
+				</div>
+				<div class="field-list">
+					<div class="field-label">ID</div>
+					<div class="field-value">{ vm.ID }</div>
+					<div class="field-label">Email</div>
+					<div class="field-value">{ vm.Email }</div>
+					<div class="field-label">Name</div>
+					<div class="field-value">{ vm.FirstName } { vm.LastName }</div>
+					<div class="field-label">Verified</div>
+					<div class="field-value">{ func() string { if vm.Verified { return "Yes" }; return "No" }() }</div>
+					<div class="field-label">Disabled</div>
+					<div class="field-value">{ func() string { if vm.Disabled { return "Yes" }; return "No" }() }</div>
+				</div>
+			</div>
+			<div class="admin-card" style="flex:1;">
+				<h2>Stats</h2>
+				<div class="field-list">
+					<div class="field-label">Last Login</div>
+					<div class="field-value">{ formatTimestamp(vm.LastLogin) }</div>
+					<div class="field-label">Total Logins</div>
+					<div class="field-value">{ vm.LoginCount }</div>
+					<div class="field-label">Last Failed Login</div>
+					<div class="field-value">{ formatTimestamp(vm.LastFailedLogin) }</div>
+					<div class="field-label">Failed Login Attempts</div>
+					<div class="field-value">{ vm.FailedLoginAttempts }</div>
+				</div>
+			</div>
+		</div>
+		<div class="admin-card" id="roles-card">
+			<h2>Roles</h2>
+			<div style="margin: 0.75rem 0 1rem 0;">
+				<div class="form-field">
+					<label for="org-select">Organization</label>
+					<select id="org-select" name="org" hx-get={ fmt.Sprintf("/admin/users/%d/roles", vm.ID) } hx-trigger="change" hx-target="#user-roles" hx-swap="outerHTML">
+						for _, o := range vm.Organizations {
+							if o.ID == vm.SelectedOrganization {
+								<option value={ o.ID } selected>{ o.Name }</option>
+							} else {
+								<option value={ o.ID }>{ o.Name }</option>
+							}
+						}
+					</select>
+				</div>
+			</div>
+			<div id="user-roles" hx-get={ fmt.Sprintf("/admin/users/%d/roles?org=%d", vm.ID, vm.SelectedOrganization) } hx-trigger="load" hx-target="#user-roles" hx-swap="outerHTML"></div>
+		</div>
+	}
 }

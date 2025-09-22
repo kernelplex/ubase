@@ -42,7 +42,16 @@ func RoleOverviewRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementServi
 			return
 		}
 		state := resp.Data.State
-		_ = views.RoleOverview(false, id, state.Name, state.SystemName, state.OrganizationId).Render(r.Context(), w)
+		_ = views.RoleOverview(contracts.RoleOverviewViewModel{
+			BaseViewModel: contracts.BaseViewModel{
+				Fragment: false,
+				Links:    []contracts.AdminLink{},
+			},
+			ID:             id,
+			Name:           state.Name,
+			SystemName:     state.SystemName,
+			OrganizationID: state.OrganizationId,
+		}).Render(r.Context(), w)
 	}
 
     return contracts.Route{
@@ -288,11 +297,33 @@ func RoleCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		switch r.Method {
 		case http.MethodGet:
-			_ = views.RoleForm(isHTMX(r), false, nil, orgs, selectedOrg, "", nil).Render(r.Context(), w)
+			_ = views.RoleForm(contracts.RoleFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    []contracts.AdminLink{},
+				},
+				IsEdit:        false,
+				Role:          nil,
+				Organizations: orgs,
+				SelectedOrg:   selectedOrg,
+				Error:         "",
+				FieldErrors:   nil,
+			}).Render(r.Context(), w)
 			return
 		case http.MethodPost:
 			if err := r.ParseForm(); err != nil {
-				_ = views.RoleForm(isHTMX(r), false, nil, orgs, selectedOrg, "Invalid form submission", nil).Render(r.Context(), w)
+				_ = views.RoleForm(contracts.RoleFormViewModel{
+					BaseViewModel: contracts.BaseViewModel{
+						Fragment: isHTMX(r),
+						Links:    []contracts.AdminLink{},
+					},
+					IsEdit:        false,
+					Role:          nil,
+					Organizations: orgs,
+					SelectedOrg:   selectedOrg,
+					Error:         "Invalid form submission",
+					FieldErrors:   nil,
+				}).Render(r.Context(), w)
 				return
 			}
 			name := strings.TrimSpace(r.FormValue("name"))
@@ -308,7 +339,18 @@ func RoleCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				errMap := resp.GetValidationMap()
 				msg := resp.Message
 				draft := ubdata.RoleRow{Name: name, SystemName: sys}
-				_ = views.RoleForm(isHTMX(r), false, &draft, orgs, oid, msg, errMap).Render(r.Context(), w)
+				_ = views.RoleForm(contracts.RoleFormViewModel{
+					BaseViewModel: contracts.BaseViewModel{
+						Fragment: isHTMX(r),
+						Links:    []contracts.AdminLink{},
+					},
+					IsEdit:        false,
+					Role:          &draft,
+					Organizations: orgs,
+					SelectedOrg:   oid,
+					Error:         msg,
+					FieldErrors:   errMap,
+				}).Render(r.Context(), w)
 				return
 			}
 			dest := "/admin/roles/" + strconv.FormatInt(resp.Data.Id, 10)
@@ -352,11 +394,33 @@ func RoleEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			}
 			st := rresp.Data.State
 			draft := ubdata.RoleRow{ID: roleId, Name: st.Name, SystemName: st.SystemName}
-			_ = views.RoleForm(isHTMX(r), true, &draft, orgs, st.OrganizationId, "", nil).Render(r.Context(), w)
+			_ = views.RoleForm(contracts.RoleFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    []contracts.AdminLink{},
+				},
+				IsEdit:        true,
+				Role:          &draft,
+				Organizations: orgs,
+				SelectedOrg:   st.OrganizationId,
+				Error:         "",
+				FieldErrors:   nil,
+			}).Render(r.Context(), w)
 			return
 		case http.MethodPost:
 			if err := r.ParseForm(); err != nil {
-				_ = views.RoleForm(isHTMX(r), true, nil, orgs, 0, "Invalid form submission", nil).Render(r.Context(), w)
+				_ = views.RoleForm(contracts.RoleFormViewModel{
+					BaseViewModel: contracts.BaseViewModel{
+						Fragment: isHTMX(r),
+						Links:    []contracts.AdminLink{},
+					},
+					IsEdit:        true,
+					Role:          nil,
+					Organizations: orgs,
+					SelectedOrg:   0,
+					Error:         "Invalid form submission",
+					FieldErrors:   nil,
+				}).Render(r.Context(), w)
 				return
 			}
 			name := strings.TrimSpace(r.FormValue("name"))
@@ -372,7 +436,18 @@ func RoleEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				if rresp.Status == ubstatus.Success {
 					selected = rresp.Data.State.OrganizationId
 				}
-				_ = views.RoleForm(isHTMX(r), true, &draft, orgs, selected, msg, errMap).Render(r.Context(), w)
+				_ = views.RoleForm(contracts.RoleFormViewModel{
+					BaseViewModel: contracts.BaseViewModel{
+						Fragment: isHTMX(r),
+						Links:    []contracts.AdminLink{},
+					},
+					IsEdit:        true,
+					Role:          &draft,
+					Organizations: orgs,
+					SelectedOrg:   selected,
+					Error:         msg,
+					FieldErrors:   errMap,
+				}).Render(r.Context(), w)
 				return
 			}
 			dest := "/admin/roles/" + strconv.FormatInt(roleId, 10)
@@ -411,7 +486,18 @@ func RoleCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			if len(orgs) > 0 {
 				selectedOrg = orgs[0].ID
 			}
-			_ = views.RoleForm(isHTMX(r), false, nil, orgs, selectedOrg, "Invalid form submission", nil).Render(r.Context(), w)
+			_ = views.RoleForm(contracts.RoleFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    []contracts.AdminLink{},
+				},
+				IsEdit:        false,
+				Role:          nil,
+				Organizations: orgs,
+				SelectedOrg:   selectedOrg,
+				Error:         "Invalid form submission",
+				FieldErrors:   nil,
+			}).Render(r.Context(), w)
 			return
 		}
 		name := strings.TrimSpace(f.Name)
@@ -426,7 +512,18 @@ func RoleCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			errMap := resp.GetValidationMap()
 			msg := resp.Message
 			draft := ubdata.RoleRow{Name: name, SystemName: sys}
-			_ = views.RoleForm(isHTMX(r), false, &draft, orgs, oid, msg, errMap).Render(r.Context(), w)
+			_ = views.RoleForm(contracts.RoleFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    []contracts.AdminLink{},
+				},
+				IsEdit:        false,
+				Role:          &draft,
+				Organizations: orgs,
+				SelectedOrg:   oid,
+				Error:         msg,
+				FieldErrors:   errMap,
+			}).Render(r.Context(), w)
 			return
 		}
 		dest := "/admin/roles/" + strconv.FormatInt(resp.Data.Id, 10)
@@ -463,7 +560,18 @@ func RoleEditPostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		var f roleEditForm
 		if err := forms.ParseFormToStruct(r, &f); err != nil {
-			_ = views.RoleForm(isHTMX(r), true, nil, orgs, 0, "Invalid form submission", nil).Render(r.Context(), w)
+			_ = views.RoleForm(contracts.RoleFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    []contracts.AdminLink{},
+				},
+				IsEdit:        true,
+				Role:          nil,
+				Organizations: orgs,
+				SelectedOrg:   0,
+				Error:         "Invalid form submission",
+				FieldErrors:   nil,
+			}).Render(r.Context(), w)
 			return
 		}
 		name := f.Name
@@ -479,7 +587,18 @@ func RoleEditPostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			if rresp.Status == ubstatus.Success {
 				selected = rresp.Data.State.OrganizationId
 			}
-			_ = views.RoleForm(isHTMX(r), true, &draft, orgs, selected, msg, errMap).Render(r.Context(), w)
+			_ = views.RoleForm(contracts.RoleFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    []contracts.AdminLink{},
+				},
+				IsEdit:        true,
+				Role:          &draft,
+				Organizations: orgs,
+				SelectedOrg:   selected,
+				Error:         msg,
+				FieldErrors:   errMap,
+			}).Render(r.Context(), w)
 			return
 		}
 		dest := "/admin/roles/" + strconv.FormatInt(roleId, 10)

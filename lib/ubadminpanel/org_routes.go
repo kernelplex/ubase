@@ -54,7 +54,14 @@ func OrganizationsRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.OrganizationsTable(orgs).Render(r.Context(), w)
 			return
 		}
-		_ = views.OrganizationsPage(false, orgs, q).Render(r.Context(), w)
+		_ = views.OrganizationsPage(contracts.OrganizationsPageViewModel{
+			BaseViewModel: contracts.BaseViewModel{
+				Fragment: false,
+				Links:    []contracts.AdminLink{},
+			},
+			Organizations: orgs,
+			Query:         q,
+		}).Render(r.Context(), w)
 	}
 
     return contracts.Route{
@@ -89,7 +96,16 @@ func OrganizationOverviewRoute(mgmt ubmanage.ManagementService) contracts.Route 
 		} else {
 			roles = rolesResp.Data
 		}
-		_ = views.OrganizationOverview(false, id, name, systemName, roles).Render(r.Context(), w)
+		_ = views.OrganizationOverview(contracts.OrganizationOverviewViewModel{
+			BaseViewModel: contracts.BaseViewModel{
+				Fragment: false,
+				Links:    []contracts.AdminLink{},
+			},
+			ID:         id,
+			Name:       name,
+			SystemName: systemName,
+			Roles:      roles,
+		}).Render(r.Context(), w)
 	}
 
     return contracts.Route{
@@ -106,7 +122,16 @@ func OrganizationCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		_ = views.OrganizationForm(isHTMX(r), false, nil, "", nil).Render(r.Context(), w)
+		_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
+			BaseViewModel: contracts.BaseViewModel{
+				Fragment: isHTMX(r),
+				Links:    []contracts.AdminLink{},
+			},
+			IsEdit:       false,
+			Organization: nil,
+			Error:        "",
+			FieldErrors:  nil,
+		}).Render(r.Context(), w)
 	}
 
 	return contracts.Route{
@@ -124,7 +149,16 @@ func OrganizationCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Rout
 		}
 		var f orgCreateForm
 		if err := forms.ParseFormToStruct(r, &f); err != nil {
-			_ = views.OrganizationForm(isHTMX(r), false, nil, "Invalid form submission", nil).Render(r.Context(), w)
+			_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    []contracts.AdminLink{},
+				},
+				IsEdit:       false,
+				Organization: nil,
+				Error:        "Invalid form submission",
+				FieldErrors:  nil,
+			}).Render(r.Context(), w)
 			return
 		}
 		name := strings.TrimSpace(f.Name)
@@ -138,7 +172,16 @@ func OrganizationCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Rout
 			errMap := resp.GetValidationMap()
 			msg := resp.Message
 			draft := ubdata.Organization{Name: name, SystemName: sys, Status: status}
-			_ = views.OrganizationForm(isHTMX(r), false, &draft, msg, errMap).Render(r.Context(), w)
+			_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    []contracts.AdminLink{},
+				},
+				IsEdit:       false,
+				Organization: &draft,
+				Error:        msg,
+				FieldErrors:  errMap,
+			}).Render(r.Context(), w)
 			return
 		}
 		dest := "/admin/organizations/" + strconv.FormatInt(resp.Data.Id, 10)
@@ -174,14 +217,32 @@ func OrganizationEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				return
 			}
 			org := ubdata.Organization{ID: id, Name: oresp.Data.State.Name, SystemName: oresp.Data.State.SystemName, Status: oresp.Data.State.Status}
-			_ = views.OrganizationForm(isHTMX(r), true, &org, "", nil).Render(r.Context(), w)
+			_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    []contracts.AdminLink{},
+				},
+				IsEdit:       true,
+				Organization: &org,
+				Error:        "",
+				FieldErrors:  nil,
+			}).Render(r.Context(), w)
 			return
 		}
 
 		if r.Method == http.MethodPost {
 			var f orgEditForm
 			if err := forms.ParseFormToStruct(r, &f); err != nil {
-				_ = views.OrganizationForm(isHTMX(r), true, nil, "Invalid form submission", nil).Render(r.Context(), w)
+				_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
+					BaseViewModel: contracts.BaseViewModel{
+						Fragment: isHTMX(r),
+						Links:    []contracts.AdminLink{},
+					},
+					IsEdit:       true,
+					Organization: nil,
+					Error:        "Invalid form submission",
+					FieldErrors:  nil,
+				}).Render(r.Context(), w)
 				return
 			}
 			name := strings.TrimSpace(f.Name)
@@ -193,7 +254,16 @@ func OrganizationEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				errMap := uresp.GetValidationMap()
 				msg := uresp.Message
 				draft := ubdata.Organization{ID: id, Name: name, SystemName: sys, Status: status}
-				_ = views.OrganizationForm(isHTMX(r), true, &draft, msg, errMap).Render(r.Context(), w)
+				_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
+					BaseViewModel: contracts.BaseViewModel{
+						Fragment: isHTMX(r),
+						Links:    []contracts.AdminLink{},
+					},
+					IsEdit:       true,
+					Organization: &draft,
+					Error:        msg,
+					FieldErrors:  errMap,
+				}).Render(r.Context(), w)
 				return
 			}
 			dest := "/admin/organizations/" + strconv.FormatInt(id, 10)

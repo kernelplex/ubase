@@ -48,7 +48,14 @@ func UsersListRoute(adapter ubdata.DataAdapter) contracts.Route {
 			_ = views.UsersTable(users).Render(r.Context(), w)
 			return
 		}
-		_ = views.UsersPage(false, users, q).Render(r.Context(), w)
+		_ = views.UsersPage(contracts.UsersPageViewModel{
+			BaseViewModel: contracts.BaseViewModel{
+				Fragment: false,
+				Links:    []contracts.AdminLink{},
+			},
+			Users: users,
+			Query: q,
+		}).Render(r.Context(), w)
 	}
     return contracts.Route{
         Path:               "GET /admin/users",
@@ -86,7 +93,25 @@ func UserOverviewRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		if len(orgs) > 0 && selectedOrg == 0 {
 			selectedOrg = orgs[0].ID
 		}
-		_ = views.UserOverview(false, id, st.DisplayName, st.Email, st.FirstName, st.LastName, st.Verified, st.Disabled, st.LastLogin, st.LoginCount, st.LastLoginAttempt, st.FailedLoginAttempts, orgs, selectedOrg).Render(r.Context(), w)
+		_ = views.UserOverview(contracts.UserOverviewViewModel{
+			BaseViewModel: contracts.BaseViewModel{
+				Fragment: false,
+				Links:    []contracts.AdminLink{},
+			},
+			ID:                  id,
+			DisplayName:         st.DisplayName,
+			Email:               st.Email,
+			FirstName:           st.FirstName,
+			LastName:            st.LastName,
+			Verified:            st.Verified,
+			Disabled:            st.Disabled,
+			LastLogin:           st.LastLogin,
+			LoginCount:          st.LoginCount,
+			LastFailedLogin:     st.LastLoginAttempt,
+			FailedLoginAttempts: st.FailedLoginAttempts,
+			Organizations:       orgs,
+			SelectedOrganization: selectedOrg,
+		}).Render(r.Context(), w)
 	}
     return contracts.Route{
         Path:               "GET /admin/users/{id}",
@@ -227,7 +252,16 @@ func UserRolesRemoveRoute(mgmt ubmanage.ManagementService) contracts.Route {
 func UserCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
-			_ = views.UserForm(isHTMX(r), false, nil, "", nil).Render(r.Context(), w)
+			_ = views.UserForm(contracts.UserFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    []contracts.AdminLink{},
+				},
+				IsEdit:     false,
+				User:       nil,
+				Error:      "",
+				FieldErrors: nil,
+			}).Render(r.Context(), w)
 			return
 		}
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -247,7 +281,16 @@ func UserCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		var f userCreateForm
 		if err := forms.ParseFormToStruct(r, &f); err != nil {
-			_ = views.UserForm(isHTMX(r), false, nil, "Invalid form submission", nil).Render(r.Context(), w)
+			_ = views.UserForm(contracts.UserFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    []contracts.AdminLink{},
+				},
+				IsEdit:     false,
+				User:       nil,
+				Error:      "Invalid form submission",
+				FieldErrors: nil,
+			}).Render(r.Context(), w)
 			return
 		}
 		email := strings.TrimSpace(f.Email)
@@ -265,7 +308,16 @@ func UserCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			errMap := resp.GetValidationMap()
 			msg := resp.Message
 			draft := ubdata.User{Email: email, FirstName: first, LastName: last, DisplayName: display, Verified: verified}
-			_ = views.UserForm(isHTMX(r), false, &draft, msg, errMap).Render(r.Context(), w)
+			_ = views.UserForm(contracts.UserFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    []contracts.AdminLink{},
+				},
+				IsEdit:     false,
+				User:       &draft,
+				Error:      msg,
+				FieldErrors: errMap,
+			}).Render(r.Context(), w)
 			return
 		}
 		dest := "/admin/users/" + strconv.FormatInt(resp.Data.Id, 10)
@@ -299,13 +351,31 @@ func UserEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			}
 			st := uresp.Data.State
 			draft := ubdata.User{UserID: id, Email: st.Email, FirstName: st.FirstName, LastName: st.LastName, DisplayName: st.DisplayName, Verified: st.Verified}
-			_ = views.UserForm(isHTMX(r), true, &draft, "", nil).Render(r.Context(), w)
+			_ = views.UserForm(contracts.UserFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    []contracts.AdminLink{},
+				},
+				IsEdit:     true,
+				User:       &draft,
+				Error:      "",
+				FieldErrors: nil,
+			}).Render(r.Context(), w)
 			return
 		}
 		if r.Method == http.MethodPost {
 			var f userEditForm
 			if err := forms.ParseFormToStruct(r, &f); err != nil {
-				_ = views.UserForm(isHTMX(r), true, nil, "Invalid form submission", nil).Render(r.Context(), w)
+				_ = views.UserForm(contracts.UserFormViewModel{
+					BaseViewModel: contracts.BaseViewModel{
+						Fragment: isHTMX(r),
+						Links:    []contracts.AdminLink{},
+					},
+					IsEdit:     true,
+					User:       nil,
+					Error:      "Invalid form submission",
+					FieldErrors: nil,
+				}).Render(r.Context(), w)
 				return
 			}
 			email := strings.TrimSpace(f.Email)
@@ -328,7 +398,16 @@ func UserEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				errMap := resp.GetValidationMap()
 				msg := resp.Message
 				draft := ubdata.User{UserID: id, Email: email, FirstName: first, LastName: last, DisplayName: display, Verified: verified}
-				_ = views.UserForm(isHTMX(r), true, &draft, msg, errMap).Render(r.Context(), w)
+				_ = views.UserForm(contracts.UserFormViewModel{
+					BaseViewModel: contracts.BaseViewModel{
+						Fragment: isHTMX(r),
+						Links:    []contracts.AdminLink{},
+					},
+					IsEdit:     true,
+					User:       &draft,
+					Error:      msg,
+					FieldErrors: errMap,
+				}).Render(r.Context(), w)
 				return
 			}
 			dest := "/admin/users/" + strconv.FormatInt(id, 10)

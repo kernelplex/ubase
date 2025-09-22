@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/kernelplex/ubase/lib/ubdata"
 )
 
 type AuthTokenCookieContextKey string
@@ -69,4 +71,130 @@ type AuthTokenCookieManager interface {
 	MiddlewareFunc(handler http.HandlerFunc) http.HandlerFunc
 	TokenFromContext(ctx context.Context) (AuthToken, bool)
 	IdentityFromContext(ctx context.Context) (UserIdentity, bool)
+}
+
+// ViewModel structs for template data consolidation
+
+type BaseViewModel struct {
+	Fragment bool
+	Links    []AdminLink
+}
+
+type LoginViewModel struct {
+	BaseViewModel
+	Error string
+}
+
+type TwoFactorViewModel struct {
+	BaseViewModel
+	UserID int64
+	Error  string
+}
+
+type AdminPanelViewModel struct {
+	BaseViewModel
+	OrgCount   int64
+	UserCount  int64
+	RoleCount  int64
+	Recent     []RecentUser
+}
+
+type RecentUser struct {
+	ID          int64
+	DisplayName string
+	Email       string
+	LastLogin   int64
+}
+
+type OrganizationsPageViewModel struct {
+	BaseViewModel
+	Organizations []ubdata.Organization
+	Query         string
+}
+
+type OrganizationOverviewViewModel struct {
+	BaseViewModel
+	ID         int64
+	Name       string
+	SystemName string
+	Roles      []ubdata.ListRolesWithUserCountsRow
+}
+
+type OrganizationFormViewModel struct {
+	BaseViewModel
+	IsEdit      bool
+	Organization *ubdata.Organization
+	Error       string
+	FieldErrors map[string][]string
+}
+
+type UsersPageViewModel struct {
+	BaseViewModel
+	Users []ubdata.User
+	Query string
+}
+
+type UserOverviewViewModel struct {
+	BaseViewModel
+	ID                   int64
+	DisplayName          string
+	Email                string
+	FirstName            string
+	LastName             string
+	Verified             bool
+	Disabled             bool
+	LastLogin            int64
+	LoginCount           int64
+	LastFailedLogin      int64
+	FailedLoginAttempts  int64
+	Organizations        []ubdata.Organization
+	SelectedOrganization int64
+}
+
+type UserFormViewModel struct {
+	BaseViewModel
+	IsEdit     bool
+	User       *ubdata.User
+	Error      string
+	FieldErrors map[string][]string
+}
+
+type UserRolesViewModel struct {
+	BaseViewModel
+	UserID     int64
+	Roles      []ubdata.RoleRow
+	MemberSet  map[int64]bool
+	OrgID      int64
+}
+
+type RoleOverviewViewModel struct {
+	BaseViewModel
+	ID             int64
+	Name           string
+	SystemName     string
+	OrganizationID int64
+}
+
+type RoleUsersViewModel struct {
+	BaseViewModel
+	RoleID    int64
+	Users     []ubdata.User
+	MemberSet map[int64]bool
+}
+
+type RolePermissionsViewModel struct {
+	BaseViewModel
+	RoleID    int64
+	Permissions []string
+	MemberSet  map[string]bool
+}
+
+type RoleFormViewModel struct {
+	BaseViewModel
+	IsEdit           bool
+	Role             *ubdata.RoleRow
+	Organizations    []ubdata.Organization
+	SelectedOrg      int64
+	Error            string
+	FieldErrors      map[string][]string
 }

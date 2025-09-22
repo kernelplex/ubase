@@ -2,16 +2,10 @@ package views
 
 import (
 	"fmt"
+	"github.com/kernelplex/ubase/lib/contracts"
 	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
 	"time"
 )
-
-type RecentUser struct {
-	ID          int64
-	DisplayName string
-	Email       string
-	LastLogin   int64
-}
 
 func formatTS(ts int64) string {
 	if ts <= 0 {
@@ -20,8 +14,8 @@ func formatTS(ts int64) string {
 	return time.Unix(ts, 0).UTC().Format("2006-01-02 15:04:05")
 }
 
-templ AdminPanel(fragment bool, orgCount int64, userCount int64, roleCount int64, recent []RecentUser) {
-	@layouts.LayoutOrFragment(fragment, true) {
+templ AdminPanel(vm contracts.AdminPanelViewModel) {
+	@layouts.LayoutOrFragment(vm.Fragment, true, vm.Links) {
 		<div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
 			<div class="admin-card stat-card" style="flex: 1; text-align: center;">
 				<a href="/admin/organizations" class="stat-link">
@@ -33,7 +27,7 @@ templ AdminPanel(fragment bool, orgCount int64, userCount int64, roleCount int64
 								<rect x="10" y="4" width="5" height="14" rx="1" ry="1"></rect>
 								<rect x="17" y="7" width="4" height="11" rx="1" ry="1"></rect>
 							</svg>
-							<div class="stat-value">{ orgCount }</div>
+							<div class="stat-value">{ vm.OrgCount }</div>
 						</div>
 					</div>
 				</a>
@@ -47,7 +41,7 @@ templ AdminPanel(fragment bool, orgCount int64, userCount int64, roleCount int64
 								<circle cx="12" cy="7.5" r="3.5" fill="currentColor"></circle>
 								<path d="M4 20c0-3.5 4-5.5 8-5.5s8 2 8 5.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"></path>
 							</svg>
-							<div class="stat-value">{ userCount }</div>
+							<div class="stat-value">{ vm.UserCount }</div>
 						</div>
 					</div>
 				</a>
@@ -60,7 +54,7 @@ templ AdminPanel(fragment bool, orgCount int64, userCount int64, roleCount int64
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="stat-icon">
 								<path d="M4 18h16M6 14h12M8 10h8M10 6h4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"></path>
 							</svg>
-							<div class="stat-value">{ roleCount }</div>
+							<div class="stat-value">{ vm.RoleCount }</div>
 						</div>
 					</div>
 				</a>
@@ -77,10 +71,10 @@ templ AdminPanel(fragment bool, orgCount int64, userCount int64, roleCount int64
 					</tr>
 				</thead>
 				<tbody>
-					if len(recent) == 0 {
+					if len(vm.Recent) == 0 {
 						<tr><td colspan="3" style="color: var(--text-muted); padding: .5rem 0;">No recent logins.</td></tr>
 					} else {
-						for _, u := range recent {
+						for _, u := range vm.Recent {
 							<tr>
 								<td><a href={ fmt.Sprintf("/admin/users/%d", u.ID) }>{ u.DisplayName }</a></td>
 								<td>{ u.Email }</td>

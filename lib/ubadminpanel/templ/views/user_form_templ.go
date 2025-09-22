@@ -9,12 +9,12 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"github.com/kernelplex/ubase/lib/contracts"
 	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
 	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/views/components"
-	"github.com/kernelplex/ubase/lib/ubdata"
 )
 
-func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldErrors map[string][]string) templ.Component {
+func UserForm(vm contracts.UserFormViewModel) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -51,7 +51,7 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if isEdit {
+			if vm.IsEdit {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<h1>Edit User</h1>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -62,15 +62,15 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 					return templ_7745c5c3_Err
 				}
 			}
-			if err != "" {
+			if vm.Error != "" {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"error\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var3 string
-				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(err)
+				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(vm.Error)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/user_form.templ`, Line: 19, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/user_form.templ`, Line: 19, Col: 34}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -87,13 +87,13 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 			}
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(func() string {
-				if user != nil {
-					return user.Email
+				if vm.User != nil {
+					return vm.User.Email
 				}
 				return ""
 			}())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/user_form.templ`, Line: 24, Col: 144}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/user_form.templ`, Line: 24, Col: 132}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -103,7 +103,7 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = components.FieldErrors(fieldErrors["email"]).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.FieldErrors(vm.FieldErrors["email"]).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -113,13 +113,13 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 			}
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(func() string {
-				if isEdit {
+				if vm.IsEdit {
 					return "Leave blank to keep current password"
 				}
 				return ""
 			}())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/user_form.templ`, Line: 29, Col: 182}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/user_form.templ`, Line: 29, Col: 167}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -129,7 +129,7 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = components.FieldErrors(fieldErrors["password"]).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.FieldErrors(vm.FieldErrors["password"]).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -139,13 +139,13 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 			}
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(func() string {
-				if user != nil {
-					return user.FirstName
+				if vm.User != nil {
+					return vm.User.FirstName
 				}
 				return ""
 			}())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/user_form.templ`, Line: 34, Col: 157}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/user_form.templ`, Line: 34, Col: 145}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -155,7 +155,7 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = components.FieldErrors(fieldErrors["firstName"]).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.FieldErrors(vm.FieldErrors["firstName"]).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -165,13 +165,13 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 			}
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(func() string {
-				if user != nil {
-					return user.LastName
+				if vm.User != nil {
+					return vm.User.LastName
 				}
 				return ""
 			}())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/user_form.templ`, Line: 39, Col: 154}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/user_form.templ`, Line: 39, Col: 142}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -181,7 +181,7 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = components.FieldErrors(fieldErrors["lastName"]).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.FieldErrors(vm.FieldErrors["lastName"]).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -191,13 +191,13 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 			}
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(func() string {
-				if user != nil {
-					return user.DisplayName
+				if vm.User != nil {
+					return vm.User.DisplayName
 				}
 				return ""
 			}())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/user_form.templ`, Line: 44, Col: 163}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/user_form.templ`, Line: 44, Col: 151}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -207,7 +207,7 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = components.FieldErrors(fieldErrors["displayName"]).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.FieldErrors(vm.FieldErrors["displayName"]).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -215,7 +215,7 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if user != nil && user.Verified {
+			if vm.User != nil && vm.User.Verified {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<input id=\"verified\" type=\"checkbox\" name=\"verified\" checked>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -226,7 +226,7 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = components.FieldErrors(fieldErrors["verified"]).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.FieldErrors(vm.FieldErrors["verified"]).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -234,7 +234,7 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if isEdit {
+			if vm.IsEdit {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span>Save Changes</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -251,7 +251,7 @@ func UserForm(fragment bool, isEdit bool, user *ubdata.User, err string, fieldEr
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layouts.LayoutOrFragment(fragment, true).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layouts.LayoutOrFragment(vm.Fragment, true, vm.Links).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

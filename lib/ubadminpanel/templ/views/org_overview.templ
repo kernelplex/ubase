@@ -1,59 +1,58 @@
 package views
 
 import (
-    "fmt"
-    "github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
-    "github.com/kernelplex/ubase/lib/ubdata"
+	"fmt"
+	"github.com/kernelplex/ubase/lib/contracts"
+	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
 )
 
-templ OrganizationOverview(fragment bool, id int64, name string, systemName string, roles []ubdata.ListRolesWithUserCountsRow) {
-    @layouts.LayoutOrFragment(fragment, true) {
-        <div class="admin-card">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: .75rem;">
-                <h1>Organization: { name }</h1>
-                <a href={ fmt.Sprintf("/admin/organizations/%d/edit", id) } class="role-toggle" title="Edit organization">Edit</a>
-            </div>
-            <div class="field-list" style="margin-bottom: 1rem;">
-                <div class="field-label">ID</div>
-                <div class="field-value">{ id }</div>
-                <div class="field-label">System Name</div>
-                <div class="field-value">{ systemName }</div>
-            </div>
-        </div>
-
-        <div class="admin-card">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: .75rem;">
-                <h2>Roles</h2>
-                <a href={ fmt.Sprintf("/admin/roles/new?org=%d", id) } class="role-toggle plus" title="Add role">+</a>
-            </div>
-            <div style="margin-top: 0.5rem;">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 120px; text-align: left;">ID</th>
-                            <th style="text-align: left;">Name</th>
-                            <th style="text-align: left;">System Name</th>
-                            <th style="width: 140px; text-align: left;">Users</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        if len(roles) == 0 {
-                            <tr>
-                                <td colspan="4" style="color: var(--text-muted); padding: 0.75rem 0;">No roles found.</td>
-                            </tr>
-                        } else {
-                            for _, r := range roles {
-                                <tr>
-                                    <td><a href={ fmt.Sprintf("/admin/roles/%d", r.ID) }>{ r.ID }</a></td>
-                                    <td>{ r.Name }</td>
-                                    <td>{ r.SystemName }</td>
-                                    <td>{ r.UserCount }</td>
-                                </tr>
-                            }
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    }
+templ OrganizationOverview(vm contracts.OrganizationOverviewViewModel) {
+	@layouts.LayoutOrFragment(vm.Fragment, true, vm.Links) {
+		<div class="admin-card">
+			<div style="display: flex; align-items: center; justify-content: space-between; gap: .75rem;">
+				<h1>Organization: { vm.Name }</h1>
+				<a href={ fmt.Sprintf("/admin/organizations/%d/edit", vm.ID) } class="role-toggle" title="Edit organization">Edit</a>
+			</div>
+			<div class="field-list" style="margin-bottom: 1rem;">
+				<div class="field-label">ID</div>
+				<div class="field-value">{ vm.ID }</div>
+				<div class="field-label">System Name</div>
+				<div class="field-value">{ vm.SystemName }</div>
+			</div>
+		</div>
+		<div class="admin-card">
+			<div style="display: flex; align-items: center; justify-content: space-between; gap: .75rem;">
+				<h2>Roles</h2>
+				<a href={ fmt.Sprintf("/admin/roles/new?org=%d", vm.ID) } class="role-toggle plus" title="Add role">+</a>
+			</div>
+			<div style="margin-top: 0.5rem;">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th style="width: 120px; text-align: left;">ID</th>
+							<th style="text-align: left;">Name</th>
+							<th style="text-align: left;">System Name</th>
+							<th style="width: 140px; text-align: left;">Users</th>
+						</tr>
+					</thead>
+					<tbody>
+						if len(vm.Roles) == 0 {
+							<tr>
+								<td colspan="4" style="color: var(--text-muted); padding: 0.75rem 0;">No roles found.</td>
+							</tr>
+						} else {
+							for _, r := range vm.Roles {
+								<tr>
+									<td><a href={ fmt.Sprintf("/admin/roles/%d", r.ID) }>{ r.ID }</a></td>
+									<td>{ r.Name }</td>
+									<td>{ r.SystemName }</td>
+									<td>{ r.UserCount }</td>
+								</tr>
+							}
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	}
 }

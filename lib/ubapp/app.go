@@ -378,6 +378,10 @@ func (app *UbaseApp) WithAdminPanel(permissions []string) {
 		ws.AddRoute(ubadminpanel.OrganizationOverviewRoute(managementService))
 		ws.AddRoute(ubadminpanel.OrganizationCreateRoute(managementService))
 		ws.AddRoute(ubadminpanel.OrganizationCreatePostRoute(managementService))
+		ws.AddRoute(ubadminpanel.OrganizationSettingsRoute(managementService))
+		ws.AddRoute(ubadminpanel.OrganizationSettingsAddRoute(managementService))
+		ws.AddRoute(ubadminpanel.OrganizationSettingsRemoveRoute(managementService))
+
 		ws.AddRoute(ubadminpanel.OrganizationEditRoute(managementService))
 		ws.AddRoute(ubadminpanel.RoleOverviewRoute(adapter, managementService, permissions))
 		ws.AddRoute(ubadminpanel.RoleUsersListRoute(adapter))

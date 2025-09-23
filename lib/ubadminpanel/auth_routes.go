@@ -88,7 +88,7 @@ func LoginRoute(
 						_ = views.TwoFactor(contracts.TwoFactorViewModel{
 							BaseViewModel: contracts.BaseViewModel{
 								Fragment: isHTMX(r),
-								Links:    []contracts.AdminLink{},
+								Links:    GetAdminLinks(),
 							},
 							UserID: resp.Data.UserId,
 							Error:  "",
@@ -98,7 +98,7 @@ func LoginRoute(
 					_ = views.Login(contracts.LoginViewModel{
 						BaseViewModel: contracts.BaseViewModel{
 							Fragment: isHTMX(r),
-							Links:    []contracts.AdminLink{},
+							Links:    GetAdminLinks(),
 						},
 						Error: "Please verify your email before logging in.",
 					}).Render(r.Context(), w)
@@ -138,7 +138,7 @@ func VerifyTwoFactorRoute(
 				_ = views.TwoFactor(contracts.TwoFactorViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    []contracts.AdminLink{},
+						Links:    GetAdminLinks(),
 					},
 					UserID: 0,
 					Error:  "Invalid form submission",
@@ -158,7 +158,7 @@ func VerifyTwoFactorRoute(
 				_ = views.TwoFactor(contracts.TwoFactorViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    []contracts.AdminLink{},
+						Links:    GetAdminLinks(),
 					},
 					UserID: userId,
 					Error:  msg,
@@ -182,7 +182,7 @@ func VerifyTwoFactorRoute(
 				_ = views.TwoFactor(contracts.TwoFactorViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    []contracts.AdminLink{},
+						Links:    GetAdminLinks(),
 					},
 					UserID: userId,
 					Error:  "Failed to create session. Try again.",

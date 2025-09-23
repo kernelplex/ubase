@@ -51,7 +51,7 @@ func UsersListRoute(adapter ubdata.DataAdapter) contracts.Route {
 		_ = views.UsersPage(contracts.UsersPageViewModel{
 			BaseViewModel: contracts.BaseViewModel{
 				Fragment: false,
-				Links:    []contracts.AdminLink{},
+				Links:    GetAdminLinks(),
 			},
 			Users: users,
 			Query: q,
@@ -96,7 +96,7 @@ func UserOverviewRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		_ = views.UserOverview(contracts.UserOverviewViewModel{
 			BaseViewModel: contracts.BaseViewModel{
 				Fragment: false,
-				Links:    []contracts.AdminLink{},
+				Links:    GetAdminLinks(),
 			},
 			ID:                  id,
 			DisplayName:         st.DisplayName,
@@ -255,7 +255,7 @@ func UserCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.UserForm(contracts.UserFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    []contracts.AdminLink{},
+					Links:    GetAdminLinks(),
 				},
 				IsEdit:     false,
 				User:       nil,
@@ -284,7 +284,7 @@ func UserCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.UserForm(contracts.UserFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    []contracts.AdminLink{},
+					Links:    GetAdminLinks(),
 				},
 				IsEdit:     false,
 				User:       nil,
@@ -311,7 +311,7 @@ func UserCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.UserForm(contracts.UserFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    []contracts.AdminLink{},
+					Links:    GetAdminLinks(),
 				},
 				IsEdit:     false,
 				User:       &draft,
@@ -354,7 +354,7 @@ func UserEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.UserForm(contracts.UserFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    []contracts.AdminLink{},
+					Links:    GetAdminLinks(),
 				},
 				IsEdit:     true,
 				User:       &draft,
@@ -369,7 +369,7 @@ func UserEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				_ = views.UserForm(contracts.UserFormViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    []contracts.AdminLink{},
+						Links:    GetAdminLinks(),
 					},
 					IsEdit:     true,
 					User:       nil,
@@ -401,7 +401,7 @@ func UserEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				_ = views.UserForm(contracts.UserFormViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    []contracts.AdminLink{},
+						Links:    GetAdminLinks(),
 					},
 					IsEdit:     true,
 					User:       &draft,

@@ -57,18 +57,18 @@ func OrganizationsRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		_ = views.OrganizationsPage(contracts.OrganizationsPageViewModel{
 			BaseViewModel: contracts.BaseViewModel{
 				Fragment: false,
-				Links:    []contracts.AdminLink{},
+				Links:    GetAdminLinks(),
 			},
 			Organizations: orgs,
 			Query:         q,
 		}).Render(r.Context(), w)
 	}
 
-    return contracts.Route{
-        Path:               "GET /admin/organizations",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "GET /admin/organizations",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 // OrganizationOverviewRoute shows a single organization's overview by ID.
@@ -99,7 +99,7 @@ func OrganizationOverviewRoute(mgmt ubmanage.ManagementService) contracts.Route 
 		_ = views.OrganizationOverview(contracts.OrganizationOverviewViewModel{
 			BaseViewModel: contracts.BaseViewModel{
 				Fragment: false,
-				Links:    []contracts.AdminLink{},
+				Links:    GetAdminLinks(),
 			},
 			ID:         id,
 			Name:       name,
@@ -108,11 +108,11 @@ func OrganizationOverviewRoute(mgmt ubmanage.ManagementService) contracts.Route 
 		}).Render(r.Context(), w)
 	}
 
-    return contracts.Route{
-        Path:               "GET /admin/organizations/{id}",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "GET /admin/organizations/{id}",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 // OrganizationCreateRoute renders and processes the add organization form.
@@ -125,7 +125,7 @@ func OrganizationCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
 			BaseViewModel: contracts.BaseViewModel{
 				Fragment: isHTMX(r),
-				Links:    []contracts.AdminLink{},
+				Links:    GetAdminLinks(),
 			},
 			IsEdit:       false,
 			Organization: nil,
@@ -152,7 +152,7 @@ func OrganizationCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Rout
 			_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    []contracts.AdminLink{},
+					Links:    GetAdminLinks(),
 				},
 				IsEdit:       false,
 				Organization: nil,
@@ -175,7 +175,7 @@ func OrganizationCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Rout
 			_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    []contracts.AdminLink{},
+					Links:    GetAdminLinks(),
 				},
 				IsEdit:       false,
 				Organization: &draft,
@@ -195,6 +195,130 @@ func OrganizationCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Rout
 
 	return contracts.Route{
 		Path:               "POST /admin/organizations/new",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
+}
+
+// OrganizationSettingsRoute displays the settings for an organization
+func OrganizationSettingsRoute(mgmt ubmanage.ManagementService) contracts.Route {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.PathValue("id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil || id <= 0 {
+			http.NotFound(w, r)
+			return
+		}
+
+		// Get organization settings
+		orgResponse, _ := mgmt.OrganizationGet(r.Context(), id)
+		if orgResponse.Status != ubstatus.Success {
+			http.NotFound(w, r)
+			return
+		}
+		settings := orgResponse.Data.State.Settings
+
+		_ = views.OrganizationSettingsTable(id, settings).Render(r.Context(), w)
+	}
+
+	return contracts.Route{
+		Path:               "GET /admin/organizations/{id}/settings",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
+}
+
+// OrganizationSettingsAddRoute adds a new setting
+func OrganizationSettingsAddRoute(mgmt ubmanage.ManagementService) contracts.Route {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.PathValue("id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil || id <= 0 {
+			http.NotFound(w, r)
+			return
+		}
+
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		name := strings.TrimSpace(r.FormValue("name"))
+		value := strings.TrimSpace(r.FormValue("value"))
+
+		if name == "" {
+			http.Error(w, "Name is required", http.StatusBadRequest)
+			return
+		}
+
+		// Add the setting
+		_, err = mgmt.OrganizationSettingsAdd(r.Context(), ubmanage.OrganizationSettingsAddCommand{
+			Id:       id,
+			Settings: map[string]string{name: value},
+		}, "web:ubadminpanel")
+
+		if err != nil {
+			slog.Error("failed to add organization setting", "error", err)
+			http.Error(w, "Failed to add setting", http.StatusInternalServerError)
+			return
+		}
+
+		// Get organization settings
+		orgResponse, _ := mgmt.OrganizationGet(r.Context(), id)
+		if orgResponse.Status != ubstatus.Success {
+			http.NotFound(w, r)
+			return
+		}
+		settings := orgResponse.Data.State.Settings
+		_ = views.OrganizationSettingsTable(id, settings).Render(r.Context(), w)
+	}
+
+	return contracts.Route{
+		Path:               "POST /admin/organizations/{id}/settings/add",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
+}
+
+// OrganizationSettingsRemoveRoute removes a setting
+func OrganizationSettingsRemoveRoute(mgmt ubmanage.ManagementService) contracts.Route {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.PathValue("id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil || id <= 0 {
+			http.NotFound(w, r)
+			return
+		}
+
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		name := strings.TrimSpace(r.FormValue("name"))
+		if name == "" {
+			http.Error(w, "Name is required", http.StatusBadRequest)
+			return
+		}
+
+		// Remove the setting
+		_, err = mgmt.OrganizationSettingsRemove(r.Context(), ubmanage.OrganizationSettingsRemoveCommand{
+			Id:          id,
+			SettingKeys: []string{name},
+		}, "web:ubadminpanel")
+
+		if err != nil {
+			slog.Error("failed to remove organization setting", "error", err)
+			http.Error(w, "Failed to remove setting", http.StatusInternalServerError)
+			return
+		}
+
+		// Return empty content which will remove the row via HTMX
+		w.WriteHeader(http.StatusOK)
+	}
+
+	return contracts.Route{
+		Path:               "POST /admin/organizations/{id}/settings/remove",
 		RequiresPermission: PermSystemAdmin,
 		Func:               handler,
 	}
@@ -220,7 +344,7 @@ func OrganizationEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    []contracts.AdminLink{},
+					Links:    GetAdminLinks(),
 				},
 				IsEdit:       true,
 				Organization: &org,
@@ -236,7 +360,7 @@ func OrganizationEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    []contracts.AdminLink{},
+						Links:    GetAdminLinks(),
 					},
 					IsEdit:       true,
 					Organization: nil,
@@ -257,7 +381,7 @@ func OrganizationEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    []contracts.AdminLink{},
+						Links:    GetAdminLinks(),
 					},
 					IsEdit:       true,
 					Organization: &draft,

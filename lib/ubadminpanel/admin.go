@@ -64,11 +64,14 @@ func AdminRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) con
 		}
 
 		vm := contracts.AdminPanelViewModel{
-			BaseViewModel: contracts.BaseViewModel{Fragment: isHTMX(r)},
-			OrgCount:      orgs,
-			UserCount:     users,
-			RoleCount:     roles,
-			Recent:        recent,
+			BaseViewModel: contracts.BaseViewModel{
+				Fragment: isHTMX(r),
+				Links:    GetAdminLinks(),
+			},
+			OrgCount:  orgs,
+			UserCount: users,
+			RoleCount: roles,
+			Recent:    recent,
 		}
 
 		component := views.AdminPanel(vm)

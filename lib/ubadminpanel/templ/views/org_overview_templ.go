@@ -194,7 +194,33 @@ func OrganizationOverview(vm contracts.OrganizationOverviewViewModel) templ.Comp
 					}
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</tbody></table></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</tbody></table></div></div><div class=\"admin-card\"><div class=\"settings-header\"><h2>Settings</h2><button type=\"button\" class=\"role-toggle plus\" onclick=\"document.getElementById('add-setting-form').classList.toggle('hidden')\">+</button></div><div id=\"add-setting-form\" class=\"add-setting-form hidden\"><form hx-post=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var13 string
+			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/admin/organizations/%d/settings/add", vm.ID))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 63, Col: 78}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" hx-target=\"#settings-table\" hx-swap=\"outerHTML\"><div class=\"setting-form-fields\"><div class=\"form-field setting-field\"><label for=\"setting-name\">Name</label> <input type=\"text\" id=\"setting-name\" name=\"name\" required class=\"setting-input\"></div><div class=\"form-field setting-field\"><label for=\"setting-value\">Value</label> <input type=\"text\" id=\"setting-value\" name=\"value\" required class=\"setting-input\"></div><div class=\"setting-submit\"><button type=\"submit\" class=\"role-toggle\">Add</button></div></div></form></div><div id=\"settings-table\" hx-get=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var14 string
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/admin/organizations/%d/settings", vm.ID))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/org_overview.templ`, Line: 79, Col: 91}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" hx-trigger=\"load\" hx-swap=\"outerHTML\"></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -45,7 +45,7 @@ func RoleOverviewRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementServi
 		_ = views.RoleOverview(contracts.RoleOverviewViewModel{
 			BaseViewModel: contracts.BaseViewModel{
 				Fragment: false,
-				Links:    []contracts.AdminLink{},
+				Links:    GetAdminLinks(),
 			},
 			ID:             id,
 			Name:           state.Name,
@@ -300,7 +300,7 @@ func RoleCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.RoleForm(contracts.RoleFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    []contracts.AdminLink{},
+					Links:    GetAdminLinks(),
 				},
 				IsEdit:        false,
 				Role:          nil,
@@ -315,7 +315,7 @@ func RoleCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				_ = views.RoleForm(contracts.RoleFormViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    []contracts.AdminLink{},
+						Links:    GetAdminLinks(),
 					},
 					IsEdit:        false,
 					Role:          nil,
@@ -342,7 +342,7 @@ func RoleCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				_ = views.RoleForm(contracts.RoleFormViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    []contracts.AdminLink{},
+						Links:    GetAdminLinks(),
 					},
 					IsEdit:        false,
 					Role:          &draft,
@@ -397,7 +397,7 @@ func RoleEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.RoleForm(contracts.RoleFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    []contracts.AdminLink{},
+					Links:    GetAdminLinks(),
 				},
 				IsEdit:        true,
 				Role:          &draft,
@@ -412,7 +412,7 @@ func RoleEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				_ = views.RoleForm(contracts.RoleFormViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    []contracts.AdminLink{},
+						Links:    GetAdminLinks(),
 					},
 					IsEdit:        true,
 					Role:          nil,
@@ -439,7 +439,7 @@ func RoleEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				_ = views.RoleForm(contracts.RoleFormViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    []contracts.AdminLink{},
+						Links:    GetAdminLinks(),
 					},
 					IsEdit:        true,
 					Role:          &draft,

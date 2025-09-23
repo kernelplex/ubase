@@ -394,6 +394,7 @@ func (app *UbaseApp) WithAdminPanel(permissions []string) {
 		ws.AddRoute(ubadminpanel.RoleCreatePostRoute(managementService))
 		ws.AddRoute(ubadminpanel.RoleEditRoute(managementService))
 		ws.AddRoute(ubadminpanel.RoleEditPostRoute(managementService))
+
 		ws.AddRoute(ubadminpanel.UsersListRoute(adapter))
 		ws.AddRoute(ubadminpanel.UserOverviewRoute(managementService))
 		ws.AddRoute(ubadminpanel.UserRolesListRoute(managementService))
@@ -402,6 +403,9 @@ func (app *UbaseApp) WithAdminPanel(permissions []string) {
 		ws.AddRoute(ubadminpanel.UserCreateRoute(managementService))
 		ws.AddRoute(ubadminpanel.UserCreatePostRoute(managementService))
 		ws.AddRoute(ubadminpanel.UserEditRoute(managementService))
+		ws.AddRoute(ubadminpanel.UserSettingsRoute(managementService))
+		ws.AddRoute(ubadminpanel.UserSettingsAddRoute(managementService))
+		ws.AddRoute(ubadminpanel.UserSettingsRemoveRoute(managementService))
 		ws.AddRoute(ubadminpanel.LoginRoute(primaryOrganization, managementService, cookieManager))
 		ws.AddRoute(ubadminpanel.VerifyTwoFactorRoute(managementService, cookieManager))
 		ws.AddRoute(ubadminpanel.LogoutRoute(cookieManager))

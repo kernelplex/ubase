@@ -67,5 +67,29 @@ templ UserOverview(vm contracts.UserOverviewViewModel) {
 			</div>
 			<div id="user-roles" hx-get={ fmt.Sprintf("/admin/users/%d/roles?org=%d", vm.ID, vm.SelectedOrganization) } hx-trigger="load" hx-target="#user-roles" hx-swap="outerHTML"></div>
 		</div>
+		<div class="admin-card">
+			<div class="settings-header">
+				<h2>Settings</h2>
+				<button type="button" class="role-toggle plus" onclick="document.getElementById('add-setting-form').classList.toggle('hidden')">+</button>
+			</div>
+			<div id="add-setting-form" class="add-setting-form hidden">
+				<form hx-post={ fmt.Sprintf("/admin/users/%d/settings/add", vm.ID) } hx-target="#settings-table" hx-swap="outerHTML">
+					<div class="setting-form-fields">
+						<div class="form-field setting-field">
+							<label for="setting-name">Name</label>
+							<input type="text" id="setting-name" name="name" required class="setting-input"/>
+						</div>
+						<div class="form-field setting-field">
+							<label for="setting-value">Value</label>
+							<input type="text" id="setting-value" name="value" required class="setting-input"/>
+						</div>
+						<div class="setting-submit">
+							<button type="submit" class="role-toggle">Add</button>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div id="settings-table" hx-get={ fmt.Sprintf("/admin/users/%d/settings", vm.ID) } hx-trigger="load" hx-swap="outerHTML"></div>
+		</div>
 	}
 }

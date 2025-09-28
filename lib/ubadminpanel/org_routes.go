@@ -29,7 +29,9 @@ type orgEditForm struct {
 }
 
 // OrganizationsRoute shows a searchable list of organizations.
-func OrganizationsRoute(mgmt ubmanage.ManagementService) contracts.Route {
+func OrganizationsRoute(mgmt ubmanage.ManagementService,
+	adminLinkService contracts.AdminLinkService,
+) contracts.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
 		resp, err := mgmt.OrganizationList(r.Context())
@@ -57,7 +59,7 @@ func OrganizationsRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		_ = views.OrganizationsPage(contracts.OrganizationsPageViewModel{
 			BaseViewModel: contracts.BaseViewModel{
 				Fragment: false,
-				Links:    GetAdminLinks(),
+				Links:    adminLinkService.GetLinks(r),
 			},
 			Organizations: orgs,
 			Query:         q,
@@ -72,7 +74,10 @@ func OrganizationsRoute(mgmt ubmanage.ManagementService) contracts.Route {
 }
 
 // OrganizationOverviewRoute shows a single organization's overview by ID.
-func OrganizationOverviewRoute(mgmt ubmanage.ManagementService) contracts.Route {
+func OrganizationOverviewRoute(mgmt ubmanage.ManagementService,
+	adminLinkService contracts.AdminLinkService,
+
+) contracts.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
@@ -99,7 +104,7 @@ func OrganizationOverviewRoute(mgmt ubmanage.ManagementService) contracts.Route 
 		_ = views.OrganizationOverview(contracts.OrganizationOverviewViewModel{
 			BaseViewModel: contracts.BaseViewModel{
 				Fragment: false,
-				Links:    GetAdminLinks(),
+				Links:    adminLinkService.GetLinks(r),
 			},
 			ID:         id,
 			Name:       name,
@@ -116,7 +121,8 @@ func OrganizationOverviewRoute(mgmt ubmanage.ManagementService) contracts.Route 
 }
 
 // OrganizationCreateRoute renders and processes the add organization form.
-func OrganizationCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
+func OrganizationCreateRoute(mgmt ubmanage.ManagementService,
+	adminLinkService contracts.AdminLinkService) contracts.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -125,7 +131,7 @@ func OrganizationCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
 			BaseViewModel: contracts.BaseViewModel{
 				Fragment: isHTMX(r),
-				Links:    GetAdminLinks(),
+				Links:    adminLinkService.GetLinks(r),
 			},
 			IsEdit:       false,
 			Organization: nil,
@@ -141,7 +147,10 @@ func OrganizationCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 	}
 }
 
-func OrganizationCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
+func OrganizationCreatePostRoute(
+	mgmt ubmanage.ManagementService,
+	adminLinkService contracts.AdminLinkService,
+) contracts.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -152,7 +161,7 @@ func OrganizationCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Rout
 			_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    GetAdminLinks(),
+					Links:    adminLinkService.GetLinks(r),
 				},
 				IsEdit:       false,
 				Organization: nil,
@@ -175,7 +184,7 @@ func OrganizationCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Rout
 			_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    GetAdminLinks(),
+					Links:    adminLinkService.GetLinks(r),
 				},
 				IsEdit:       false,
 				Organization: &draft,
@@ -325,7 +334,9 @@ func OrganizationSettingsRemoveRoute(mgmt ubmanage.ManagementService) contracts.
 }
 
 // OrganizationEditRoute renders and processes the edit organization form.
-func OrganizationEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
+func OrganizationEditRoute(mgmt ubmanage.ManagementService,
+	adminLinkService contracts.AdminLinkService,
+) contracts.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
 		id, _ := strconv.ParseInt(idStr, 10, 64)
@@ -344,7 +355,7 @@ func OrganizationEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    GetAdminLinks(),
+					Links:    adminLinkService.GetLinks(r),
 				},
 				IsEdit:       true,
 				Organization: &org,
@@ -360,7 +371,7 @@ func OrganizationEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    GetAdminLinks(),
+						Links:    adminLinkService.GetLinks(r),
 					},
 					IsEdit:       true,
 					Organization: nil,
@@ -381,7 +392,7 @@ func OrganizationEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				_ = views.OrganizationForm(contracts.OrganizationFormViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    GetAdminLinks(),
+						Links:    adminLinkService.GetLinks(r),
 					},
 					IsEdit:       true,
 					Organization: &draft,

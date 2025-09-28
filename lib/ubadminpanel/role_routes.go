@@ -27,7 +27,12 @@ type roleCreateForm struct {
 	OrganizationId int64  `json:"organization_id"`
 }
 
-func RoleOverviewRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService, permissions []string) contracts.Route {
+func RoleOverviewRoute(
+	adapter ubdata.DataAdapter,
+	mgmt ubmanage.ManagementService,
+	permissions []string,
+	adminLinkService contracts.AdminLinkService,
+) contracts.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
@@ -45,7 +50,7 @@ func RoleOverviewRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementServi
 		_ = views.RoleOverview(contracts.RoleOverviewViewModel{
 			BaseViewModel: contracts.BaseViewModel{
 				Fragment: false,
-				Links:    GetAdminLinks(),
+				Links:    adminLinkService.GetLinks(r),
 			},
 			ID:             id,
 			Name:           state.Name,
@@ -54,11 +59,11 @@ func RoleOverviewRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementServi
 		}).Render(r.Context(), w)
 	}
 
-    return contracts.Route{
-        Path:               "GET /admin/roles/{id}",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "GET /admin/roles/{id}",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 func RoleUsersListRoute(adapter ubdata.DataAdapter) contracts.Route {
@@ -93,11 +98,11 @@ func RoleUsersListRoute(adapter ubdata.DataAdapter) contracts.Route {
 		}
 		_ = views.RoleUsersTable(users, memberSet, id).Render(r.Context(), w)
 	}
-    return contracts.Route{
-        Path:               "GET /admin/roles/{id}/users",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "GET /admin/roles/{id}/users",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 func RoleUsersAddRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) contracts.Route {
@@ -132,11 +137,11 @@ func RoleUsersAddRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementServi
 		}
 		_ = views.RoleUserRow(id, user, memberSet[uid]).Render(r.Context(), w)
 	}
-    return contracts.Route{
-        Path:               "POST /admin/roles/{id}/users/add",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "POST /admin/roles/{id}/users/add",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 func RoleUsersRemoveRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) contracts.Route {
@@ -171,11 +176,11 @@ func RoleUsersRemoveRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementSe
 		}
 		_ = views.RoleUserRow(id, user, memberSet[uid]).Render(r.Context(), w)
 	}
-    return contracts.Route{
-        Path:               "POST /admin/roles/{id}/users/remove",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "POST /admin/roles/{id}/users/remove",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 func RolePermissionsListRoute(adapter ubdata.DataAdapter, permissions []string) contracts.Route {
@@ -208,11 +213,11 @@ func RolePermissionsListRoute(adapter ubdata.DataAdapter, permissions []string) 
 		}
 		_ = views.RolePermissionsTable(filtered, memberSet, id).Render(r.Context(), w)
 	}
-    return contracts.Route{
-        Path:               "GET /admin/roles/{id}/permissions",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "GET /admin/roles/{id}/permissions",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 func RolePermissionsAddRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) contracts.Route {
@@ -240,11 +245,11 @@ func RolePermissionsAddRoute(adapter ubdata.DataAdapter, mgmt ubmanage.Managemen
 		}
 		_ = views.RolePermissionRow(id, perm, memberSet[perm]).Render(r.Context(), w)
 	}
-    return contracts.Route{
-        Path:               "POST /admin/roles/{id}/permissions/add",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "POST /admin/roles/{id}/permissions/add",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 func RolePermissionsRemoveRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) contracts.Route {
@@ -272,14 +277,16 @@ func RolePermissionsRemoveRoute(adapter ubdata.DataAdapter, mgmt ubmanage.Manage
 		}
 		_ = views.RolePermissionRow(id, perm, memberSet[perm]).Render(r.Context(), w)
 	}
-    return contracts.Route{
-        Path:               "POST /admin/roles/{id}/permissions/remove",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "POST /admin/roles/{id}/permissions/remove",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
-func RoleCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
+func RoleCreateRoute(mgmt ubmanage.ManagementService,
+	adminLinkService contracts.AdminLinkService,
+) contracts.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		orgsResp, _ := mgmt.OrganizationList(r.Context())
 		orgs := []ubdata.Organization{}
@@ -300,7 +307,7 @@ func RoleCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.RoleForm(contracts.RoleFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    GetAdminLinks(),
+					Links:    adminLinkService.GetLinks(r),
 				},
 				IsEdit:        false,
 				Role:          nil,
@@ -315,7 +322,7 @@ func RoleCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				_ = views.RoleForm(contracts.RoleFormViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    GetAdminLinks(),
+						Links:    adminLinkService.GetLinks(r),
 					},
 					IsEdit:        false,
 					Role:          nil,
@@ -342,7 +349,7 @@ func RoleCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				_ = views.RoleForm(contracts.RoleFormViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    GetAdminLinks(),
+						Links:    adminLinkService.GetLinks(r),
 					},
 					IsEdit:        false,
 					Role:          &draft,
@@ -365,14 +372,16 @@ func RoleCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 	}
-    return contracts.Route{
-        Path:               "GET /admin/roles/new",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "GET /admin/roles/new",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
-func RoleEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
+func RoleEditRoute(mgmt ubmanage.ManagementService,
+	adminLinkService contracts.AdminLinkService,
+) contracts.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
 		roleId, _ := strconv.ParseInt(idStr, 10, 64)
@@ -397,7 +406,7 @@ func RoleEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.RoleForm(contracts.RoleFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    GetAdminLinks(),
+					Links:    adminLinkService.GetLinks(r),
 				},
 				IsEdit:        true,
 				Role:          &draft,
@@ -412,7 +421,7 @@ func RoleEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				_ = views.RoleForm(contracts.RoleFormViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    GetAdminLinks(),
+						Links:    adminLinkService.GetLinks(r),
 					},
 					IsEdit:        true,
 					Role:          nil,
@@ -439,7 +448,7 @@ func RoleEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				_ = views.RoleForm(contracts.RoleFormViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    GetAdminLinks(),
+						Links:    adminLinkService.GetLinks(r),
 					},
 					IsEdit:        true,
 					Role:          &draft,
@@ -462,11 +471,11 @@ func RoleEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 	}
-    return contracts.Route{
-        Path:               "GET /admin/roles/{id}/edit",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "GET /admin/roles/{id}/edit",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 func RoleCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
@@ -534,11 +543,11 @@ func RoleCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		http.Redirect(w, r, dest, http.StatusSeeOther)
 	}
-    return contracts.Route{
-        Path:               "POST /admin/roles/new",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "POST /admin/roles/new",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 func RoleEditPostRoute(mgmt ubmanage.ManagementService) contracts.Route {
@@ -609,9 +618,9 @@ func RoleEditPostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		http.Redirect(w, r, dest, http.StatusSeeOther)
 	}
-    return contracts.Route{
-        Path:               "POST /admin/roles/{id}/edit",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "POST /admin/roles/{id}/edit",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }

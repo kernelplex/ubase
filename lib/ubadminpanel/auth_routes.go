@@ -19,6 +19,7 @@ func LoginRoute(
 	primaryOrganization int64,
 	mgmt ubmanage.ManagementService,
 	cookieManager contracts.AuthTokenCookieManager,
+	adminLinkService contracts.AdminLinkService,
 ) contracts.Route {
 	ensure.That(primaryOrganization > 0, "primary organization must be set and greater than zero")
 
@@ -88,7 +89,7 @@ func LoginRoute(
 						_ = views.TwoFactor(contracts.TwoFactorViewModel{
 							BaseViewModel: contracts.BaseViewModel{
 								Fragment: isHTMX(r),
-								Links:    GetAdminLinks(),
+								Links:    adminLinkService.GetLinks(r),
 							},
 							UserID: resp.Data.UserId,
 							Error:  "",
@@ -98,7 +99,7 @@ func LoginRoute(
 					_ = views.Login(contracts.LoginViewModel{
 						BaseViewModel: contracts.BaseViewModel{
 							Fragment: isHTMX(r),
-							Links:    GetAdminLinks(),
+							Links:    adminLinkService.GetLinks(r),
 						},
 						Error: "Please verify your email before logging in.",
 					}).Render(r.Context(), w)
@@ -126,6 +127,7 @@ func LoginRoute(
 func VerifyTwoFactorRoute(
 	mgmt ubmanage.ManagementService,
 	cookieManager contracts.AuthTokenCookieManager,
+	adminLinkService contracts.AdminLinkService,
 ) contracts.Route {
 	return contracts.Route{
 		Path: "/admin/verify-2fa",
@@ -138,7 +140,7 @@ func VerifyTwoFactorRoute(
 				_ = views.TwoFactor(contracts.TwoFactorViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    GetAdminLinks(),
+						Links:    adminLinkService.GetLinks(r),
 					},
 					UserID: 0,
 					Error:  "Invalid form submission",
@@ -158,7 +160,7 @@ func VerifyTwoFactorRoute(
 				_ = views.TwoFactor(contracts.TwoFactorViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    GetAdminLinks(),
+						Links:    adminLinkService.GetLinks(r),
 					},
 					UserID: userId,
 					Error:  msg,
@@ -182,7 +184,7 @@ func VerifyTwoFactorRoute(
 				_ = views.TwoFactor(contracts.TwoFactorViewModel{
 					BaseViewModel: contracts.BaseViewModel{
 						Fragment: isHTMX(r),
-						Links:    GetAdminLinks(),
+						Links:    adminLinkService.GetLinks(r),
 					},
 					UserID: userId,
 					Error:  "Failed to create session. Try again.",

@@ -23,7 +23,10 @@ func isHTMX(r *http.Request) bool {
 // IsHTMX is an exported helper for consumers to detect HTMX requests.
 func IsHTMX(r *http.Request) bool { return isHTMX(r) }
 
-func AdminRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) contracts.Route {
+func AdminRoute(
+	adapter ubdata.DataAdapter,
+	mgmt ubmanage.ManagementService,
+	adminLinkService contracts.AdminLinkService) contracts.Route {
 
 	ensure.That(adapter != nil, "data adapter is required")
 
@@ -66,7 +69,7 @@ func AdminRoute(adapter ubdata.DataAdapter, mgmt ubmanage.ManagementService) con
 		vm := contracts.AdminPanelViewModel{
 			BaseViewModel: contracts.BaseViewModel{
 				Fragment: isHTMX(r),
-				Links:    GetAdminLinks(),
+				Links:    adminLinkService.GetLinks(r),
 			},
 			OrgCount:  orgs,
 			UserCount: users,

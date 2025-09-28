@@ -78,6 +78,7 @@ type UbaseApp struct {
 	prefectService        ubmanage.PrefectService
 	backgroundServices    []BackgroundService
 	permissionsMiddleware *ubwww.PermissionMiddleware
+	adminLinkService      contracts.AdminLinkService
 
 	cookieManager         contracts.AuthTokenCookieManager
 	webService            ubwww.WebService
@@ -369,49 +370,60 @@ func (app *UbaseApp) WithAdminPanel(permissions []string) {
 		managementService := app.GetManagementService()
 		cookieManager := app.GetCookieManager()
 		primaryOrganization := app.GetConfig().PrimaryOrganization
+		adminLinkService := app.GetAdminLinkService()
 
 		ws := app.GetWebService()
 		fs := http.FileServer(http.FS(ubadminpanel.Static))
 		ws.AddRouteHandler("/admin/static/", http.StripPrefix("/admin", fs))
-		ws.AddRoute(ubadminpanel.AdminRoute(adapter, managementService))
-		ws.AddRoute(ubadminpanel.OrganizationsRoute(managementService))
-		ws.AddRoute(ubadminpanel.OrganizationOverviewRoute(managementService))
-		ws.AddRoute(ubadminpanel.OrganizationCreateRoute(managementService))
-		ws.AddRoute(ubadminpanel.OrganizationCreatePostRoute(managementService))
+		ws.AddRoute(ubadminpanel.AdminRoute(adapter, managementService, adminLinkService))
+		ws.AddRoute(ubadminpanel.OrganizationsRoute(managementService, adminLinkService))
+		ws.AddRoute(ubadminpanel.OrganizationOverviewRoute(managementService, adminLinkService))
+		ws.AddRoute(ubadminpanel.OrganizationCreateRoute(managementService, adminLinkService))
+		ws.AddRoute(ubadminpanel.OrganizationCreatePostRoute(managementService, adminLinkService))
 		ws.AddRoute(ubadminpanel.OrganizationSettingsRoute(managementService))
 		ws.AddRoute(ubadminpanel.OrganizationSettingsAddRoute(managementService))
 		ws.AddRoute(ubadminpanel.OrganizationSettingsRemoveRoute(managementService))
 
-		ws.AddRoute(ubadminpanel.OrganizationEditRoute(managementService))
-		ws.AddRoute(ubadminpanel.RoleOverviewRoute(adapter, managementService, permissions))
+		ws.AddRoute(ubadminpanel.OrganizationEditRoute(managementService, adminLinkService))
+		ws.AddRoute(ubadminpanel.RoleOverviewRoute(adapter, managementService, permissions, adminLinkService))
 		ws.AddRoute(ubadminpanel.RoleUsersListRoute(adapter))
 		ws.AddRoute(ubadminpanel.RoleUsersAddRoute(adapter, managementService))
 		ws.AddRoute(ubadminpanel.RoleUsersRemoveRoute(adapter, managementService))
 		ws.AddRoute(ubadminpanel.RolePermissionsListRoute(adapter, permissions))
 		ws.AddRoute(ubadminpanel.RolePermissionsAddRoute(adapter, managementService))
 		ws.AddRoute(ubadminpanel.RolePermissionsRemoveRoute(adapter, managementService))
-		ws.AddRoute(ubadminpanel.RoleCreateRoute(managementService))
+		ws.AddRoute(ubadminpanel.RoleCreateRoute(managementService, adminLinkService))
 		ws.AddRoute(ubadminpanel.RoleCreatePostRoute(managementService))
-		ws.AddRoute(ubadminpanel.RoleEditRoute(managementService))
+		ws.AddRoute(ubadminpanel.RoleEditRoute(managementService, adminLinkService))
 		ws.AddRoute(ubadminpanel.RoleEditPostRoute(managementService))
 
-		ws.AddRoute(ubadminpanel.UsersListRoute(adapter))
-		ws.AddRoute(ubadminpanel.UserOverviewRoute(managementService))
+		ws.AddRoute(ubadminpanel.UsersListRoute(adapter, adminLinkService))
+		ws.AddRoute(ubadminpanel.UserOverviewRoute(managementService, adminLinkService))
 		ws.AddRoute(ubadminpanel.UserRolesListRoute(managementService))
 		ws.AddRoute(ubadminpanel.UserRolesAddRoute(managementService))
 		ws.AddRoute(ubadminpanel.UserRolesRemoveRoute(managementService))
-		ws.AddRoute(ubadminpanel.UserCreateRoute(managementService))
-		ws.AddRoute(ubadminpanel.UserCreatePostRoute(managementService))
-		ws.AddRoute(ubadminpanel.UserEditRoute(managementService))
+		ws.AddRoute(ubadminpanel.UserCreateRoute(managementService, adminLinkService))
+		ws.AddRoute(ubadminpanel.UserCreatePostRoute(managementService, adminLinkService))
+		ws.AddRoute(ubadminpanel.UserEditRoute(managementService, adminLinkService))
 		ws.AddRoute(ubadminpanel.UserSettingsRoute(managementService))
 		ws.AddRoute(ubadminpanel.UserSettingsAddRoute(managementService))
 		ws.AddRoute(ubadminpanel.UserSettingsRemoveRoute(managementService))
-		ws.AddRoute(ubadminpanel.LoginRoute(primaryOrganization, managementService, cookieManager))
-		ws.AddRoute(ubadminpanel.VerifyTwoFactorRoute(managementService, cookieManager))
+		ws.AddRoute(ubadminpanel.LoginRoute(primaryOrganization, managementService, cookieManager, adminLinkService))
+		ws.AddRoute(ubadminpanel.VerifyTwoFactorRoute(managementService, cookieManager, adminLinkService))
 		ws.AddRoute(ubadminpanel.LogoutRoute(cookieManager))
 
 		app.adminPanelInitialized = true
 	}
+}
+
+func (app *UbaseApp) GetAdminLinkService() contracts.AdminLinkService {
+	if app.adminLinkService == nil {
+		prefectService := app.GetPrefectService()
+		cookieManager := app.GetCookieManager()
+
+		app.adminLinkService = ubadminpanel.NewAdminLinkService(prefectService, cookieManager)
+	}
+	return app.adminLinkService
 }
 
 func (app *UbaseApp) GetWebService() ubwww.WebService {

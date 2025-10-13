@@ -77,7 +77,7 @@ type AuthTokenCookieManager interface {
 
 type BaseViewModel struct {
 	Fragment bool
-	Links    []AdminLink
+	Links    *AdminSectionLinks
 }
 
 type LoginViewModel struct {
@@ -93,10 +93,10 @@ type TwoFactorViewModel struct {
 
 type AdminPanelViewModel struct {
 	BaseViewModel
-	OrgCount   int64
-	UserCount  int64
-	RoleCount  int64
-	Recent     []RecentUser
+	OrgCount  int64
+	UserCount int64
+	RoleCount int64
+	Recent    []RecentUser
 }
 
 type RecentUser struct {
@@ -122,10 +122,10 @@ type OrganizationOverviewViewModel struct {
 
 type OrganizationFormViewModel struct {
 	BaseViewModel
-	IsEdit      bool
+	IsEdit       bool
 	Organization *ubdata.Organization
-	Error       string
-	FieldErrors map[string][]string
+	Error        string
+	FieldErrors  map[string][]string
 }
 
 type UsersPageViewModel struct {
@@ -153,18 +153,18 @@ type UserOverviewViewModel struct {
 
 type UserFormViewModel struct {
 	BaseViewModel
-	IsEdit     bool
-	User       *ubdata.User
-	Error      string
+	IsEdit      bool
+	User        *ubdata.User
+	Error       string
 	FieldErrors map[string][]string
 }
 
 type UserRolesViewModel struct {
 	BaseViewModel
-	UserID     int64
-	Roles      []ubdata.RoleRow
-	MemberSet  map[int64]bool
-	OrgID      int64
+	UserID    int64
+	Roles     []ubdata.RoleRow
+	MemberSet map[int64]bool
+	OrgID     int64
 }
 
 type RoleOverviewViewModel struct {
@@ -184,17 +184,17 @@ type RoleUsersViewModel struct {
 
 type RolePermissionsViewModel struct {
 	BaseViewModel
-	RoleID    int64
+	RoleID      int64
 	Permissions []string
-	MemberSet  map[string]bool
+	MemberSet   map[string]bool
 }
 
 type RoleFormViewModel struct {
 	BaseViewModel
-	IsEdit           bool
-	Role             *ubdata.RoleRow
-	Organizations    []ubdata.Organization
-	SelectedOrg      int64
-	Error            string
-	FieldErrors      map[string][]string
+	IsEdit        bool
+	Role          *ubdata.RoleRow
+	Organizations []ubdata.Organization
+	SelectedOrg   int64
+	Error         string
+	FieldErrors   map[string][]string
 }

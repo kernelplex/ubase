@@ -2,7 +2,7 @@ package layouts
 
 import "github.com/kernelplex/ubase/lib/contracts"
 
-templ Layout(showLogout bool, links []contracts.AdminLink) {
+templ Layout(showLogout bool, links *contracts.AdminSectionLinks, styles []string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -10,6 +10,9 @@ templ Layout(showLogout bool, links []contracts.AdminLink) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>My Website</title>
 			<link rel="stylesheet" href="/admin/static/style.css"/>
+			for _, style := range styles {
+				<link rel="stylesheet" href={ style }/>
+			}
 			<script src="/admin/static/htmx.min.js"></script>
 		</head>
 		<body class="admin-layout">
@@ -30,14 +33,16 @@ templ Layout(showLogout bool, links []contracts.AdminLink) {
 				if showLogout {
 					<div class="admin-shell">
 						<aside class="admin-sidebar">
-							<div class="admin-brand">Admin</div>
-							<nav class="admin-nav">
-								for _, link := range links {
-									<a href={ link.Path }>{ link.Title }</a>
-								}
-							</nav>
+							for title, section := range links.Iter() {
+								<div class="admin-brand">{ title }</div>
+								<nav class="admin-nav">
+									for _, l := range section {
+										<a href={ l.Path }>{ l.Title }</a>
+									}
+								</nav>
+							}
 						</aside>
-						<section id="panel-content" class="admin-panel">
+						<section id="main" class="admin-panel">
 							{ children... }
 						</section>
 					</div>
@@ -51,11 +56,21 @@ templ Layout(showLogout bool, links []contracts.AdminLink) {
 	</html>
 }
 
-templ LayoutOrFragment(fragment bool, showLogout bool, links []contracts.AdminLink) {
+templ RenderComponent(fragment bool, showLogout bool, links *contracts.AdminSectionLinks, styles []string, cmp templ.Component) {
+	if (fragment) {
+		@cmp
+	} else {
+		@Layout(showLogout, links, styles) {
+			@cmp
+		}
+	}
+}
+
+templ LayoutOrFragment(fragment bool, showLogout bool, links *contracts.AdminSectionLinks) {
 	if (fragment) {
 		{ children... }
 	} else {
-		@Layout(showLogout, links) {
+		@Layout(showLogout, links, nil) {
 			{ children... }
 		}
 	}

@@ -23,13 +23,13 @@ func NewAdminLinkService(
 	}
 }
 
-func (als *AdminLinkServiceImpl) GetLinks(r *http.Request) []contracts.AdminLink {
+func (als *AdminLinkServiceImpl) GetLinks(r *http.Request) *contracts.AdminSectionLinks {
 	identity, found := als.cookieManager.IdentityFromContext(r.Context())
 
-	linksToShow := make([]contracts.AdminLink, 0, len(als.links))
+	linksToShow := contracts.AdminSectionLinks{}
 	for _, link := range als.links {
 		if link.RequiredPermission == "" {
-			linksToShow = append(linksToShow, link)
+			linksToShow.Add(link)
 			continue
 		}
 		if !found || identity.UserID == 0 || identity.OrganizationID == 0 {
@@ -37,10 +37,10 @@ func (als *AdminLinkServiceImpl) GetLinks(r *http.Request) []contracts.AdminLink
 		}
 		hasPermission, err := als.prefectService.UserHasPermission(r.Context(), identity.UserID, identity.OrganizationID, link.RequiredPermission)
 		if err == nil && hasPermission {
-			linksToShow = append(linksToShow, link)
+			linksToShow.Add(link)
 		}
 	}
-	return linksToShow
+	return &linksToShow
 }
 
 func (als *AdminLinkServiceImpl) AddLink(link contracts.AdminLink) {
@@ -50,9 +50,8 @@ func (als *AdminLinkServiceImpl) AddLink(link contracts.AdminLink) {
 // GetAdminLinks returns the standard admin navigation links
 func getAdminLinks() []contracts.AdminLink {
 	return []contracts.AdminLink{
-		{Title: "Dashboard", Icon: "home", Path: "/admin/", HtmxAware: true},
-		{Title: "Organizations", Icon: "building", Path: "/admin/organizations", HtmxAware: true},
-		{Title: "Users", Icon: "users", Path: "/admin/users", HtmxAware: true},
-		{Title: "Roles", Icon: "key", Path: "/admin/roles", HtmxAware: true},
+		{Title: "Dashboard", Icon: "home", Path: "/admin/", HtmxAware: true, RequiredPermission: PermSystemAdmin, Section: "General"},
+		{Title: "Organizations", Icon: "building", Path: "/admin/organizations", HtmxAware: true, RequiredPermission: PermSystemAdmin, Section: "System"},
+		{Title: "Users", Icon: "users", Path: "/admin/users", HtmxAware: true, RequiredPermission: PermSystemAdmin, Section: "System"},
 	}
 }

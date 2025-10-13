@@ -498,7 +498,7 @@ func RoleCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.RoleForm(contracts.RoleFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    []contracts.AdminLink{},
+					Links:    nil,
 				},
 				IsEdit:        false,
 				Role:          nil,
@@ -524,7 +524,7 @@ func RoleCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.RoleForm(contracts.RoleFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    []contracts.AdminLink{},
+					Links:    nil,
 				},
 				IsEdit:        false,
 				Role:          &draft,
@@ -572,7 +572,7 @@ func RoleEditPostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.RoleForm(contracts.RoleFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    []contracts.AdminLink{},
+					Links:    nil,
 				},
 				IsEdit:        true,
 				Role:          nil,
@@ -599,7 +599,7 @@ func RoleEditPostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			_ = views.RoleForm(contracts.RoleFormViewModel{
 				BaseViewModel: contracts.BaseViewModel{
 					Fragment: isHTMX(r),
-					Links:    []contracts.AdminLink{},
+					Links:    nil,
 				},
 				IsEdit:        true,
 				Role:          &draft,

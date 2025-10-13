@@ -79,6 +79,7 @@ type UbaseApp struct {
 	backgroundServices    []BackgroundService
 	permissionsMiddleware *ubwww.PermissionMiddleware
 	adminLinkService      contracts.AdminLinkService
+	adminRenderer         contracts.AdminRenderer
 
 	cookieManager         contracts.AuthTokenCookieManager
 	webService            ubwww.WebService
@@ -364,9 +365,19 @@ func (app *UbaseApp) GetPermissionsMiddleware() *ubwww.PermissionMiddleware {
 	return app.permissionsMiddleware
 }
 
+func (app *UbaseApp) GetAdminRenderer() contracts.AdminRenderer {
+	if app.adminRenderer == nil {
+		adminLinkService := app.GetAdminLinkService()
+		app.adminRenderer = ubadminpanel.NewAdminRenderer(adminLinkService)
+	}
+	return app.adminRenderer
+
+}
+
 func (app *UbaseApp) WithAdminPanel(permissions []string) {
 	if !app.adminPanelInitialized {
 		adapter := app.GetDBAdapter()
+		prefectService := app.GetPrefectService()
 		managementService := app.GetManagementService()
 		cookieManager := app.GetCookieManager()
 		primaryOrganization := app.GetConfig().PrimaryOrganization
@@ -375,7 +386,8 @@ func (app *UbaseApp) WithAdminPanel(permissions []string) {
 		ws := app.GetWebService()
 		fs := http.FileServer(http.FS(ubadminpanel.Static))
 		ws.AddRouteHandler("/admin/static/", http.StripPrefix("/admin", fs))
-		ws.AddRoute(ubadminpanel.AdminRoute(adapter, managementService, adminLinkService))
+		ws.AddRoute(ubadminpanel.AdminBasicRoute(prefectService, cookieManager, adminLinkService))
+		ws.AddRoute(ubadminpanel.AdminPanelRoute(adapter, managementService, adminLinkService))
 		ws.AddRoute(ubadminpanel.OrganizationsRoute(managementService, adminLinkService))
 		ws.AddRoute(ubadminpanel.OrganizationOverviewRoute(managementService, adminLinkService))
 		ws.AddRoute(ubadminpanel.OrganizationCreateRoute(managementService, adminLinkService))

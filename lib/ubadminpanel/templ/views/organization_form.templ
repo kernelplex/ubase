@@ -1,63 +1,63 @@
 package views
 
 import (
-    "github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
-    "github.com/kernelplex/ubase/lib/ubadminpanel/templ/views/components"
-    "github.com/kernelplex/ubase/lib/ubdata"
+	"github.com/kernelplex/ubase/lib/contracts"
+	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
+	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/views/components"
 )
 
-templ OrganizationForm(fragment bool, isEdit bool, org *ubdata.Organization, err string, fieldErrors map[string][]string) {
-    @layouts.LayoutOrFragment(fragment, true) {
-        <section class="auth-screen">
-            <div class="auth-card">
-                if isEdit {
-                    <h1>Edit Organization</h1>
-                } else {
-                    <h1>Add Organization</h1>
-                }
-                if err != "" {
-                    <div class="error">{ err }</div>
-                }
-                <form class="auth-form" method="post">
-                    <div class="form-field">
-                        <label for="name">Name</label>
-                        <input id="name" type="text" name="name" value={ func() string { if org != nil { return org.Name } ; return "" }() } required/>
-                        @components.FieldErrors(fieldErrors["name"])
-                    </div>
-                    <div class="form-field">
-                        <label for="system_name">System Name</label>
-                        <input id="system_name" type="text" name="system_name" value={ func() string { if org != nil { return org.SystemName } ; return "" }() } required/>
-                        @components.FieldErrors(fieldErrors["systemName"])
-                    </div>
-                    <div class="form-field">
-                        <label for="status">Status</label>
-                        <select id="status" name="status" required>
-                            if org != nil {
-                                if org.Status == "inactive" {
-                                    <option value="active">Active</option>
-                                    <option value="inactive" selected>Inactive</option>
-                                } else {
-                                    <option value="active" selected>Active</option>
-                                    <option value="inactive">Inactive</option>
-                                }
-                            } else {
-                                <option value="active" selected>Active</option>
-                                <option value="inactive">Inactive</option>
-                            }
-                        </select>
-                        @components.FieldErrors(fieldErrors["status"])
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit">
-                            if isEdit {
-                                <span>Save Changes</span>
-                            } else {
-                                <span>Create Organization</span>
-                            }
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </section>
-    }
+templ OrganizationForm(vm contracts.OrganizationFormViewModel) {
+	@layouts.LayoutOrFragment(vm.Fragment, true, vm.Links) {
+		<section class="auth-screen">
+			<div class="auth-card">
+				if vm.IsEdit {
+					<h1>Edit Organization</h1>
+				} else {
+					<h1>Add Organization</h1>
+				}
+				if vm.Error != "" {
+					<div class="error">{ vm.Error }</div>
+				}
+				<form class="auth-form" method="post">
+					<div class="form-field">
+						<label for="name">Name</label>
+						<input id="name" type="text" name="name" value={ func() string { if vm.Organization != nil { return vm.Organization.Name } ; return "" }() } required/>
+						@components.FieldErrors(vm.FieldErrors["name"])
+					</div>
+					<div class="form-field">
+						<label for="system_name">System Name</label>
+						<input id="system_name" type="text" name="system_name" value={ func() string { if vm.Organization != nil { return vm.Organization.SystemName } ; return "" }() } required/>
+						@components.FieldErrors(vm.FieldErrors["systemName"])
+					</div>
+					<div class="form-field">
+						<label for="status">Status</label>
+						<select id="status" name="status" required>
+							if vm.Organization != nil {
+								if vm.Organization.Status == "inactive" {
+									<option value="active">Active</option>
+									<option value="inactive" selected>Inactive</option>
+								} else {
+									<option value="active" selected>Active</option>
+									<option value="inactive">Inactive</option>
+								}
+							} else {
+								<option value="active" selected>Active</option>
+								<option value="inactive">Inactive</option>
+							}
+						</select>
+						@components.FieldErrors(vm.FieldErrors["status"])
+					</div>
+					<div class="form-actions">
+						<button type="submit">
+							if vm.IsEdit {
+								<span>Save Changes</span>
+							} else {
+								<span>Create Organization</span>
+							}
+						</button>
+					</div>
+				</form>
+			</div>
+		</section>
+	}
 }

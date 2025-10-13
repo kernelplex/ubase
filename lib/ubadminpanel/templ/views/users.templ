@@ -2,12 +2,13 @@ package views
 
 import (
     "fmt"
+    "github.com/kernelplex/ubase/lib/contracts"
     "github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
     "github.com/kernelplex/ubase/lib/ubdata"
 )
 
-templ UsersPage(fragment bool, users []ubdata.User, q string) {
-    @layouts.LayoutOrFragment(fragment, true) {
+templ UsersPage(vm contracts.UsersPageViewModel) {
+    @layouts.LayoutOrFragment(vm.Fragment, true, vm.Links) {
         <div class="admin-card">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: .75rem;">
                 <h1>Users</h1>
@@ -18,7 +19,7 @@ templ UsersPage(fragment bool, users []ubdata.User, q string) {
                     type="text"
                     name="q"
                     placeholder="Search by name or email..."
-                    value={ q }
+                    value={ vm.Query }
                     hx-get="/admin/users"
                     hx-trigger="input changed delay:1s"
                     hx-target="#user-table"
@@ -26,7 +27,7 @@ templ UsersPage(fragment bool, users []ubdata.User, q string) {
                     style="width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--color-trim); border-radius: 8px; background: var(--color-surface-2); color: var(--text);"
                 />
             </div>
-            @UsersTable(users)
+            @UsersTable(vm.Users)
         </div>
     }
 }

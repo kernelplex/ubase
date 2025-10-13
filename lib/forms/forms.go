@@ -32,7 +32,7 @@ func ParseFormToStruct(r *http.Request, dest any) error {
 		return errors.New("dest cannot be nil")
 	}
 	rv := reflect.ValueOf(dest)
-	if rv.Kind() != reflect.Pointer || rv.Elem().Kind() != reflect.Struct {
+	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
 		return errors.New("dest must be a pointer to a struct")
 	}
 	if err := r.ParseForm(); err != nil {
@@ -54,11 +54,10 @@ func ParseFormToStruct(r *http.Request, dest any) error {
 		}
 	}
 
-	return populateStruct(form, rv.Elem(), validationErrTracker)
-
+	return populateStruct(form, rv.Elem(), validationErrTracker, "")
 }
 
-func populateStruct(form map[string][]string, sv reflect.Value, tracker *ubvalidation.ValidationTracker) error {
+func populateStruct(form map[string][]string, sv reflect.Value, tracker *ubvalidation.ValidationTracker, prefix string) error {
 	st := sv.Type()
 	for i := 0; i < st.NumField(); i++ {
 		sf := st.Field(i)
@@ -74,26 +73,63 @@ func populateStruct(form map[string][]string, sv reflect.Value, tracker *ubvalid
 
 		// If it's an embedded struct, recurse (no tag lookup for embedding).
 		if sf.Anonymous && fv.Kind() == reflect.Struct && fv.CanSet() {
-			if err := populateStruct(form, fv, tracker); err != nil {
+			if err := populateStruct(form, fv, tracker, prefix); err != nil {
 				return err
 			}
 			continue
 		}
 
-		// Determine lookup key: json tag name (before comma) or field name.
-		key := jsonFieldName(sf)
-		if key == "" {
-			key = sf.Name
+		// Determine full key for this field.
+		fieldKey := prefix
+		if prefix != "" {
+			fieldKey += "."
+		}
+		jsonName := jsonFieldName(sf)
+		if jsonName != "" {
+			fieldKey += jsonName
+		} else {
+			fieldKey += sf.Name
 		}
 
-		rawVals, ok := form[key]
+		// Handle struct fields (including time.Time and nested structs).
+		if fv.Kind() == reflect.Struct || (fv.Kind() == reflect.Pointer && fv.Type().Elem().Kind() == reflect.Struct) {
+			if fv.Kind() == reflect.Pointer {
+				if fv.IsNil() {
+					et := fv.Type().Elem()
+					fv.Set(reflect.New(et))
+				}
+				fv = fv.Elem()
+			}
+			// Now fv is the struct value.
+			if fv.Type() == reflect.TypeOf(time.Time{}) {
+				rawVals, ok := form[fieldKey]
+				if !ok || len(rawVals) == 0 {
+					continue
+				}
+				t, err := parseTime(rawVals[0])
+				if err != nil {
+					tracker.AddIssue(fieldKey, err.Error())
+					return fmt.Errorf("field %q: %w", fieldKey, err)
+				}
+				fv.Set(reflect.ValueOf(t))
+				continue
+			}
+			// Recurse into nested struct.
+			if err := populateStruct(form, fv, tracker, fieldKey); err != nil {
+				return err
+			}
+			continue
+		}
+
+		// For other fields (primitives, pointers to primitives, slices), look up and set.
+		rawVals, ok := form[fieldKey]
 		if !ok || len(rawVals) == 0 {
 			continue // nothing to set
 		}
 
 		if err := setValue(fv, sf, rawVals); err != nil {
-			tracker.AddIssue(key, err.Error())
-			return fmt.Errorf("field %q: %w", sf.Name, err)
+			tracker.AddIssue(fieldKey, err.Error())
+			return fmt.Errorf("field %q: %w", fieldKey, err)
 		}
 	}
 	return nil
@@ -164,19 +200,6 @@ func setValue(fv reflect.Value, sf reflect.StructField, rawVals []string) error 
 			return fmt.Errorf("invalid bool %q", first())
 		}
 		fv.SetBool(b)
-		return nil
-
-	case reflect.Struct:
-		// Support time.Time
-		if fv.Type() == reflect.TypeOf(time.Time{}) {
-			t, err := parseTime(first())
-			if err != nil {
-				return err
-			}
-			fv.Set(reflect.ValueOf(t))
-			return nil
-		}
-		// For non-time structs, quietly skip setting to avoid spurious errors.
 		return nil
 
 	case reflect.Slice:

@@ -9,12 +9,12 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"github.com/kernelplex/ubase/lib/contracts"
 	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
 	"github.com/kernelplex/ubase/lib/ubadminpanel/templ/views/components"
-	"github.com/kernelplex/ubase/lib/ubdata"
 )
 
-func OrganizationForm(fragment bool, isEdit bool, org *ubdata.Organization, err string, fieldErrors map[string][]string) templ.Component {
+func OrganizationForm(vm contracts.OrganizationFormViewModel) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -51,7 +51,7 @@ func OrganizationForm(fragment bool, isEdit bool, org *ubdata.Organization, err 
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if isEdit {
+			if vm.IsEdit {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<h1>Edit Organization</h1>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -62,15 +62,15 @@ func OrganizationForm(fragment bool, isEdit bool, org *ubdata.Organization, err 
 					return templ_7745c5c3_Err
 				}
 			}
-			if err != "" {
+			if vm.Error != "" {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"error\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var3 string
-				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(err)
+				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(vm.Error)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/organization_form.templ`, Line: 19, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/organization_form.templ`, Line: 19, Col: 34}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -87,13 +87,13 @@ func OrganizationForm(fragment bool, isEdit bool, org *ubdata.Organization, err 
 			}
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(func() string {
-				if org != nil {
-					return org.Name
+				if vm.Organization != nil {
+					return vm.Organization.Name
 				}
 				return ""
 			}())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/organization_form.templ`, Line: 24, Col: 138}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/organization_form.templ`, Line: 24, Col: 144}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -103,7 +103,7 @@ func OrganizationForm(fragment bool, isEdit bool, org *ubdata.Organization, err 
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = components.FieldErrors(fieldErrors["name"]).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.FieldErrors(vm.FieldErrors["name"]).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -113,13 +113,13 @@ func OrganizationForm(fragment bool, isEdit bool, org *ubdata.Organization, err 
 			}
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(func() string {
-				if org != nil {
-					return org.SystemName
+				if vm.Organization != nil {
+					return vm.Organization.SystemName
 				}
 				return ""
 			}())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/organization_form.templ`, Line: 29, Col: 158}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `lib/ubadminpanel/templ/views/organization_form.templ`, Line: 29, Col: 164}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -129,7 +129,7 @@ func OrganizationForm(fragment bool, isEdit bool, org *ubdata.Organization, err 
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = components.FieldErrors(fieldErrors["systemName"]).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.FieldErrors(vm.FieldErrors["systemName"]).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -137,8 +137,8 @@ func OrganizationForm(fragment bool, isEdit bool, org *ubdata.Organization, err 
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if org != nil {
-				if org.Status == "inactive" {
+			if vm.Organization != nil {
+				if vm.Organization.Status == "inactive" {
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<option value=\"active\">Active</option> <option value=\"inactive\" selected>Inactive</option>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
@@ -159,7 +159,7 @@ func OrganizationForm(fragment bool, isEdit bool, org *ubdata.Organization, err 
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = components.FieldErrors(fieldErrors["status"]).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = components.FieldErrors(vm.FieldErrors["status"]).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -167,7 +167,7 @@ func OrganizationForm(fragment bool, isEdit bool, org *ubdata.Organization, err 
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if isEdit {
+			if vm.IsEdit {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<span>Save Changes</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -184,7 +184,7 @@ func OrganizationForm(fragment bool, isEdit bool, org *ubdata.Organization, err 
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layouts.LayoutOrFragment(fragment, true).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layouts.LayoutOrFragment(vm.Fragment, true, vm.Links).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

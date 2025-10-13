@@ -87,19 +87,23 @@ func (p *PrefectServiceImpl) getUserData(ctx context.Context, userId int64) (*Us
 	userData, found := p.userCache.Get(userId)
 	slog.Info("getUserData", "userId", userId, "foundInCache", found)
 	if !found {
+		slog.Debug("User not found in cache, loading from management service", "userId", userId)
 		// Load user data from management service
 		userResp, err := p.managementService.UserGetById(ctx, userId)
 		if err != nil {
+			slog.Error("Error getting user by ID", "userId", userId, "error", err)
 			return nil, err
 		}
 
 		if userResp.Status != ubstatus.Success {
+			slog.Error("Failed to get user data", "userId", userId, "message", userResp.Message)
 			return nil, fmt.Errorf("failed to get user data: %s", userResp.Message)
 		}
 
 		roleList, err := p.managementService.UserGetAllOrganizationRoles(ctx, userId)
 
 		if err != nil {
+			slog.Error("Error getting user roles", "userId", userId, "error", err)
 			return nil, err
 		}
 
@@ -164,7 +168,6 @@ func (p *PrefectServiceImpl) getGroupPermissions(ctx context.Context, groupId in
 }
 
 func (p *PrefectServiceImpl) UserHasPermission(ctx context.Context, userId int64, orgId int64, permission string) (bool, error) {
-	slog.Info("Checking if user has permission", "userId", userId, "orgId", orgId, "permission", permission)
 	if started := p.started; !started {
 		slog.Error("prefect service not started")
 		return false, fmt.Errorf("prefect service not started")
@@ -172,16 +175,19 @@ func (p *PrefectServiceImpl) UserHasPermission(ctx context.Context, userId int64
 
 	userData, err := p.getUserData(ctx, userId)
 	if err != nil {
+		slog.Error("Error getting user data", "error", err)
 		return false, err
 	}
 
 	for _, roleId := range userData.Roles {
 		groupData, err := p.getGroupPermissions(ctx, roleId)
 		if err != nil {
+			slog.Error("Error getting group data", "error", err)
 			return false, err
 		}
 
 		if groupData.OrganizationId != orgId {
+			slog.Debug("Skipping group as orgId does not match", "groupId", groupData.GroupId, "groupOrgId", groupData.OrganizationId, "userOrgId", orgId)
 			continue
 		}
 
@@ -248,7 +254,7 @@ func (p *PrefectServiceImpl) ApiKeyToUser(ctx context.Context, apiKey string) (A
 }
 
 func (p *PrefectServiceImpl) main() {
-	slog.Info("********** Starting Prefect Service **********")
+	slog.Info("Starting Prefect Service")
 	filter := evercore.SubscriptionFilter{
 		EventTypes: []string{},
 	}

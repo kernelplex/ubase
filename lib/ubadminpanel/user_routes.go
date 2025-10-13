@@ -34,7 +34,10 @@ type userEditForm struct {
 	Verified    bool   `json:"verified"`
 }
 
-func UsersListRoute(adapter ubdata.DataAdapter) contracts.Route {
+func UsersListRoute(
+	adapter ubdata.DataAdapter,
+	adminLinkService contracts.AdminLinkService,
+) contracts.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
 		const limit = 25
@@ -48,17 +51,29 @@ func UsersListRoute(adapter ubdata.DataAdapter) contracts.Route {
 			_ = views.UsersTable(users).Render(r.Context(), w)
 			return
 		}
-		_ = views.UsersPage(false, users, q).Render(r.Context(), w)
+		_ = views.UsersPage(contracts.UsersPageViewModel{
+			BaseViewModel: contracts.BaseViewModel{
+				Fragment: false,
+				Links:    adminLinkService.GetLinks(r),
+			},
+			Users: users,
+			Query: q,
+		}).Render(r.Context(), w)
 	}
-    return contracts.Route{
-        Path:               "GET /admin/users",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "GET /admin/users",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
-func UserOverviewRoute(mgmt ubmanage.ManagementService) contracts.Route {
-	handler := func(w http.ResponseWriter, r *http.Request) {
+func UserOverviewRoute(mgmt ubmanage.ManagementService,
+	adminLinkService contracts.AdminLinkService,
+
+) contracts.Route {
+
+	handler := func(w http.ResponseWriter, r *http.Request,
+	) {
 		idStr := r.PathValue("id")
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil || id <= 0 {
@@ -86,13 +101,31 @@ func UserOverviewRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		if len(orgs) > 0 && selectedOrg == 0 {
 			selectedOrg = orgs[0].ID
 		}
-		_ = views.UserOverview(false, id, st.DisplayName, st.Email, st.FirstName, st.LastName, st.Verified, st.Disabled, st.LastLogin, st.LoginCount, st.LastLoginAttempt, st.FailedLoginAttempts, orgs, selectedOrg).Render(r.Context(), w)
+		_ = views.UserOverview(contracts.UserOverviewViewModel{
+			BaseViewModel: contracts.BaseViewModel{
+				Fragment: false,
+				Links:    adminLinkService.GetLinks(r),
+			},
+			ID:                   id,
+			DisplayName:          st.DisplayName,
+			Email:                st.Email,
+			FirstName:            st.FirstName,
+			LastName:             st.LastName,
+			Verified:             st.Verified,
+			Disabled:             st.Disabled,
+			LastLogin:            st.LastLogin,
+			LoginCount:           st.LoginCount,
+			LastFailedLogin:      st.LastLoginAttempt,
+			FailedLoginAttempts:  st.FailedLoginAttempts,
+			Organizations:        orgs,
+			SelectedOrganization: selectedOrg,
+		}).Render(r.Context(), w)
 	}
-    return contracts.Route{
-        Path:               "GET /admin/users/{id}",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "GET /admin/users/{id}",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 func UserRolesListRoute(mgmt ubmanage.ManagementService) contracts.Route {
@@ -123,11 +156,11 @@ func UserRolesListRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		_ = views.UserRolesTable(id, rolesResp.Data, memberSet, orgId).Render(r.Context(), w)
 	}
-    return contracts.Route{
-        Path:               "GET /admin/users/{id}/roles",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "GET /admin/users/{id}/roles",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 func UserRolesAddRoute(mgmt ubmanage.ManagementService) contracts.Route {
@@ -170,11 +203,11 @@ func UserRolesAddRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		_ = views.UserRoleRow(id, role, memberSet[roleId], orgId).Render(r.Context(), w)
 	}
-    return contracts.Route{
-        Path:               "POST /admin/users/{id}/roles/add",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "POST /admin/users/{id}/roles/add",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
 func UserRolesRemoveRoute(mgmt ubmanage.ManagementService) contracts.Route {
@@ -217,29 +250,42 @@ func UserRolesRemoveRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		_ = views.UserRoleRow(id, role, memberSet[roleId], orgId).Render(r.Context(), w)
 	}
-    return contracts.Route{
-        Path:               "POST /admin/users/{id}/roles/remove",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "POST /admin/users/{id}/roles/remove",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
-func UserCreateRoute(mgmt ubmanage.ManagementService) contracts.Route {
+func UserCreateRoute(mgmt ubmanage.ManagementService,
+	adminLinkService contracts.AdminLinkService,
+) contracts.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
-			_ = views.UserForm(isHTMX(r), false, nil, "", nil).Render(r.Context(), w)
+			_ = views.UserForm(contracts.UserFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    adminLinkService.GetLinks(r),
+				},
+				IsEdit:      false,
+				User:        nil,
+				Error:       "",
+				FieldErrors: nil,
+			}).Render(r.Context(), w)
 			return
 		}
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
-    return contracts.Route{
-        Path:               "GET /admin/users/new",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "GET /admin/users/new",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
-func UserCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
+func UserCreatePostRoute(mgmt ubmanage.ManagementService,
+	adminLinkService contracts.AdminLinkService,
+) contracts.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -247,7 +293,16 @@ func UserCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		var f userCreateForm
 		if err := forms.ParseFormToStruct(r, &f); err != nil {
-			_ = views.UserForm(isHTMX(r), false, nil, "Invalid form submission", nil).Render(r.Context(), w)
+			_ = views.UserForm(contracts.UserFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    adminLinkService.GetLinks(r),
+				},
+				IsEdit:      false,
+				User:        nil,
+				Error:       "Invalid form submission",
+				FieldErrors: nil,
+			}).Render(r.Context(), w)
 			return
 		}
 		email := strings.TrimSpace(f.Email)
@@ -265,7 +320,16 @@ func UserCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			errMap := resp.GetValidationMap()
 			msg := resp.Message
 			draft := ubdata.User{Email: email, FirstName: first, LastName: last, DisplayName: display, Verified: verified}
-			_ = views.UserForm(isHTMX(r), false, &draft, msg, errMap).Render(r.Context(), w)
+			_ = views.UserForm(contracts.UserFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    adminLinkService.GetLinks(r),
+				},
+				IsEdit:      false,
+				User:        &draft,
+				Error:       msg,
+				FieldErrors: errMap,
+			}).Render(r.Context(), w)
 			return
 		}
 		dest := "/admin/users/" + strconv.FormatInt(resp.Data.Id, 10)
@@ -276,14 +340,17 @@ func UserCreatePostRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		http.Redirect(w, r, dest, http.StatusSeeOther)
 	}
-    return contracts.Route{
-        Path:               "POST /admin/users/new",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "POST /admin/users/new",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }
 
-func UserEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
+func UserEditRoute(mgmt ubmanage.ManagementService,
+	adminLinkService contracts.AdminLinkService,
+
+) contracts.Route {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.PathValue("id")
 		id, _ := strconv.ParseInt(idStr, 10, 64)
@@ -299,13 +366,31 @@ func UserEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 			}
 			st := uresp.Data.State
 			draft := ubdata.User{UserID: id, Email: st.Email, FirstName: st.FirstName, LastName: st.LastName, DisplayName: st.DisplayName, Verified: st.Verified}
-			_ = views.UserForm(isHTMX(r), true, &draft, "", nil).Render(r.Context(), w)
+			_ = views.UserForm(contracts.UserFormViewModel{
+				BaseViewModel: contracts.BaseViewModel{
+					Fragment: isHTMX(r),
+					Links:    adminLinkService.GetLinks(r),
+				},
+				IsEdit:      true,
+				User:        &draft,
+				Error:       "",
+				FieldErrors: nil,
+			}).Render(r.Context(), w)
 			return
 		}
 		if r.Method == http.MethodPost {
 			var f userEditForm
 			if err := forms.ParseFormToStruct(r, &f); err != nil {
-				_ = views.UserForm(isHTMX(r), true, nil, "Invalid form submission", nil).Render(r.Context(), w)
+				_ = views.UserForm(contracts.UserFormViewModel{
+					BaseViewModel: contracts.BaseViewModel{
+						Fragment: isHTMX(r),
+						Links:    adminLinkService.GetLinks(r),
+					},
+					IsEdit:      true,
+					User:        nil,
+					Error:       "Invalid form submission",
+					FieldErrors: nil,
+				}).Render(r.Context(), w)
 				return
 			}
 			email := strings.TrimSpace(f.Email)
@@ -328,7 +413,16 @@ func UserEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 				errMap := resp.GetValidationMap()
 				msg := resp.Message
 				draft := ubdata.User{UserID: id, Email: email, FirstName: first, LastName: last, DisplayName: display, Verified: verified}
-				_ = views.UserForm(isHTMX(r), true, &draft, msg, errMap).Render(r.Context(), w)
+				_ = views.UserForm(contracts.UserFormViewModel{
+					BaseViewModel: contracts.BaseViewModel{
+						Fragment: isHTMX(r),
+						Links:    adminLinkService.GetLinks(r),
+					},
+					IsEdit:      true,
+					User:        &draft,
+					Error:       msg,
+					FieldErrors: errMap,
+				}).Render(r.Context(), w)
 				return
 			}
 			dest := "/admin/users/" + strconv.FormatInt(id, 10)
@@ -342,9 +436,133 @@ func UserEditRoute(mgmt ubmanage.ManagementService) contracts.Route {
 		}
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
-    return contracts.Route{
-        Path:               "/admin/users/{id}/edit",
-        RequiresPermission: PermSystemAdmin,
-        Func:               handler,
-    }
+	return contracts.Route{
+		Path:               "/admin/users/{id}/edit",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
+}
+
+// UserSettingsRoute displays the settings for a user
+func UserSettingsRoute(mgmt ubmanage.ManagementService) contracts.Route {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.PathValue("id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil || id <= 0 {
+			http.NotFound(w, r)
+			return
+		}
+
+		// Get user settings
+		userResponse, _ := mgmt.UserGetById(r.Context(), id)
+		if userResponse.Status != ubstatus.Success {
+			http.NotFound(w, r)
+			return
+		}
+		settings := userResponse.Data.State.Settings
+
+		_ = views.UserSettingsTable(id, settings).Render(r.Context(), w)
+	}
+
+	return contracts.Route{
+		Path:               "GET /admin/users/{id}/settings",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
+}
+
+// UserSettingsAddRoute adds a new setting
+func UserSettingsAddRoute(mgmt ubmanage.ManagementService) contracts.Route {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.PathValue("id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil || id <= 0 {
+			http.NotFound(w, r)
+			return
+		}
+
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		name := strings.TrimSpace(r.FormValue("name"))
+		value := strings.TrimSpace(r.FormValue("value"))
+
+		if name == "" {
+			http.Error(w, "Name is required", http.StatusBadRequest)
+			return
+		}
+
+		// Add the setting
+		_, err = mgmt.UserSettingsAdd(r.Context(), ubmanage.UserSettingsAddCommand{
+			Id:       id,
+			Settings: map[string]string{name: value},
+		}, "web:ubadminpanel")
+
+		if err != nil {
+			slog.Error("failed to add user setting", "error", err)
+			http.Error(w, "Failed to add setting", http.StatusInternalServerError)
+			return
+		}
+
+		// Get user settings
+		userResponse, _ := mgmt.UserGetById(r.Context(), id)
+		if userResponse.Status != ubstatus.Success {
+			http.NotFound(w, r)
+			return
+		}
+		settings := userResponse.Data.State.Settings
+		_ = views.UserSettingsTable(id, settings).Render(r.Context(), w)
+	}
+
+	return contracts.Route{
+		Path:               "POST /admin/users/{id}/settings/add",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
+}
+
+// UserSettingsRemoveRoute removes a setting
+func UserSettingsRemoveRoute(mgmt ubmanage.ManagementService) contracts.Route {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		idStr := r.PathValue("id")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil || id <= 0 {
+			http.NotFound(w, r)
+			return
+		}
+
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		name := strings.TrimSpace(r.FormValue("name"))
+		if name == "" {
+			http.Error(w, "Name is required", http.StatusBadRequest)
+			return
+		}
+
+		// Remove the setting
+		_, err = mgmt.UserSettingsRemove(r.Context(), ubmanage.UserSettingsRemoveCommand{
+			Id:          id,
+			SettingKeys: []string{name},
+		}, "web:ubadminpanel")
+
+		if err != nil {
+			slog.Error("failed to remove user setting", "error", err)
+			http.Error(w, "Failed to remove setting", http.StatusInternalServerError)
+			return
+		}
+
+		// Return empty content which will remove the row via HTMX
+		w.WriteHeader(http.StatusOK)
+	}
+
+	return contracts.Route{
+		Path:               "POST /admin/users/{id}/settings/remove",
+		RequiresPermission: PermSystemAdmin,
+		Func:               handler,
+	}
 }

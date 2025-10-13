@@ -67,8 +67,6 @@ func (c *CookieMonster) ReadAuthTokenCookie(r *http.Request) (bool, contracts.Au
 		slog.Debug("Error decrypting auth token cookie", "error", err)
 		return false, zero, fmt.Errorf("failed to decrypt auth token cookie: %w", err)
 	}
-	slog.Debug("************ Decrypted auth token cookie", "cookie", string(tokenBytes))
-	slog.Debug("************ Decrypted auth token cookie", "cookie", []byte(string(tokenBytes)))
 
 	var jsonToken contracts.AuthToken
 	err = json.Unmarshal([]byte(string(tokenBytes)), &jsonToken)

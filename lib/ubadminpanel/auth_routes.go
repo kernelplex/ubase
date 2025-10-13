@@ -19,6 +19,7 @@ func LoginRoute(
 	primaryOrganization int64,
 	mgmt ubmanage.ManagementService,
 	cookieManager contracts.AuthTokenCookieManager,
+	adminLinkService contracts.AdminLinkService,
 ) contracts.Route {
 	ensure.That(primaryOrganization > 0, "primary organization must be set and greater than zero")
 
@@ -27,13 +28,19 @@ func LoginRoute(
 		Func: func(w http.ResponseWriter, r *http.Request) {
 			switch r.Method {
 			case http.MethodGet:
-				component := views.Login(isHTMX(r), "")
+				component := views.Login(contracts.LoginViewModel{
+					BaseViewModel: contracts.BaseViewModel{Fragment: isHTMX(r)},
+					Error:         "",
+				})
 				_ = component.Render(r.Context(), w)
 				return
 			case http.MethodPost:
 				if err := r.ParseForm(); err != nil {
 					slog.Error("parse form error", "error", err)
-					_ = views.Login(isHTMX(r), "Invalid form submission").Render(r.Context(), w)
+					_ = views.Login(contracts.LoginViewModel{
+						BaseViewModel: contracts.BaseViewModel{Fragment: isHTMX(r)},
+						Error:         "Invalid form submission",
+					}).Render(r.Context(), w)
 					return
 				}
 				email := strings.TrimSpace(r.FormValue("email"))
@@ -42,7 +49,10 @@ func LoginRoute(
 				resp, err := mgmt.UserAuthenticate(r.Context(), ubmanage.UserLoginCommand{Email: email, Password: password}, "web:ubadminpanel")
 				if err != nil {
 					slog.Error("auth error", "error", err)
-					_ = views.Login(isHTMX(r), "Could not verify this account at this time.").Render(r.Context(), w)
+					_ = views.Login(contracts.LoginViewModel{
+						BaseViewModel: contracts.BaseViewModel{Fragment: isHTMX(r)},
+						Error:         "Could not verify this account at this time.",
+					}).Render(r.Context(), w)
 					return
 				}
 
@@ -61,7 +71,10 @@ func LoginRoute(
 					}
 					if err := cookieManager.WriteAuthTokenCookie(w, token); err != nil {
 						slog.Error("write cookie error", "error", err)
-						_ = views.Login(isHTMX(r), "Failed to create session. Try again.").Render(r.Context(), w)
+						_ = views.Login(contracts.LoginViewModel{
+							BaseViewModel: contracts.BaseViewModel{Fragment: isHTMX(r)},
+							Error:         "Failed to create session. Try again.",
+						}).Render(r.Context(), w)
 						return
 					}
 					if isHTMX(r) {
@@ -73,17 +86,33 @@ func LoginRoute(
 					return
 				case ubstatus.PartialSuccess:
 					if resp.Data.RequiresTwoFactor {
-						_ = views.TwoFactor(isHTMX(r), resp.Data.UserId, "").Render(r.Context(), w)
+						_ = views.TwoFactor(contracts.TwoFactorViewModel{
+							BaseViewModel: contracts.BaseViewModel{
+								Fragment: isHTMX(r),
+								Links:    adminLinkService.GetLinks(r),
+							},
+							UserID: resp.Data.UserId,
+							Error:  "",
+						}).Render(r.Context(), w)
 						return
 					}
-					_ = views.Login(isHTMX(r), "Please verify your email before logging in.").Render(r.Context(), w)
+					_ = views.Login(contracts.LoginViewModel{
+						BaseViewModel: contracts.BaseViewModel{
+							Fragment: isHTMX(r),
+							Links:    adminLinkService.GetLinks(r),
+						},
+						Error: "Please verify your email before logging in.",
+					}).Render(r.Context(), w)
 					return
 				default:
 					msg := resp.Message
 					if strings.TrimSpace(msg) == "" {
 						msg = "Email or password is incorrect"
 					}
-					_ = views.Login(isHTMX(r), msg).Render(r.Context(), w)
+					_ = views.Login(contracts.LoginViewModel{
+						BaseViewModel: contracts.BaseViewModel{Fragment: isHTMX(r)},
+						Error:         msg,
+					}).Render(r.Context(), w)
 					return
 				}
 			default:
@@ -98,6 +127,7 @@ func LoginRoute(
 func VerifyTwoFactorRoute(
 	mgmt ubmanage.ManagementService,
 	cookieManager contracts.AuthTokenCookieManager,
+	adminLinkService contracts.AdminLinkService,
 ) contracts.Route {
 	return contracts.Route{
 		Path: "/admin/verify-2fa",
@@ -107,7 +137,14 @@ func VerifyTwoFactorRoute(
 				return
 			}
 			if err := r.ParseForm(); err != nil {
-				_ = views.TwoFactor(isHTMX(r), 0, "Invalid form submission").Render(r.Context(), w)
+				_ = views.TwoFactor(contracts.TwoFactorViewModel{
+					BaseViewModel: contracts.BaseViewModel{
+						Fragment: isHTMX(r),
+						Links:    adminLinkService.GetLinks(r),
+					},
+					UserID: 0,
+					Error:  "Invalid form submission",
+				}).Render(r.Context(), w)
 				return
 			}
 			idStr := r.FormValue("user_id")
@@ -120,7 +157,14 @@ func VerifyTwoFactorRoute(
 				if err != nil {
 					slog.Error("2fa error", "error", err)
 				}
-				_ = views.TwoFactor(isHTMX(r), userId, msg).Render(r.Context(), w)
+				_ = views.TwoFactor(contracts.TwoFactorViewModel{
+					BaseViewModel: contracts.BaseViewModel{
+						Fragment: isHTMX(r),
+						Links:    adminLinkService.GetLinks(r),
+					},
+					UserID: userId,
+					Error:  msg,
+				}).Render(r.Context(), w)
 				return
 			}
 
@@ -137,7 +181,14 @@ func VerifyTwoFactorRoute(
 
 			if err := cookieManager.WriteAuthTokenCookie(w, token); err != nil {
 				slog.Error("write cookie error", "error", err)
-				_ = views.TwoFactor(isHTMX(r), userId, "Failed to create session. Try again.").Render(r.Context(), w)
+				_ = views.TwoFactor(contracts.TwoFactorViewModel{
+					BaseViewModel: contracts.BaseViewModel{
+						Fragment: isHTMX(r),
+						Links:    adminLinkService.GetLinks(r),
+					},
+					UserID: userId,
+					Error:  "Failed to create session. Try again.",
+				}).Render(r.Context(), w)
 				return
 			}
 			if isHTMX(r) {

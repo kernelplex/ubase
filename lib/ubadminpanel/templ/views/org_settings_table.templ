@@ -1,0 +1,35 @@
+package views
+
+import "fmt"
+
+templ OrganizationSettingsTable(orgId int64, settings map[string]string) {
+	<table class="data-table settings-table" id="settings-table">
+		<thead>
+			<tr>
+				<th class="settings-name-header">Name</th>
+				<th class="settings-value-header">Value</th>
+				<th class="settings-actions-header">Actions</th>
+			</tr>
+		</thead>
+		<tbody>
+			if len(settings) == 0 {
+				<tr>
+					<td colspan="3" class="no-settings-message">No settings found.</td>
+				</tr>
+			} else {
+				for name, value := range settings {
+					<tr id={ fmt.Sprintf("setting-row-%s", name) }>
+						<td class="setting-name">{ name }</td>
+						<td class="setting-value">{ value }</td>
+						<td class="setting-actions">
+							<form hx-post={ fmt.Sprintf("/admin/organizations/%d/settings/remove", orgId) } hx-target={ fmt.Sprintf("#setting-row-%s", name) } hx-swap="outerHTML" class="setting-form">
+								<input type="hidden" name="name" value={ name }/>
+								<button type="submit" class="role-toggle minus" title="Remove setting">-</button>
+							</form>
+						</td>
+					</tr>
+				}
+			}
+		</tbody>
+	</table>
+}

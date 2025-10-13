@@ -1,17 +1,20 @@
 package views
 
-import "github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
+import (
+    "github.com/kernelplex/ubase/lib/contracts"
+    "github.com/kernelplex/ubase/lib/ubadminpanel/templ/layouts"
+)
 
-templ TwoFactor(fragment bool, userId int64, err string) {
-    @layouts.LayoutOrFragment(fragment, false) {
+templ TwoFactor(vm contracts.TwoFactorViewModel) {
+    @layouts.LayoutOrFragment(vm.Fragment, false, vm.Links) {
         <section class="auth-screen">
             <div class="auth-card">
                 <h1>Two-Factor Authentication</h1>
-                if err != "" {
-                    <div class="error">{ err }</div>
+                if vm.Error != "" {
+                    <div class="error">{ vm.Error }</div>
                 }
                 <form class="auth-form" hx-post="/admin/verify-2fa" hx-target="#main" hx-swap="innerHTML">
-                    <input type="hidden" name="user_id" value={ userId }/>
+                    <input type="hidden" name="user_id" value={ vm.UserID }/>
                     <div class="form-field">
                         <label for="code">Authentication Code</label>
                         <input id="code" type="text" name="code" inputmode="numeric" autocomplete="one-time-code" placeholder="123 456" required/>

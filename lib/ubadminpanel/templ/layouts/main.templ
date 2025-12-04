@@ -18,12 +18,10 @@ templ Layout(showLogout bool, links *contracts.AdminSectionLinks, styles []strin
 		<body class="admin-layout">
 			<div class="admin-container">
 				<header class="admin-header">
-					if showLogout {
-						<div class="admin-header__brand">
-							<div class="admin-logo"></div>
-							<a href="/admin">Ubase Admin</a>
-						</div>
-					}
+					<div class="admin-header__brand">
+						<div class="admin-logo"></div>
+						<a href="/admin">Ubase Admin</a>
+					</div>
 					<div class="admin-header__actions">
 						if showLogout {
 							<button class="btn-logout" hx-post="/admin/logout">Log Out</button>

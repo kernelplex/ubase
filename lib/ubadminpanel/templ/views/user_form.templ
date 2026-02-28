@@ -31,17 +31,17 @@ templ UserForm(vm contracts.UserFormViewModel) {
 					</div>
 					<div class="form-field">
 						<label for="first_name">First Name</label>
-						<input id="first_name" type="text" name="first_name" value={ func() string { if vm.User != nil { return vm.User.FirstName } ; return "" }() } required/>
+						<input id="first_name" type="text" name="first_name" value={ func() string { if vm.User != nil { return vm.User.FirstName } ; return "" }() }/>
 						@components.FieldErrors(vm.FieldErrors["firstName"])
 					</div>
 					<div class="form-field">
 						<label for="last_name">Last Name</label>
-						<input id="last_name" type="text" name="last_name" value={ func() string { if vm.User != nil { return vm.User.LastName } ; return "" }() } required/>
+						<input id="last_name" type="text" name="last_name" value={ func() string { if vm.User != nil { return vm.User.LastName } ; return "" }() }/>
 						@components.FieldErrors(vm.FieldErrors["lastName"])
 					</div>
 					<div class="form-field">
 						<label for="display_name">Display Name</label>
-						<input id="display_name" type="text" name="display_name" value={ func() string { if vm.User != nil { return vm.User.DisplayName } ; return "" }() } required/>
+						<input id="display_name" type="text" name="display_name" value={ func() string { if vm.User != nil { return vm.User.DisplayName } ; return "" }() }/>
 						@components.FieldErrors(vm.FieldErrors["displayName"])
 					</div>
 					<div class="form-field">

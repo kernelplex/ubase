@@ -42,9 +42,9 @@ func UserAddCommand() ubcli.Command {
 		if err != nil {
 			return err
 		}
-		firstName = maybeReadInput("First Name: ", firstName)
-		lastName = maybeReadInput("Last Name: ", lastName)
-		displayName = maybeReadInput("Display Name: ", displayName)
+		firstName = maybeReadInputAllowEmpty("First Name: ", firstName)
+		lastName = maybeReadInputAllowEmpty("Last Name: ", lastName)
+		displayName = maybeReadInputAllowEmpty("Display Name: ", displayName)
 
 		command := ubmanage.UserCreateCommand{
 			Email:       email,

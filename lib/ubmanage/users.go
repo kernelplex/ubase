@@ -17,24 +17,27 @@ type ApiKey struct {
 }
 
 type UserState struct {
-	Email                 string            `json:"email"`
-	PasswordHash          string            `json:"passwordHash"`
-	FirstName             string            `json:"firstName"`
-	LastName              string            `json:"lastName"`
-	Settings              map[string]string `json:"settings"`
-	VerificationToken     *string           `json:"verificationToken,omitempty"`
-	Verified              bool              `json:"verified"`
-	Disabled              bool              `json:"disabled"`
-	DisplayName           string            `json:"displayName"`
-	ResetToken            *string           `json:"resetToken,omitempty"`
-	LastLogin             int64             `json:"lastLogin,omitempty"`
-	LastLoginAttempt      int64             `json:"lastLoginAttempt,omitempty"`
-	FailedLoginAttempts   int64             `json:"failedLoginAttempts,omitempty"`
-	TwoFactorSharedSecret *string           `json:"twoFactorSharedSecret,omitempty"`
-	LoginCount            int64             `json:"loginCount,omitempty"`
-	CreatedAt             int64             `json:"createdAt,omitempty"`
-	UpdatedAt             int64             `json:"updatedAt,omitempty"`
-	ApiKeys               []ApiKey          `json:"apiKeys,omitempty"`
+	Email                     string            `json:"email"`
+	PasswordHash              string            `json:"passwordHash"`
+	FirstName                 string            `json:"firstName"`
+	LastName                  string            `json:"lastName"`
+	Settings                  map[string]string `json:"settings"`
+	VerificationToken         *string           `json:"verificationToken,omitempty"`
+	Verified                  bool              `json:"verified"`
+	Disabled                  bool              `json:"disabled"`
+	DisplayName               string            `json:"displayName"`
+	ResetToken                *string           `json:"resetToken,omitempty"`
+	LastLogin                 int64             `json:"lastLogin,omitempty"`
+	LastLoginAttempt          int64             `json:"lastLoginAttempt,omitempty"`
+	FailedLoginAttempts       int64             `json:"failedLoginAttempts,omitempty"`
+	TwoFactorSharedSecret     *string           `json:"twoFactorSharedSecret,omitempty"`
+	LoginCount                int64             `json:"loginCount,omitempty"`
+	CreatedAt                 int64             `json:"createdAt,omitempty"`
+	UpdatedAt                 int64             `json:"updatedAt,omitempty"`
+	ApiKeys                   []ApiKey          `json:"apiKeys,omitempty"`
+	EmailLoginCode            *string           `json:"emailLoginCode,omitempty"`
+	EmailLoginCodeGeneratedAt int64             `json:"emailLoginCodeGeneratedAt,omitempty"`
+	EmailLoginCodeExpiresAt   int64             `json:"emailLoginCodeExpiresAt,omitempty"`
 }
 
 // evercore:aggregate
@@ -114,6 +117,17 @@ func (t *UserAggregate) ApplyEventState(eventState evercore.EventState, eventTim
 			}
 		}
 		t.State.ApiKeys = newApiKeys
+		return nil
+	case UserEmailLoginCodeGeneratedEvent:
+		t.State.EmailLoginCode = &ev.Code
+		t.State.EmailLoginCodeGeneratedAt = eventTime.Unix()
+		t.State.EmailLoginCodeExpiresAt = ev.ExpiresAt
+		return nil
+	case UserEmailLoginCodeConsumedEvent:
+		t.State.EmailLoginCode = nil
+		t.State.EmailLoginCodeGeneratedAt = 0
+		t.State.EmailLoginCodeExpiresAt = 0
+		t.State.Verified = true
 		return nil
 	default:
 		err = t.StateAggregate.ApplyEventState(eventState, eventTime, reference)
@@ -269,6 +283,41 @@ type UserSetTwoFactorSharedSecretCommand struct {
 type UserVerifyTwoFactorLoginCommand struct {
 	UserId int64  `json:"id"`
 	Code   string `json:"code"`
+}
+
+type UserEmailLoginRequestCommand struct {
+	Email       string  `json:"email"`
+	FirstName   *string `json:"firstName,omitempty"`
+	LastName    *string `json:"lastName,omitempty"`
+	DisplayName *string `json:"displayName,omitempty"`
+}
+
+func (c UserEmailLoginRequestCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
+	v := ubvalidation.NewValidationTracker()
+	v.ValidateEmail("email", c.Email)
+	v.ValidateOptionalField("firstName", c.FirstName, 0)
+	v.ValidateOptionalField("lastName", c.LastName, 0)
+	v.ValidateOptionalField("displayName", c.DisplayName, 0)
+	return v.Valid()
+}
+
+type UserEmailLoginRequestResponse struct {
+	UserId    int64  `json:"userId"`
+	Email     string `json:"email"`
+	Code      string `json:"code"`
+	ExpiresAt int64  `json:"expiresAt"`
+}
+
+type UserVerifyEmailLoginCodeCommand struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
+func (c UserVerifyEmailLoginCodeCommand) Validate() (bool, []ubvalidation.ValidationIssue) {
+	v := ubvalidation.NewValidationTracker()
+	v.ValidateEmail("email", c.Email)
+	v.ValidateField("code", c.Code, true, 0)
+	return v.Valid()
 }
 
 type UserDisableCommand struct {
@@ -499,3 +548,29 @@ type UserSettingsRemovedEvent struct {
 
 func (a UserSettingsRemovedEvent) GetEventType() string { return "UserSettingsRemovedEvent" }
 func (a UserSettingsRemovedEvent) Serialize() string    { return evercore.SerializeToJson(a) }
+
+// evercore:event
+type UserEmailLoginCodeGeneratedEvent struct {
+	Code      string `json:"code"`
+	ExpiresAt int64  `json:"expiresAt"`
+}
+
+func (a UserEmailLoginCodeGeneratedEvent) GetEventType() string {
+	return events.UserEmailLoginCodeGeneratedEventType
+}
+
+func (a UserEmailLoginCodeGeneratedEvent) Serialize() string {
+	return evercore.SerializeToJson(a)
+}
+
+// evercore:event
+type UserEmailLoginCodeConsumedEvent struct {
+}
+
+func (a UserEmailLoginCodeConsumedEvent) GetEventType() string {
+	return events.UserEmailLoginCodeConsumedEventType
+}
+
+func (a UserEmailLoginCodeConsumedEvent) Serialize() string {
+	return evercore.SerializeToJson(a)
+}

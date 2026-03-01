@@ -35,7 +35,14 @@ func NewManagementServiceTestSuite(eventStore *evercore.EventStore, dbadapter ub
 	})
 	totpService := ub2fa.NewTotpService("exaple.test")
 
-	managemntService := ubmanage.NewManagement(eventStore, dbadapter, hashingService, encryptionService, totpService)
+	managemntService := ubmanage.NewManagement(
+		eventStore,
+		dbadapter,
+		hashingService,
+		encryptionService,
+		totpService,
+		ubmanage.WithEmailLoginOptions(ubmanage.EmailLoginOptions{Enabled: true}),
+	)
 	return &ManagmentServiceTestSuite{
 		eventStore:        eventStore,
 		dbadapter:         dbadapter,
@@ -46,13 +53,13 @@ func NewManagementServiceTestSuite(eventStore *evercore.EventStore, dbadapter ub
 }
 
 func (s *ManagmentServiceTestSuite) RunTests(t *testing.T) {
-    t.Run("AddOrganization", s.AddOrganization)
-    t.Run("GetOrganizationBySystemName", s.GetOrganizationBySystemName)
-    t.Run("UpdateOrganization", s.UpdateOrganization)
-    t.Run("AddOrganizationSettings", s.AddOrganizationSettings)
-    t.Run("AddOrganizationSettingsValidation", s.AddOrganizationSettingsValidation)
-    t.Run("RemoveOrganizationSettings", s.RemoveOrganizationSettings)
-    t.Run("RemoveOrganizationSettingsValidation", s.RemoveOrganizationSettingsValidation)
+	t.Run("AddOrganization", s.AddOrganization)
+	t.Run("GetOrganizationBySystemName", s.GetOrganizationBySystemName)
+	t.Run("UpdateOrganization", s.UpdateOrganization)
+	t.Run("AddOrganizationSettings", s.AddOrganizationSettings)
+	t.Run("AddOrganizationSettingsValidation", s.AddOrganizationSettingsValidation)
+	t.Run("RemoveOrganizationSettings", s.RemoveOrganizationSettings)
+	t.Run("RemoveOrganizationSettingsValidation", s.RemoveOrganizationSettingsValidation)
 	t.Run("AddRole", s.AddRole)
 	t.Run("UpdateRole", s.UpdateRole)
 	t.Run("DeleteRole", s.DeleteRole)
@@ -62,12 +69,12 @@ func (s *ManagmentServiceTestSuite) RunTests(t *testing.T) {
 	t.Run("AddUser", s.AddUser)
 	t.Run("GetUserByEmail", s.GetUserByEmail)
 	t.Run("UpdateUser", s.UpdateUser)
-    t.Run("GetUserByEmailPostUpdate", s.GetUserByEmailPostUpdate)
-    t.Run("AddUserSettings", s.AddUserSettings)
-    t.Run("AddUserSettingsValidation", s.AddUserSettingsValidation)
-    t.Run("RemoveUserSettings", s.RemoveUserSettings)
-    t.Run("RemoveUserSettingsValidation", s.RemoveUserSettingsValidation)
-    t.Run("UpdateUserWithoutPassword", s.UpdateUserWithoutPassword)
+	t.Run("GetUserByEmailPostUpdate", s.GetUserByEmailPostUpdate)
+	t.Run("AddUserSettings", s.AddUserSettings)
+	t.Run("AddUserSettingsValidation", s.AddUserSettingsValidation)
+	t.Run("RemoveUserSettings", s.RemoveUserSettings)
+	t.Run("RemoveUserSettingsValidation", s.RemoveUserSettingsValidation)
+	t.Run("UpdateUserWithoutPassword", s.UpdateUserWithoutPassword)
 	t.Run("UpdateUserSamePassword", s.UpdateUserSamePassword)
 	t.Run("LoginWithCorrectPassword", s.TestLoginWithCorrectPassword)
 	t.Run("LoginWithIncorrectPassword", s.LoginWithIncorrectPassword)
@@ -75,6 +82,8 @@ func (s *ManagmentServiceTestSuite) RunTests(t *testing.T) {
 	t.Run("LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet", s.LoginWithCorrectPasswordEnsureTwoFactorRequiredIsSet)
 	t.Run("VerifyCorrectTwoFactorCode", s.VerifyCorrectTwoFactorCode)
 	t.Run("VerifyIncorrectTwoFactorCode", s.VerifyIncorrectTwoFactorCode)
+	t.Run("EmailLoginRequestCreatesUser", s.EmailLoginRequestCreatesUser)
+	t.Run("EmailLoginVerificationFlow", s.EmailLoginVerificationFlow)
 	t.Run("AddUserToRole", s.AddUserToRole)
 	t.Run("RemoveUserFromRole", s.RemoveUserFromRole)
 

@@ -19,7 +19,7 @@ func TestPostgresqlStorageEngine(t *testing.T) {
 
 	postgresContainer, err := postgres.Run(
 		ctx,
-		"postgres:16-alpine",
+		"postgres:16",
 		postgres.BasicWaitStrategies(),
 	)
 

@@ -57,6 +57,28 @@ func TestUserAggregateApplyEventState_LoginAndTokens(t *testing.T) {
 	if !agg.State.Verified || agg.State.VerificationToken != nil {
 		t.Fatal("expected verified=true and token cleared")
 	}
+
+	// Email login code generation/consumption should track code and verification
+	agg.State.Verified = false
+	expiry := now.Add(10 * time.Minute).Unix()
+	if err := agg.ApplyEventState(UserEmailLoginCodeGeneratedEvent{Code: "enc-code", ExpiresAt: expiry}, now.Add(5*time.Second), "tester"); err != nil {
+		t.Fatalf("apply email login code generated: %v", err)
+	}
+	if agg.State.EmailLoginCode == nil || *agg.State.EmailLoginCode != "enc-code" {
+		t.Fatal("expected email login code stored")
+	}
+	if agg.State.EmailLoginCodeExpiresAt != expiry {
+		t.Fatalf("expected email login expiry %d, got %d", expiry, agg.State.EmailLoginCodeExpiresAt)
+	}
+	if err := agg.ApplyEventState(UserEmailLoginCodeConsumedEvent{}, now.Add(6*time.Second), "tester"); err != nil {
+		t.Fatalf("apply email login code consumed: %v", err)
+	}
+	if agg.State.EmailLoginCode != nil || agg.State.EmailLoginCodeGeneratedAt != 0 || agg.State.EmailLoginCodeExpiresAt != 0 {
+		t.Fatal("expected email login code cleared")
+	}
+	if !agg.State.Verified {
+		t.Fatal("expected consuming email login code to verify user")
+	}
 }
 
 func TestUserAggregateApplyEventState_TwoFactorAndApiKeys(t *testing.T) {
@@ -153,5 +175,25 @@ func TestUserCommandValidation(t *testing.T) {
 	gen = UserGenerateApiKeyCommand{UserId: 0, Name: "key", OrganizationId: 1, ExpiresAt: time.Now().Add(24 * time.Hour)}
 	if ok, _ := gen.Validate(); ok {
 		t.Fatal("expected invalid api key cmd userId")
+	}
+
+	// UserEmailLoginRequestCommand
+	emailReq := UserEmailLoginRequestCommand{Email: "login@example.com"}
+	if ok, _ := emailReq.Validate(); !ok {
+		t.Fatal("expected valid email login request")
+	}
+	emailReq = UserEmailLoginRequestCommand{}
+	if ok, _ := emailReq.Validate(); ok {
+		t.Fatal("expected invalid email login request")
+	}
+
+	// UserVerifyEmailLoginCodeCommand
+	verifyCmd := UserVerifyEmailLoginCodeCommand{Email: "login@example.com", Code: "abcd"}
+	if ok, _ := verifyCmd.Validate(); !ok {
+		t.Fatal("expected valid email login verify command")
+	}
+	verifyCmd = UserVerifyEmailLoginCodeCommand{}
+	if ok, _ := verifyCmd.Validate(); ok {
+		t.Fatal("expected invalid email login verify command")
 	}
 }

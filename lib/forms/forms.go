@@ -62,6 +62,11 @@ func populateStruct(form map[string][]string, sv reflect.Value, tracker *ubvalid
 	for i := 0; i < st.NumField(); i++ {
 		sf := st.Field(i)
 		fv := sv.Field(i)
+		ft := fv.Type()
+		isPtr := fv.Kind() == reflect.Pointer
+		if isPtr {
+			ft = ft.Elem()
+		}
 
 		// Skip unexported or explicitly ignored fields.
 		if sf.PkgPath != "" { // unexported
@@ -92,16 +97,8 @@ func populateStruct(form map[string][]string, sv reflect.Value, tracker *ubvalid
 		}
 
 		// Handle struct fields (including time.Time and nested structs).
-		if fv.Kind() == reflect.Struct || (fv.Kind() == reflect.Pointer && fv.Type().Elem().Kind() == reflect.Struct) {
-			if fv.Kind() == reflect.Pointer {
-				if fv.IsNil() {
-					et := fv.Type().Elem()
-					fv.Set(reflect.New(et))
-				}
-				fv = fv.Elem()
-			}
-			// Now fv is the struct value.
-			if fv.Type() == reflect.TypeOf(time.Time{}) {
+		if ft.Kind() == reflect.Struct {
+			if ft == reflect.TypeOf(time.Time{}) {
 				rawVals, ok := form[fieldKey]
 				if !ok || len(rawVals) == 0 {
 					continue
@@ -111,11 +108,30 @@ func populateStruct(form map[string][]string, sv reflect.Value, tracker *ubvalid
 					tracker.AddIssue(fieldKey, err.Error())
 					return fmt.Errorf("field %q: %w", fieldKey, err)
 				}
-				fv.Set(reflect.ValueOf(t))
+				if isPtr {
+					if fv.IsNil() {
+						fv.Set(reflect.New(ft))
+					}
+					fv.Elem().Set(reflect.ValueOf(t))
+				} else {
+					fv.Set(reflect.ValueOf(t))
+				}
 				continue
 			}
-			// Recurse into nested struct.
-			if err := populateStruct(form, fv, tracker, fieldKey); err != nil {
+
+			var target reflect.Value
+			if isPtr {
+				if fv.IsNil() {
+					if !hasNestedValues(form, fieldKey) {
+						continue
+					}
+					fv.Set(reflect.New(ft))
+				}
+				target = fv.Elem()
+			} else {
+				target = fv
+			}
+			if err := populateStruct(form, target, tracker, fieldKey); err != nil {
 				return err
 			}
 			continue
@@ -216,9 +232,30 @@ func setValue(fv reflect.Value, sf reflect.StructField, rawVals []string) error 
 		}
 		fv.Set(out)
 		return nil
+
+	case reflect.Struct:
+		if fv.Type() != reflect.TypeOf(time.Time{}) {
+			break
+		}
+		t, err := parseTime(first())
+		if err != nil {
+			return err
+		}
+		fv.Set(reflect.ValueOf(t))
+		return nil
 	}
 
 	return fmt.Errorf("unsupported type %s", fv.Type())
+}
+
+func hasNestedValues(form map[string][]string, fieldKey string) bool {
+	prefix := fieldKey + "."
+	for key := range form {
+		if strings.HasPrefix(key, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func parseTime(s string) (time.Time, error) {

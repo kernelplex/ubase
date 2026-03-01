@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	evercore "github.com/kernelplex/evercore/base"
@@ -17,6 +18,11 @@ import (
 const ApiKeyLength = 40
 const ApiKeyIdLength = 10
 const VerificationTokenLength = 10
+const emailLoginPasswordLength = 32
+
+var (
+	errEmailLoginDisabledUser = errors.New("user account is disabled")
+)
 
 func MapEvercoreErrorToStatus(err error) ubstatus.StatusCode {
 	// Duplicate
@@ -380,6 +386,186 @@ func (m *ManagementImpl) UserAuthenticate(ctx context.Context,
 		})
 }
 
+func (m *ManagementImpl) UserRequestEmailLogin(ctx context.Context,
+	command UserEmailLoginRequestCommand,
+	agent string) (r.Response[UserEmailLoginRequestResponse], error) {
+
+	if !m.emailLoginOptions.Enabled {
+		return r.StatusError[UserEmailLoginRequestResponse](ubstatus.NotAuthorized, "Email-only login is not enabled"), nil
+	}
+
+	if ok, issues := command.Validate(); !ok {
+		return r.Response[UserEmailLoginRequestResponse]{
+			Status:           ubstatus.ValidationError,
+			ValidationIssues: issues,
+			Message:          "Validation issues",
+		}, nil
+	}
+
+	if m.emailLoginOptions.Validator != nil {
+		if err := m.emailLoginOptions.Validator.ValidateEmailLogin(ctx, command.Email); err != nil {
+			slog.Error("Email login validation failed", "email", command.Email, "error", err)
+			return r.StatusError[UserEmailLoginRequestResponse](ubstatus.ValidationError, err.Error()), nil
+		}
+	}
+
+	result, err := evercore.InContext(
+		ctx,
+		m.store,
+		func(etx evercore.EventStoreContext) (UserEmailLoginRequestResponse, error) {
+			aggregate := UserAggregate{}
+			err := etx.LoadStateByKeyInto(&aggregate, command.Email)
+			if err != nil {
+				status := MapEvercoreErrorToStatus(err)
+				if status != ubstatus.NotFound {
+					return UserEmailLoginRequestResponse{}, fmt.Errorf("failed to load user: %w", err)
+				}
+				if err := m.createEmailLoginUser(ctx, etx, &aggregate, command, agent); err != nil {
+					return UserEmailLoginRequestResponse{}, err
+				}
+			} else if aggregate.State.Disabled {
+				return UserEmailLoginRequestResponse{}, errEmailLoginDisabledUser
+			}
+
+			code := ubsecurity.GenerateSecureRandomString(uint32(m.emailLoginOptions.CodeLength))
+			encryptedCode, err := m.encryptionService.Encrypt64(code)
+			if err != nil {
+				return UserEmailLoginRequestResponse{}, fmt.Errorf("failed to encrypt email login code: %w", err)
+			}
+			expiresAt := time.Now().Add(m.emailLoginOptions.CodeTTL).Unix()
+
+			event := UserEmailLoginCodeGeneratedEvent{
+				Code:      encryptedCode,
+				ExpiresAt: expiresAt,
+			}
+			now := time.Now()
+			if err := etx.ApplyEventTo(&aggregate, event, now, agent); err != nil {
+				return UserEmailLoginRequestResponse{}, fmt.Errorf("failed to apply email login code generated event: %w", err)
+			}
+
+			return UserEmailLoginRequestResponse{
+				UserId:    aggregate.Id,
+				Email:     aggregate.State.Email,
+				Code:      code,
+				ExpiresAt: expiresAt,
+			}, nil
+		})
+
+	if err != nil {
+		if errors.Is(err, errEmailLoginDisabledUser) {
+			return r.StatusError[UserEmailLoginRequestResponse](ubstatus.NotAuthorized, "This account is not currently active. Please contact support."), nil
+		}
+		slog.Error("Error requesting email login", "error", err)
+		return r.Error[UserEmailLoginRequestResponse]("Could not start email login at this time."), err
+	}
+
+	return r.Success(result), nil
+}
+
+func (m *ManagementImpl) UserVerifyEmailLoginCode(ctx context.Context,
+	command UserVerifyEmailLoginCodeCommand,
+	agent string) (r.Response[*UserAuthenticationResponse], error) {
+
+	if !m.emailLoginOptions.Enabled {
+		return r.StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "Email-only login is not enabled"), nil
+	}
+
+	if ok, issues := command.Validate(); !ok {
+		return r.Response[*UserAuthenticationResponse]{
+			Status:           ubstatus.ValidationError,
+			ValidationIssues: issues,
+			Message:          "Validation issues",
+		}, nil
+	}
+
+	if m.emailLoginOptions.Validator != nil {
+		if err := m.emailLoginOptions.Validator.ValidateEmailLogin(ctx, command.Email); err != nil {
+			slog.Error("Email login validation failed", "email", command.Email, "error", err)
+			return r.StatusError[*UserAuthenticationResponse](ubstatus.ValidationError, err.Error()), nil
+		}
+	}
+
+	return evercore.InContext(
+		ctx,
+		m.store,
+		func(etx evercore.EventStoreContext) (r.Response[*UserAuthenticationResponse], error) {
+			aggregate := UserAggregate{}
+			err := etx.LoadStateByKeyInto(&aggregate, command.Email)
+			if err != nil {
+				status := MapEvercoreErrorToStatus(err)
+				if status == ubstatus.NotFound {
+					return r.StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "Email or code is incorrect"), nil
+				}
+				slog.Error("Error getting user for email login verification", "error", err)
+				if status == ubstatus.UnexpectedError {
+					return r.Error[*UserAuthenticationResponse]("Could not verify this account at this time."), err
+				}
+				return r.StatusError[*UserAuthenticationResponse](status, "Could not verify this account at this time."), err
+			}
+
+			if aggregate.State.Disabled {
+				return r.StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "This account is not currently active. Please contact support."), nil
+			}
+
+			if aggregate.State.EmailLoginCode == nil {
+				return r.StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "Email or code is incorrect"), nil
+			}
+
+			decryptedCode, err := m.encryptionService.Decrypt64(*aggregate.State.EmailLoginCode)
+			if err != nil {
+				slog.Error("Error decrypting email login code", "error", err)
+				return r.Error[*UserAuthenticationResponse]("Could not verify this account at this time."), fmt.Errorf("failed to decrypt email login code: %w", err)
+			}
+
+			if string(decryptedCode) != command.Code {
+				return r.StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "Email or code is incorrect"), nil
+			}
+
+			if aggregate.State.EmailLoginCodeExpiresAt > 0 &&
+				time.Now().Unix() > aggregate.State.EmailLoginCodeExpiresAt {
+				return r.StatusError[*UserAuthenticationResponse](ubstatus.NotAuthorized, "Email login code has expired. Request a new code."), nil
+			}
+
+			now := time.Now()
+			if err := etx.ApplyEventTo(&aggregate, UserEmailLoginCodeConsumedEvent{}, now, agent); err != nil {
+				return r.Error[*UserAuthenticationResponse]("Could not verify this account at this time."), fmt.Errorf("failed to apply email login code consumed event: %w", err)
+			}
+
+			if err := etx.ApplyEventTo(&aggregate, UserLoginSucceededEvent{}, now, agent); err != nil {
+				return r.Error[*UserAuthenticationResponse]("Could not verify this account at this time."), fmt.Errorf("failed to apply login succeeded event: %w", err)
+			}
+
+			err = m.dbadapter.UpdateUser(
+				ctx,
+				aggregate.Id,
+				aggregate.State.FirstName,
+				aggregate.State.LastName,
+				aggregate.State.DisplayName,
+				aggregate.State.Email,
+				aggregate.State.Verified,
+				aggregate.State.UpdatedAt)
+			if err != nil {
+				return r.Error[*UserAuthenticationResponse]("Could not verify this account at this time."), fmt.Errorf("failed to persist user verification state: %w", err)
+			}
+
+			err = m.dbadapter.UpdateUserLoginStats(
+				ctx,
+				aggregate.Id,
+				aggregate.State.LastLogin,
+				aggregate.State.LoginCount)
+			if err != nil {
+				slog.Error("Error updating user login stats", "error", err)
+			}
+
+			return r.Success(&UserAuthenticationResponse{
+				UserId:               aggregate.Id,
+				Email:                aggregate.State.Email,
+				RequiresTwoFactor:    false,
+				RequiresVerification: false,
+			}), nil
+		})
+}
+
 func (m *ManagementImpl) UserVerifyTwoFactorCode(ctx context.Context,
 	command UserVerifyTwoFactorLoginCommand,
 	agent string) (r.Response[any], error) {
@@ -418,6 +604,70 @@ func (m *ManagementImpl) UserVerifyTwoFactorCode(ctx context.Context,
 		return r.StatusError[any](ubstatus.NotAuthorized, "Two factor code does not match"), nil
 	}
 	return r.SuccessAny(), nil
+}
+
+func (m *ManagementImpl) createEmailLoginUser(ctx context.Context,
+	etx evercore.EventStoreContext,
+	aggregate *UserAggregate,
+	command UserEmailLoginRequestCommand,
+	agent string) error {
+
+	err := etx.CreateAggregateWithKeyInto(aggregate, command.Email)
+	if err != nil {
+		return fmt.Errorf("failed to create user aggregate: %w", err)
+	}
+
+	randomPassword := ubsecurity.GenerateSecureRandomString(emailLoginPasswordLength)
+	passwordHash, err := m.hashingService.GenerateHashBase64(randomPassword)
+	if err != nil {
+		return fmt.Errorf("failed to generate password hash: %w", err)
+	}
+
+	firstName := strings.TrimSpace(valueOrEmpty(command.FirstName))
+	lastName := strings.TrimSpace(valueOrEmpty(command.LastName))
+
+	displayName := strings.TrimSpace(valueOrEmpty(command.DisplayName))
+	if displayName == "" {
+		displayName = strings.TrimSpace(firstName + " " + lastName)
+		if displayName == "" {
+			displayName = command.Email
+		}
+	}
+
+	stateEvent := evercore.NewStateEvent(
+		UserAddedEvent{
+			Email:        command.Email,
+			PasswordHash: passwordHash,
+			FirstName:    firstName,
+			LastName:     lastName,
+			DisplayName:  displayName,
+			Verified:     false,
+		})
+
+	now := time.Now()
+	etx.ApplyEventTo(aggregate, stateEvent, now, agent)
+
+	err = m.dbadapter.AddUser(
+		ctx,
+		aggregate.Id,
+		aggregate.State.FirstName,
+		aggregate.State.LastName,
+		aggregate.State.DisplayName,
+		aggregate.State.Email,
+		aggregate.State.Verified,
+		aggregate.State.CreatedAt,
+		aggregate.State.UpdatedAt)
+	if err != nil {
+		return fmt.Errorf("failed to add email login user in database: %w", err)
+	}
+	return nil
+}
+
+func valueOrEmpty(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }
 
 func (m *ManagementImpl) UserGenerateVerificationToken(ctx context.Context,
@@ -649,63 +899,63 @@ func (m *ManagementImpl) UsersCount(ctx context.Context) (r.Response[int64], err
 }
 
 func (m *ManagementImpl) UserSettingsAdd(ctx context.Context,
-    command UserSettingsAddCommand,
-    agent string) (r.Response[any], error) {
+	command UserSettingsAddCommand,
+	agent string) (r.Response[any], error) {
 
-    if ok, issues := command.Validate(); !ok {
-        return r.ValidationError[any](issues), nil
-    }
+	if ok, issues := command.Validate(); !ok {
+		return r.ValidationError[any](issues), nil
+	}
 
-    err := m.store.WithContext(
-        ctx,
-        func(etx evercore.EventStoreContext) error {
-            aggregate := UserAggregate{}
-            if err := etx.LoadStateInto(&aggregate, command.Id); err != nil {
-                return fmt.Errorf("failed to load user: %w", err)
-            }
-            event := UserSettingsAddedEvent{Settings: command.Settings}
-            if err := etx.ApplyEventTo(&aggregate, event, time.Now(), agent); err != nil {
-                return fmt.Errorf("failed to apply user settings added event: %w", err)
-            }
-            return nil
-        })
+	err := m.store.WithContext(
+		ctx,
+		func(etx evercore.EventStoreContext) error {
+			aggregate := UserAggregate{}
+			if err := etx.LoadStateInto(&aggregate, command.Id); err != nil {
+				return fmt.Errorf("failed to load user: %w", err)
+			}
+			event := UserSettingsAddedEvent{Settings: command.Settings}
+			if err := etx.ApplyEventTo(&aggregate, event, time.Now(), agent); err != nil {
+				return fmt.Errorf("failed to apply user settings added event: %w", err)
+			}
+			return nil
+		})
 
-    if err != nil {
-        slog.Error("Error adding user settings", "error", err)
-        return r.Error[any]("Error adding user settings"), err
-    }
+	if err != nil {
+		slog.Error("Error adding user settings", "error", err)
+		return r.Error[any]("Error adding user settings"), err
+	}
 
-    return r.SuccessAny(), nil
+	return r.SuccessAny(), nil
 }
 
 func (m *ManagementImpl) UserSettingsRemove(ctx context.Context,
-    command UserSettingsRemoveCommand,
-    agent string) (r.Response[any], error) {
+	command UserSettingsRemoveCommand,
+	agent string) (r.Response[any], error) {
 
-    if ok, issues := command.Validate(); !ok {
-        return r.ValidationError[any](issues), nil
-    }
+	if ok, issues := command.Validate(); !ok {
+		return r.ValidationError[any](issues), nil
+	}
 
-    err := m.store.WithContext(
-        ctx,
-        func(etx evercore.EventStoreContext) error {
-            aggregate := UserAggregate{}
-            if err := etx.LoadStateInto(&aggregate, command.Id); err != nil {
-                return fmt.Errorf("failed to load user: %w", err)
-            }
-            event := UserSettingsRemovedEvent{SettingKeys: command.SettingKeys}
-            if err := etx.ApplyEventTo(&aggregate, event, time.Now(), agent); err != nil {
-                return fmt.Errorf("failed to apply user settings removed event: %w", err)
-            }
-            return nil
-        })
+	err := m.store.WithContext(
+		ctx,
+		func(etx evercore.EventStoreContext) error {
+			aggregate := UserAggregate{}
+			if err := etx.LoadStateInto(&aggregate, command.Id); err != nil {
+				return fmt.Errorf("failed to load user: %w", err)
+			}
+			event := UserSettingsRemovedEvent{SettingKeys: command.SettingKeys}
+			if err := etx.ApplyEventTo(&aggregate, event, time.Now(), agent); err != nil {
+				return fmt.Errorf("failed to apply user settings removed event: %w", err)
+			}
+			return nil
+		})
 
-    if err != nil {
-        slog.Error("Error removing user settings", "error", err)
-        return r.Error[any]("Error removing user settings"), err
-    }
+	if err != nil {
+		slog.Error("Error removing user settings", "error", err)
+		return r.Error[any]("Error removing user settings"), err
+	}
 
-    return r.SuccessAny(), nil
+	return r.SuccessAny(), nil
 }
 
 func (m *ManagementImpl) UserGenerateApiKey(ctx context.Context,

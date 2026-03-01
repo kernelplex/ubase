@@ -2,6 +2,7 @@ package ubmanage
 
 import (
 	"context"
+	"time"
 
 	evercore "github.com/kernelplex/evercore/base"
 	"github.com/kernelplex/ubase/lib/ensure"
@@ -44,18 +45,18 @@ type ManagementService interface {
 
 	// OrganizationUpdate modifies an existing organization's details
 	// Returns success/failure status or an error
-    OrganizationUpdate(ctx context.Context,
-        command OrganizationUpdateCommand,
-        agent string) (r.Response[any], error)
+	OrganizationUpdate(ctx context.Context,
+		command OrganizationUpdateCommand,
+		agent string) (r.Response[any], error)
 
-    // Organization settings operations
-    OrganizationSettingsAdd(ctx context.Context,
-        command OrganizationSettingsAddCommand,
-        agent string) (r.Response[any], error)
+	// Organization settings operations
+	OrganizationSettingsAdd(ctx context.Context,
+		command OrganizationSettingsAddCommand,
+		agent string) (r.Response[any], error)
 
-    OrganizationSettingsRemove(ctx context.Context,
-        command OrganizationSettingsRemoveCommand,
-        agent string) (r.Response[any], error)
+	OrganizationSettingsRemove(ctx context.Context,
+		command OrganizationSettingsRemoveCommand,
+		agent string) (r.Response[any], error)
 
 	// Role operations
 
@@ -138,6 +139,16 @@ type ManagementService interface {
 		command UserLoginCommand,
 		agent string) (r.Response[*UserAuthenticationResponse], error)
 
+	// UserRequestEmailLogin initiates an email-only login flow by creating a one-time code
+	UserRequestEmailLogin(ctx context.Context,
+		command UserEmailLoginRequestCommand,
+		agent string) (r.Response[UserEmailLoginRequestResponse], error)
+
+	// UserVerifyEmailLoginCode validates the one-time email login code and authenticates the user
+	UserVerifyEmailLoginCode(ctx context.Context,
+		command UserVerifyEmailLoginCodeCommand,
+		agent string) (r.Response[*UserAuthenticationResponse], error)
+
 	// UserVerifyTwoFactorCode verifies a 2FA code for an authenticated user
 	// Returns success/failure status or an error
 	UserVerifyTwoFactorCode(ctx context.Context,
@@ -173,18 +184,18 @@ type ManagementService interface {
 
 	// UserEnable reactivates a previously disabled user account
 	// Returns success/failure status or an error
-    UserEnable(ctx context.Context,
-        command UserEnableCommand,
-        agent string) (r.Response[any], error)
+	UserEnable(ctx context.Context,
+		command UserEnableCommand,
+		agent string) (r.Response[any], error)
 
-    // User settings operations
-    UserSettingsAdd(ctx context.Context,
-        command UserSettingsAddCommand,
-        agent string) (r.Response[any], error)
+	// User settings operations
+	UserSettingsAdd(ctx context.Context,
+		command UserSettingsAddCommand,
+		agent string) (r.Response[any], error)
 
-    UserSettingsRemove(ctx context.Context,
-        command UserSettingsRemoveCommand,
-        agent string) (r.Response[any], error)
+	UserSettingsRemove(ctx context.Context,
+		command UserSettingsRemoveCommand,
+		agent string) (r.Response[any], error)
 
 	// UserAddToRole assigns a role to a user
 	// Returns success/failure status or an error
@@ -231,6 +242,7 @@ type ManagementImpl struct {
 	hashingService    ubsecurity.HashGenerator
 	encryptionService ubsecurity.EncryptionService
 	twoFactorService  ub2fa.TotpService
+	emailLoginOptions EmailLoginOptions
 }
 
 func Must(condition bool, message string) {
@@ -239,12 +251,43 @@ func Must(condition bool, message string) {
 	}
 }
 
+type EmailLoginValidator interface {
+	ValidateEmailLogin(ctx context.Context, email string) error
+}
+
+type EmailLoginValidatorFunc func(ctx context.Context, email string) error
+
+func (f EmailLoginValidatorFunc) ValidateEmailLogin(ctx context.Context, email string) error {
+	return f(ctx, email)
+}
+
+type EmailLoginOptions struct {
+	Enabled    bool
+	CodeLength int
+	CodeTTL    time.Duration
+	Validator  EmailLoginValidator
+}
+
+type ManagementOption func(*ManagementImpl)
+
+func WithEmailLoginOptions(options EmailLoginOptions) ManagementOption {
+	return func(m *ManagementImpl) {
+		m.emailLoginOptions = options
+	}
+}
+
+const (
+	defaultEmailLoginCodeLength = 6
+	defaultEmailLoginCodeTTL    = 15 * time.Minute
+)
+
 func NewManagement(
 	store *evercore.EventStore,
 	dbadapter ubdata.DataAdapter,
 	hashingService ubsecurity.HashGenerator,
 	encryptionService ubsecurity.EncryptionService,
 	twoFactorService ub2fa.TotpService,
+	opts ...ManagementOption,
 ) ManagementService {
 
 	// Negative space assertions
@@ -261,5 +304,21 @@ func NewManagement(
 		encryptionService: encryptionService,
 		twoFactorService:  twoFactorService,
 	}
+
+	for _, opt := range opts {
+		if opt != nil {
+			opt(&management)
+		}
+	}
+
+	if management.emailLoginOptions.Enabled {
+		if management.emailLoginOptions.CodeLength <= 0 {
+			management.emailLoginOptions.CodeLength = defaultEmailLoginCodeLength
+		}
+		if management.emailLoginOptions.CodeTTL <= 0 {
+			management.emailLoginOptions.CodeTTL = defaultEmailLoginCodeTTL
+		}
+	}
+
 	return &management
 }

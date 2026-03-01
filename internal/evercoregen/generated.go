@@ -138,6 +138,20 @@ func EventDecoder(ev evercore.SerializedEvent) (evercore.EventState, error) {
 			return nil, err
 		}
 		return eventState, nil
+	case events.UserEmailLoginCodeConsumedEventType:
+		eventState := ubmanage.UserEmailLoginCodeConsumedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
+	case events.UserEmailLoginCodeGeneratedEventType:
+		eventState := ubmanage.UserEmailLoginCodeGeneratedEvent {}
+		err := evercore.DecodeEventStateTo(ev, &eventState)
+		if err != nil {
+			return nil, err
+		}
+		return eventState, nil
 	case events.UserEnabledEventType:
 		eventState := ubmanage.UserEnabledEvent {}
 		err := evercore.DecodeEventStateTo(ev, &eventState)

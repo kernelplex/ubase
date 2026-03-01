@@ -2,6 +2,7 @@ package integration_tests
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -400,6 +401,109 @@ func (s *ManagmentServiceTestSuite) VerifyIncorrectTwoFactorCode(t *testing.T) {
 
 	if invalidResponse.Status != ubstatus.NotAuthorized {
 		t.Fatalf("VerifyIncorrectTwoFactorCode expected NotAuthorized status but got: %v", invalidResponse.Status)
+	}
+}
+
+func (s *ManagmentServiceTestSuite) EmailLoginRequestCreatesUser(t *testing.T) {
+	ctx := context.Background()
+	email := fmt.Sprintf("email-login-%d@example.com", time.Now().UnixNano())
+
+	response, err := s.managementService.UserRequestEmailLogin(ctx, ubmanage.UserEmailLoginRequestCommand{
+		Email: email,
+	}, "test-runner")
+
+	if err != nil {
+		t.Fatalf("EmailLoginRequestCreatesUser failed to request login: %v", err)
+	}
+
+	if response.Status != ubstatus.Success {
+		t.Fatalf("EmailLoginRequestCreatesUser status is not success: %v", response.Status)
+	}
+
+	if response.Data.UserId == 0 {
+		t.Fatal("EmailLoginRequestCreatesUser returned zero user id")
+	}
+
+	if response.Data.Email != email {
+		t.Fatalf("EmailLoginRequestCreatesUser returned wrong email: expected %s, got %s", email, response.Data.Email)
+	}
+
+	if response.Data.Code == "" {
+		t.Fatal("EmailLoginRequestCreatesUser returned empty code")
+	}
+
+	if response.Data.ExpiresAt <= time.Now().Unix() {
+		t.Fatal("EmailLoginRequestCreatesUser returned expired code")
+	}
+
+	user, err := s.dbadapter.GetUserByEmail(ctx, email)
+	if err != nil {
+		t.Fatalf("EmailLoginRequestCreatesUser failed to load user: %v", err)
+	}
+
+	if user.Email != email {
+		t.Fatalf("EmailLoginRequestCreatesUser expected email %s, got %s", email, user.Email)
+	}
+
+	if user.Verified {
+		t.Fatal("EmailLoginRequestCreatesUser expected user to remain unverified until code is confirmed")
+	}
+}
+
+func (s *ManagmentServiceTestSuite) EmailLoginVerificationFlow(t *testing.T) {
+	ctx := context.Background()
+	email := fmt.Sprintf("email-login-flow-%d@example.com", time.Now().UnixNano())
+
+	requestResp, err := s.managementService.UserRequestEmailLogin(ctx, ubmanage.UserEmailLoginRequestCommand{
+		Email: email,
+	}, "test-runner")
+	if err != nil {
+		t.Fatalf("EmailLoginVerificationFlow failed to request login: %v", err)
+	}
+	if requestResp.Status != ubstatus.Success {
+		t.Fatalf("EmailLoginVerificationFlow request status not success: %v", requestResp.Status)
+	}
+
+	verifyResp, err := s.managementService.UserVerifyEmailLoginCode(ctx, ubmanage.UserVerifyEmailLoginCodeCommand{
+		Email: email,
+		Code:  requestResp.Data.Code,
+	}, "test-runner")
+	if err != nil {
+		t.Fatalf("EmailLoginVerificationFlow failed to verify code: %v", err)
+	}
+	if verifyResp.Status != ubstatus.Success {
+		t.Fatalf("EmailLoginVerificationFlow verify status not success: %v", verifyResp.Status)
+	}
+	if verifyResp.Data == nil {
+		t.Fatal("EmailLoginVerificationFlow expected response data")
+	}
+	if verifyResp.Data.UserId != requestResp.Data.UserId {
+		t.Fatalf("EmailLoginVerificationFlow expected user id %d, got %d", requestResp.Data.UserId, verifyResp.Data.UserId)
+	}
+	if verifyResp.Data.RequiresTwoFactor {
+		t.Fatal("EmailLoginVerificationFlow should not require two factor")
+	}
+	if verifyResp.Data.RequiresVerification {
+		t.Fatal("EmailLoginVerificationFlow should not require verification")
+	}
+
+	secondAttempt, err := s.managementService.UserVerifyEmailLoginCode(ctx, ubmanage.UserVerifyEmailLoginCodeCommand{
+		Email: email,
+		Code:  requestResp.Data.Code,
+	}, "test-runner")
+	if err != nil {
+		t.Fatalf("EmailLoginVerificationFlow second attempt failed unexpectedly: %v", err)
+	}
+	if secondAttempt.Status != ubstatus.NotAuthorized {
+		t.Fatalf("EmailLoginVerificationFlow expected single-use code to be rejected, got status %v", secondAttempt.Status)
+	}
+
+	userResp, err := s.managementService.UserGetByEmail(ctx, email)
+	if err != nil {
+		t.Fatalf("EmailLoginVerificationFlow failed to load user: %v", err)
+	}
+	if !userResp.Data.State.Verified {
+		t.Fatal("EmailLoginVerificationFlow expected user to be verified after login code used")
 	}
 }
 

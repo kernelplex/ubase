@@ -18,6 +18,8 @@ const (
 	UserApiKeyAddedEventType = "UserApiKeyAddedEvent"
 	UserApiKeyDeletedEventType = "UserApiKeyDeletedEvent"
 	UserDisabledEventType = "UserDisabledEvent"
+	UserEmailLoginCodeConsumedEventType = "UserEmailLoginCodeConsumedEvent"
+	UserEmailLoginCodeGeneratedEventType = "UserEmailLoginCodeGeneratedEvent"
 	UserEnabledEventType = "UserEnabledEvent"
 	UserLoginFailedEventType = "UserLoginFailedEvent"
 	UserLoginPartiallySucceededEventType = "UserLoginPartiallySucceededEvent"
@@ -49,6 +51,8 @@ var List = []string{
 	UserApiKeyAddedEventType,
 	UserApiKeyDeletedEventType,
 	UserDisabledEventType,
+	UserEmailLoginCodeConsumedEventType,
+	UserEmailLoginCodeGeneratedEventType,
 	UserEnabledEventType,
 	UserLoginFailedEventType,
 	UserLoginPartiallySucceededEventType,

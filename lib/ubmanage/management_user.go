@@ -543,7 +543,7 @@ func (m *ManagementImpl) UserVerifyEmailLoginCode(ctx context.Context,
 				aggregate.State.DisplayName,
 				aggregate.State.Email,
 				aggregate.State.Verified,
-				aggregate.State.UpdatedAt)
+				now.Unix())
 			if err != nil {
 				return r.Error[*UserAuthenticationResponse]("Could not verify this account at this time."), fmt.Errorf("failed to persist user verification state: %w", err)
 			}

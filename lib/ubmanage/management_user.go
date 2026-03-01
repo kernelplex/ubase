@@ -645,7 +645,10 @@ func (m *ManagementImpl) createEmailLoginUser(ctx context.Context,
 		})
 
 	now := time.Now()
-	etx.ApplyEventTo(aggregate, stateEvent, now, agent)
+	err = etx.ApplyEventTo(aggregate, stateEvent, now, agent)
+	if err != nil {
+		return fmt.Errorf("failed to apply UserAddedEvent: %w", err)
+	}
 
 	err = m.dbadapter.AddUser(
 		ctx,
